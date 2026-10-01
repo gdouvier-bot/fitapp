@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FitApp Pro</title>
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
+    @keyframes toastIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-toast { animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  </style>
+</head>
+<body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
+
+  <!-- Toast Notification Custom -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
+
+  <!-- Modal de confirmation Custom -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center mx-auto">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 id="confirm-title" class="font-extrabold text-white text-base">Confirmation</h3>
+        <p id="confirm-msg" class="text-xs text-slate-400 mt-1">Voulez-vous vraiment réinitialiser ?</p>
+      </div>
+      <div class="flex items-center space-x-2 pt-2">
+        <button id="confirm-yes-btn" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl shadow transition">
+          Oui, réinitialiser
+        </button>
+        <button onclick="closeConfirmModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl">
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Bar -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
+    <div class="flex items-center space-x-2.5">
+      <div class="w-10 h-10 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
+        <svg viewBox="0 0 100 100" class="w-full h-full">
+          <path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/>
+          <circle cx="50" cy="50" r="6" fill="#10b981"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-base tracking-tight leading-tight text-white flex items-center gap-1.5">
+          FITAPP <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRO</span>
+        </h1>
+        <p class="text-[10px] text-slate-400">4 Séances • Google Sheets Sync</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-1.5">
+      <button onclick="switchView('workout')" id="nav-btn-workout" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1 shadow">
+        <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Séances
+      </button>
+      <button onclick="switchView('chart')" id="nav-btn-chart" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1">
+        <i data-lucide="line-chart" class="w-3.5 h-3.5"></i> Progrès
+      </button>
+    </div>
+  </header>
+
+  <!-- Global Active Session Banner -->
+  <section id="global-timer-bar" class="hidden bg-gradient-to-r from-blue-900/80 to-indigo-900/80 border-b border-blue-500/30 px-4 py-2 flex items-center justify-between text-xs">
+    <div class="flex items-center space-x-2">
+      <span class="relative flex h-2.5 w-2.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+      </span>
+      <span class="font-medium text-slate-200">Chrono Séance:</span>
+      <span id="active-workout-clock" class="font-mono font-bold text-emerald-400 text-sm">00:00</span>
+      <span class="text-[10px] text-slate-400">(Max 50 min)</span>
+    </div>
+    <button onclick="stopGlobalSession()" class="bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 text-[11px] font-semibold px-2 py-1 rounded transition">
+      Terminer
+    </button>
+  </section>
+
+  <!-- Main Scrollable Area -->
+  <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24">
+
+    <!-- WORKOUT VIEW -->
+    <div id="view-workout" class="space-y-5">
+      <section>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
+          <button onclick="askResetAppState()" class="text-[10px] bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-1 rounded-lg font-bold hover:bg-red-500/40 transition flex items-center gap-1">
+            <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Réinitialiser tout
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2" id="session-tabs"></div>
+      </section>
+
+      <!-- Rest Timer Box -->
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="timer" class="w-4 h-4 text-blue-400"></i>
+            <h3 class="font-bold text-sm text-white">Minuteur de Repos</h3>
+          </div>
+          <div class="flex items-center space-x-1" id="timer-presets">
+            <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">45s</button>
+            <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">60s</button>
+            <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-blue-600/30 text-blue-300 border border-blue-500/30">90s</button>
+            <button onclick="setTimerPreset(120)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">120s</button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
+          <div class="flex items-center space-x-4">
+            <div class="relative w-14 h-14 flex items-center justify-center">
+              <svg class="w-14 h-14 transform -rotate-90">
+                <circle cx="28" cy="28" r="22" stroke="currentColor" stroke-width="4" class="text-slate-800" fill="transparent"/>
+                <circle id="timer-circle" cx="28" cy="28" r="22" stroke="currentColor" stroke-width="4" class="text-blue-500 transition-all duration-300" fill="transparent" stroke-dasharray="138" stroke-dashoffset="0"/>
+              </svg>
+              <span id="timer-display" class="absolute font-mono font-black text-sm text-white">01:30</span>
+            </div>
+            <div>
+              <p id="timer-status-text" class="text-xs font-medium text-slate-400">Prêt pour la pause</p>
+              <p class="text-[10px] text-slate-500">Signal visuel & sonore</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg transition">
+              <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+            </button>
+            <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Workout Content List -->
+      <section class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+            <h2 id="session-title" class="font-black text-lg text-white">Sélectionnez une séance</h2>
+          </div>
+          <button id="start-session-btn" onclick="toggleGlobalSession()" class="text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl shadow flex items-center space-x-1.5 transition">
+            <i data-lucide="play-circle" class="w-4 h-4"></i>
+            <span id="start-session-text">Lancer chrono</span>
+          </button>
+        </div>
+
+        <div id="exercise-list" class="space-y-4"></div>
+      </section>
+    </div>
+
+    <!-- PROGRESS CHART VIEW -->
+    <div id="view-chart" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i> Courbe de Progression
+        </h2>
+        <div>
+          <label class="text-xs text-slate-400 font-semibold mb-1 block">Sélectionner l'exercice :</label>
+          <select id="chart-exercise-select" onchange="updateProgressionChart()" class="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded-xl p-2.5 outline-none focus:border-blue-500 font-medium">
+          </select>
+        </div>
+        <div class="bg-slate-950 rounded-xl p-2 border border-slate-800 h-64 relative">
+          <canvas id="progressionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Fiche Info / Guide d'Exécution Détaillé -->
+  <div id="exercise-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+            <i data-lucide="info" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="modal-ex-title" class="font-extrabold text-base text-white">Nom de l'exercice</h3>
+            <p class="text-xs text-blue-400 font-medium">Guide d'exécution & posture</p>
+          </div>
+        </div>
+        <button onclick="closeExerciseModal()" class="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4">
+        <div>
+          <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Muscles ciblés</h4>
+          <div id="modal-ex-muscles" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 space-y-1">
+          <div class="flex items-center space-x-2 text-blue-400 font-semibold text-xs">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Position de départ</span>
+          </div>
+          <p id="modal-ex-setup" class="text-xs text-slate-300 leading-relaxed"></p>
+        </div>
+
+        <div class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 space-y-1">
+          <div class="flex items-center space-x-2 text-emerald-400 font-semibold text-xs">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+            <span>Exécution du mouvement</span>
+          </div>
+          <p id="modal-ex-execution" class="text-xs text-slate-300 leading-relaxed"></p>
+        </div>
+
+        <div class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 space-y-1">
+          <div class="flex items-center space-x-2 text-amber-400 font-semibold text-xs">
+            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+            <span>Erreurs à éviter & Posture</span>
+          </div>
+          <p id="modal-ex-mistakes" class="text-xs text-slate-300 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-slate-800 bg-slate-900">
+        <button onclick="closeExerciseModal()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-sm text-white rounded-xl shadow transition">
+          Fermer la fiche
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL-ul tău Google Apps Script oficial
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydRqvNVAi0jLqD6fcNHQl1bPUnQxSYE-dgNNRsXi2-S4mAJrkMifXhP0DuJn3O263R/exec";
+
+    const WORKOUT_PROGRAM = [
+      { id: "s1", day: "Lundi", title: "Séance 1 - Squat, Pecs & Biceps", badgeColor: "bg-blue-500", exercises: [
+        { 
+          id: "s1_ex1", name: "Squat à la Barre", sets: 4, reps: "12", restSec: 90, 
+          muscles: ["Quadriceps", "Fessiers", "Ischios", "Core"],
+          setup: "Barre posée sur les trapèzes. Pieds écartés largeur d'épaules.",
+          execution: "Descendre cuisses parallèles au sol en poussant les fesses vers l'arrière.",
+          mistakes: "Genoux qui rentrent vers l'intérieur, talons qui décollent."
+        },
+        { 
+          id: "s1_ex2", name: "Développé Couché", sets: 4, reps: "10", restSec: 90, 
+          muscles: ["Pectoraux", "Triceps", "Deltoïdes"],
+          setup: "Allongé sur le banc, pieds à plat, omoplates resserrées.",
+          execution: "Descendre la barre jusqu'au bas des pecs puis pousser verticalement.",
+          mistakes: "Rebondir sur la poitrine, décoller les fesses du banc."
+        },
+        { 
+          id: "s1_ex3", name: "Curl Barre Biceps", sets: 4, reps: "10", restSec: 60, 
+          muscles: ["Biceps"],
+          setup: "Debout, coudes collés au corps, paumes vers le haut.",
+          execution: "Monter la barre vers la poitrine sans bouger les coudes.",
+          mistakes: "Utiliser le bas du dos pour donner de l'élan."
+        },
+        { 
+          id: "s1_ex4", name: "Rameur Cardio", sets: 1, reps: "5000m", restSec: 0, isCardio: true, placeholder: "ex: 21m 45s", label: "Temps pour 5000m :", 
+          muscles: ["Cardio", "Dos"],
+          setup: "Pieds attachés, dos droit, bras tendus.",
+          execution: "Pousser avec les jambes puis tirer la poignée au nombril.",
+          mistakes: "Tirer avec les bras avant les jambes, dos rond."
+        }
+      ]},
+      { id: "s2", day: "Mardi", title: "Séance 2 - Dos, Dips & Poigne", badgeColor: "bg-emerald-500", exercises: [
+        { id: "s2_ex1", name: "Rowing Barre", sets: 4, reps: "10", restSec: 90, muscles: ["Grand Dorsal", "Trapèzes"], setup: "Buste penché à 45°, dos plat.", execution: "Tirer la barre au nombril en resserrant les omoplates.", mistakes: "Arrondir le bas du dos." },
+        { id: "s2_ex2", name: "Dips sur Banc", sets: 4, reps: "10", restSec: 60, muscles: ["Triceps"], setup: "Mains sur le banc, dos proche du bord.", execution: "Descendre à 90° aux coudes puis remonter.", mistakes: "Descendre trop bas." },
+        { id: "s2_ex3", name: "Curl Barre Inversé", sets: 4, reps: "10", restSec: 60, muscles: ["Avant-bras"], setup: "Saisie de barre en pronation.", execution: "Monter la barre en gardant les poignets alignés.", mistakes: "Casser les poignets." },
+        { id: "s2_ex4", name: "Rameur Cardio", sets: 1, reps: "5000m", restSec: 0, isCardio: true, placeholder: "ex: 22m 10s", label: "Temps pour 5000m :", muscles: ["Cardio"], setup: "Cadence fluide.", execution: "Maintenir l'effort régulier.", mistakes: "Arrondir le dos." }
+      ]},
+      { id: "s3", day: "Jeudi", title: "Séance 3 - Core, Squat & Vélo", badgeColor: "bg-amber-500", exercises: [
+        { id: "s3_ex1", name: "Squat à la Barre", sets: 4, reps: "12", restSec: 90, muscles: ["Quadriceps"], setup: "Pieds écartés largeur d'épaules.", execution: "Exécution contrôlée.", mistakes: "Genoux vers l'intérieur." },
+        { id: "s3_ex2", name: "Crunchs Abdos", sets: 4, reps: "15", restSec: 45, muscles: ["Abdominaux"], setup: "Mains aux tempes, genoux fléchis.", execution: "Enrouler le haut du buste en expirant.", mistakes: "Tirer sur la nuque." },
+        { id: "s3_ex3", name: "Gainage Ventral", sets: 3, reps: "30s", restSec: 45, muscles: ["Transverse"], setup: "Sur avant-bras, corps aligné.", execution: "Aspirer le nombril, maintenir la posture.", mistakes: "Creuser le bas du dos." },
+        { id: "s3_ex4", name: "Vélo d'appartement", sets: 1, reps: "30 min", restSec: 0, isCardio: true, placeholder: "ex: 12.5", label: "Distance (km) :", muscles: ["Cardio"], setup: "Selle réglée à hauteur de hanche.", execution: "Pédalage régulier 80-90 RPM.", mistakes: "Selle trop basse." }
+      ]},
+      { id: "s4", day: "Vendredi", title: "Séance 4 - Deadlift & Épaules", badgeColor: "bg-purple-500", exercises: [
+        { id: "s4_ex1", name: "Soulevé de Terre (Deadlift)", sets: 4, reps: "10", restSec: 90, muscles: ["Lombaires", "Ischios"], setup: "Barre aux tibias, dos plat.", execution: "Pousser dans le sol pour se redresser.", mistakes: "Dos rond pendant le tirage." },
+        { id: "s4_ex2", name: "Développé Militaire", sets: 4, reps: "10", restSec: 90, muscles: ["Épaules"], setup: "Debout, barre aux clavicules.", execution: "Pousser la barre verticalement au-dessus de la tête.", mistakes: "Cambrer le bas du dos." },
+        { id: "s4_ex3", name: "Rowing Menton", sets: 4, reps: "10", restSec: 60, muscles: ["Deltoïdes"], setup: "Saisie largeur d'épaules.", execution: "Tirer la barre le long du corps, coudes hauts.", mistakes: "Tirer avec le dos." },
+        { id: "s4_ex4", name: "Rameur Cardio", sets: 1, reps: "5000m", restSec: 0, isCardio: true, placeholder: "ex: 21m 30s", label: "Temps pour 5000m :", muscles: ["Cardio"], setup: "Pieds sanglés.", execution: "Effort final continu.", mistakes: "Posture relâchée." }
+      ]}
+    ];
+
+    let activeSessionIndex = null;
+    let workoutTimerInterval = null, workoutSeconds = 0, isWorkoutRunning = false;
+    let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
+    let myChart = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderTabs();
+      populateChartDropdown();
+      showUnselectedState();
+    });
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColors = type === "success" ? "bg-emerald-600 text-white" : type === "error" ? "bg-red-600 text-white" : "bg-slate-800 text-slate-100 border border-slate-700";
+      
+      toast.className = `${bgColors} px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast`;
+      toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4"></i><span>${message}</span>`;
+      
+      container.appendChild(toast);
+      lucide.createIcons();
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function askResetAppState() {
+      document.getElementById('confirm-modal').classList.remove('hidden');
+      document.getElementById('confirm-yes-btn').onclick = () => {
+        localStorage.clear();
+        showUnselectedState();
+        closeConfirmModal();
+        showToast("Toutes les données ont été réinitialisées !", "success");
+      };
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirm-modal').classList.add('hidden');
+    }
+
+    function showUnselectedState() {
+      activeSessionIndex = null;
+      renderTabs();
+      document.getElementById('session-title').innerText = "Sélectionnez une séance";
+      document.getElementById('session-badge').className = "w-2.5 h-2.5 rounded-full bg-slate-600";
+      document.getElementById('exercise-list').innerHTML = `
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mx-auto">
+            <i data-lucide="dumbbell" class="w-6 h-6"></i>
+          </div>
+          <p class="font-bold text-sm text-slate-300">Prêt pour l'entraînement ?</p>
+          <p class="text-xs text-slate-500 max-w-xs mx-auto">Choisis une séance ci-dessus pour démarrer.</p>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function populateChartDropdown() {
+      const select = document.getElementById('chart-exercise-select');
+      const allEx = [];
+      WORKOUT_PROGRAM.forEach(s => s.exercises.forEach(e => {
+        if (!allEx.includes(e.name)) allEx.push(e.name);
+      }));
+      select.innerHTML = allEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
+    }
+
+    function switchView(view) {
+      if (view === 'workout') {
+        document.getElementById('view-workout').classList.remove('hidden');
+        document.getElementById('view-chart').classList.add('hidden');
+        document.getElementById('nav-btn-workout').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1 shadow";
+        document.getElementById('nav-btn-chart').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1";
+      } else {
+        document.getElementById('view-workout').classList.add('hidden');
+        document.getElementById('view-chart').classList.remove('hidden');
+        document.getElementById('nav-btn-chart').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1 shadow";
+        document.getElementById('nav-btn-workout').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1";
+        updateProgressionChart();
+      }
+    }
+
+    function renderTabs() {
+      const container = document.getElementById('session-tabs');
+      container.innerHTML = WORKOUT_PROGRAM.map((s, idx) => `
+        <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'}">
+          <div class="flex items-center justify-between w-full mb-1">
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">${s.day}</span>
+            <span class="w-2 h-2 rounded-full ${s.badgeColor}"></span>
+          </div>
+          <div class="font-bold text-xs text-white truncate">${s.title.split('-')[1]}</div>
+        </button>
+      `).join('');
+    }
+
+    function switchSession(idx) { activeSessionIndex = idx; renderTabs(); loadSession(idx); }
+
+    function loadSession(idx) {
+      const session = WORKOUT_PROGRAM[idx];
+      document.getElementById('session-title').innerText = session.title;
+      document.getElementById('session-badge').className = `w-2.5 h-2.5 rounded-full ${session.badgeColor}`;
+
+      const container = document.getElementById('exercise-list');
+      container.innerHTML = session.exercises.map((ex) => {
+        const savedData = getSavedLogs(ex.id);
+        
+        if (ex.isCardio) {
+          return `
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Cardio Finition</span>
+                  <h3 class="font-black text-base text-white">${ex.name}</h3>
+                  <p class="text-xs text-slate-400">${ex.reps}</p>
+                </div>
+                <button onclick="openExerciseModal('${ex.id}')" class="flex items-center space-x-1 text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2.5 py-1.5 rounded-xl border border-slate-700">
+                  <i data-lucide="info" class="w-3.5 h-3.5"></i><span>Info</span>
+                </button>
+              </div>
+              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-300">${ex.label}</span>
+                <div class="flex items-center space-x-2">
+                  <input type="text" id="log-cardio-${ex.id}" value="${savedData.cardioTime || ''}" placeholder="${ex.placeholder}" class="w-28 bg-slate-900 border border-slate-700 text-white text-xs rounded-lg px-2 py-1 text-center font-mono">
+                  <button onclick="saveCardioLog('${ex.id}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow">OK</button>
+                </div>
+              </div>
+              <div class="pt-1">
+                <input type="text" id="comment-${ex.id}-cardio" value="${savedData.comment || ''}" placeholder="Note / Ressenti cardio..." class="w-full bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-1.5 outline-none focus:border-blue-500">
+              </div>
+            </div>`;
+        }
+
+        return `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md">
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="font-black text-base text-white">${ex.name}</h3>
+                <p class="text-xs text-blue-400 font-medium">${ex.sets} x ${ex.reps} reps • Pause: ${ex.restSec}s</p>
+              </div>
+              <button onclick="openExerciseModal('${ex.id}')" class="flex items-center space-x-1 text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2.5 py-1.5 rounded-xl border border-slate-700">
+                <i data-lucide="info" class="w-3.5 h-3.5"></i><span>Info</span>
+              </button>
+            </div>
+            
+            <div class="space-y-2 pt-1">
+              <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
+                <span class="col-span-2">Série</span>
+                <span class="col-span-3">Poids (kg)</span>
+                <span class="col-span-2">Reps</span>
+                <span class="col-span-3">Note / Ressenti</span>
+                <span class="col-span-2">Valider</span>
+              </div>
+              ${Array.from({ length: ex.sets }).map((_, setIdx) => {
+                const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
+                const isDone = (setLog.done === true);
+
+                return `
+                  <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/80">
+                    <span class="col-span-2 text-center text-xs font-bold text-slate-400">#${setIdx + 1}</span>
+                    
+                    <div class="col-span-3">
+                      <input type="number" id="weight-${ex.id}-${setIdx}" value="${setLog.weight || ''}" placeholder="kg" class="w-full bg-slate-900 border border-slate-700 text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none focus:border-blue-500">
+                    </div>
+                    
+                    <div class="col-span-2">
+                      <input type="number" id="reps-${ex.id}-${setIdx}" value="${setLog.reps || ex.reps}" placeholder="reps" class="w-full bg-slate-900 border border-slate-700 text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none focus:border-blue-500">
+                    </div>
+
+                    <div class="col-span-3">
+                      <input type="text" id="comment-${ex.id}-${setIdx}" value="${setLog.comment || ''}" placeholder="RPE, facile..." class="w-full bg-slate-900 border border-slate-700 text-slate-300 text-[10px] rounded-lg px-1.5 py-1 outline-none focus:border-blue-500">
+                    </div>
+
+                    <div class="col-span-2 flex justify-center">
+                      <button onclick="toggleSetDone('${ex.id}', ${setIdx},${ex.restSec})" id="btn-check-${ex.id}-${setIdx}" class="w-7 h-7 rounded-lg flex items-center justify-center transition ${isDone ? 'bg-emerald-500 text-white shadow' : 'bg-slate-800 text-slate-500 hover:text-slate-200'}">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function getSavedLogs(exId) {
+      const data = localStorage.getItem(`fitapp_log_${exId}`);
+      return data ? JSON.parse(data) : {};
+    }
+
+    function sendToGoogleSheets(payload) {
+      if (!GOOGLE_SCRIPT_URL) return;
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(err => console.error("Erreur d'envoi:", err));
+    }
+
+    function toggleSetDone(exId, setIdx, restSec) {
+      const saved = getSavedLogs(exId);
+      if (!saved.sets) saved.sets = {};
+
+      const weightVal = document.getElementById(`weight-${exId}-${setIdx}`).value;
+      const repsVal = document.getElementById(`reps-${exId}-${setIdx}`).value;
+      const commentVal = document.getElementById(`comment-${exId}-${setIdx}`).value;
+      const nextDone = (saved.sets[setIdx]?.done !== true);
+
+      saved.sets[setIdx] = { weight: weightVal, reps: repsVal, comment: commentVal, done: nextDone };
+      localStorage.setItem(`fitapp_log_${exId}`, JSON.stringify(saved));
+
+      const btn = document.getElementById(`btn-check-${exId}-${setIdx}`);
+      if (nextDone) {
+        btn.className = "w-7 h-7 rounded-lg flex items-center justify-center transition bg-emerald-500 text-white shadow";
+        showToast("Série enregistrée !", "success");
+
+        sendToGoogleSheets({
+          session: WORKOUT_PROGRAM[activeSessionIndex].title,
+          exercise: getExerciseName(exId),
+          set: setIdx + 1,
+          weight: weightVal,
+          reps: repsVal,
+          comments: commentVal
+        });
+
+        if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
+      } else {
+        btn.className = "w-7 h-7 rounded-lg flex items-center justify-center transition bg-slate-800 text-slate-500 hover:text-slate-200";
+      }
+    }
+
+    function getExerciseName(exId) {
+      let name = exId;
+      WORKOUT_PROGRAM.forEach(s => s.exercises.forEach(e => { if(e.id === exId) name = e.name; }));
+      return name;
+    }
+
+    function saveCardioLog(exId) {
+      const val = document.getElementById(`log-cardio-${exId}`).value;
+      const commentVal = document.getElementById(`comment-${exId}-cardio`) ? document.getElementById(`comment-${exId}-cardio`).value : "";
+      const saved = getSavedLogs(exId);
+      saved.cardioTime = val;
+      saved.comment = commentVal;
+      localStorage.setItem(`fitapp_log_${exId}`, JSON.stringify(saved));
+
+      sendToGoogleSheets({
+        session: WORKOUT_PROGRAM[activeSessionIndex].title,
+        exercise: getExerciseName(exId),
+        set: "Cardio", 
+        weight: "-", 
+        reps: val,
+        comments: commentVal
+      });
+
+      showToast("Cardio enregistré avec succès !", "success");
+    }
+
+    function updateProgressionChart() {
+      const selectedEx = document.getElementById('chart-exercise-select').value;
+      renderChartCanvas(['S1', 'S2', 'S3'], [0, 0, 0], selectedEx);
+    }
+
+    function renderChartCanvas(labels, dataPoints, label) {
+      const ctx = document.getElementById('progressionChart').getContext('2d');
+      if (myChart) myChart.destroy();
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: dataPoints,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#e2e8f0' } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+          }
+        }
+      });
+    }
+
+    function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
+    function updateTimerDisplay() {
+      const mins = Math.floor(restTimeRemaining / 60), secs = restTimeRemaining % 60;
+      document.getElementById('timer-display').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      const circle = document.getElementById('timer-circle');
+      circle.style.strokeDashoffset = 138 - (restTimeRemaining / restTimeTotal) * 138;
+    }
+    function toggleRestTimer() { if (isRestTimerRunning) pauseRestTimer(); else startRestTimer(); }
+    function startRestTimer() {
+      if (isRestTimerRunning) clearInterval(restTimerInterval);
+      isRestTimerRunning = true;
+      document.getElementById('timer-status-text').innerText = "Repos en cours...";
+      document.getElementById('timer-toggle-btn').innerHTML = `<i data-lucide="pause" class="w-5 h-5 fill-current"></i>`;
+      lucide.createIcons();
+      restTimerInterval = setInterval(() => {
+        if (restTimeRemaining > 0) { restTimeRemaining--; updateTimerDisplay(); } 
+        else { pauseRestTimer(); document.getElementById('timer-status-text').innerText = "Temps écoulé !"; }
+      }, 1000);
+    }
+    function pauseRestTimer() {
+      isRestTimerRunning = false; clearInterval(restTimerInterval);
+      document.getElementById('timer-toggle-btn').innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-current"></i>`;
+      lucide.createIcons();
+    }
+    function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
+
+    function toggleGlobalSession() { if (isWorkoutRunning) stopGlobalSession(); else startGlobalSession(); }
+    function startGlobalSession() {
+      isWorkoutRunning = true; document.getElementById('global-timer-bar').classList.remove('hidden');
+      document.getElementById('start-session-text').innerText = "Arrêter"; workoutSeconds = 0;
+      workoutTimerInterval = setInterval(() => {
+        workoutSeconds++;
+        const m = Math.floor(workoutSeconds / 60), s = workoutSeconds % 60;
+        document.getElementById('active-workout-clock').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }, 1000);
+    }
+    function stopGlobalSession() {
+      isWorkoutRunning = false; clearInterval(workoutTimerInterval);
+      document.getElementById('global-timer-bar').classList.add('hidden');
+      document.getElementById('start-session-text').innerText = "Lancer chrono";
+    }
+
+    function openExerciseModal(exId) {
+      let ex = null; 
+      WORKOUT_PROGRAM.forEach(s => s.exercises.forEach(e => { if (e.id === exId) ex = e; }));
+      if (!ex) return;
+
+      document.getElementById('modal-ex-title').innerText = ex.name;
+      document.getElementById('modal-ex-setup').innerText = ex.setup || "Installation standard.";
+      document.getElementById('modal-ex-execution').innerText = ex.execution || "Exécution sous contrôle.";
+      document.getElementById('modal-ex-mistakes').innerText = ex.mistakes || "Gardez une posture stable.";
+      
+      document.getElementById('modal-ex-muscles').innerHTML = ex.muscles.map(m => 
+        `<span class="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-semibold">${m}</span>`
+      ).join('');
+
+      document.getElementById('exercise-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeExerciseModal() {
+      document.getElementById('exercise-modal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
