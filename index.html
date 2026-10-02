@@ -386,7 +386,7 @@
       });
 
       db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
-        journalLogs = snapshot.docs.map(doc => doc.data());
+        journalLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         syncSmartState();
         buildProgramForCurrentUser();
         
@@ -879,7 +879,6 @@
           const val2 = setLog.reps || ex.reps || '';
           const commentVal = setLog.comment || '';
 
-          // CHOIX DISJOINTS EN MODE VALIDÉ (CRAYON + POUBELLE)
           const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -1020,7 +1019,6 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
-    // BOUTON VERT : VALIDATION DE LA SÉRIE
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
@@ -1070,9 +1068,21 @@
       checkCongratsModal(isEditMode);
     }
 
-    // BOUTON POUBELLE : SUPPRESSION CIBLÉE ET GARANTIE
+    // SUPPRESSION INSTANTANÉE SANS REBOND FIREBASE
     function deleteSet(exId, exName, setIdx) {
-      // 1. Réinitialisation locale immédiate
+      const today = new Date();
+      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+
+      // 1. Nettoyage du tableau mémoire local immédiatement
+      journalLogs = journalLogs.filter(log => {
+        const matchUser = log.userId === currentUserId;
+        const matchDate = parseDateToJJMMAAAA(log.date) === dateStr;
+        const matchSet = Number(log.set) === (setIdx + 1);
+        const matchEx = cleanString(log.exercise) === cleanString(exName);
+        return !(matchUser && matchDate && matchSet && matchEx);
+      });
+
+      // 2. Réinitialisation LocalStorage
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
@@ -1083,10 +1093,7 @@
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
       }
 
-      const today = new Date();
-      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-
-      // 2. Suppression Firestore ciblée
+      // 3. Suppression dans Firestore
       db.collection("journal")
         .where("userId", "==", currentUserId)
         .where("date", "==", dateStr)
@@ -1100,12 +1107,9 @@
             }
           });
           showToast("Série supprimée !");
-        })
-        .catch((err) => {
-          console.error("Erreur de suppression Firestore:", err);
         });
 
-      // 3. Rafraîchissement de l'affichage
+      // 4. Mise à jour immédiate
       renderTabs();
       loadSession(activeSessionIndex);
     }
