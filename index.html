@@ -43,7 +43,7 @@
 
     /* Utilitaires CSS */
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
-    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); } /* Sécurité iPhone */
+    .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); } /* Sécurité iPhone */
     
     /* Animations */
     @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -57,7 +57,7 @@
   <!-- ÉCRAN DE CHARGEMENT INITIAL -->
   <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
     <div class="w-12 h-12 rounded-xl border-2 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
-    <p class="text-xs text-slate-400 font-medium">Connexion sécurisée...</p>
+    <p class="text-sm text-slate-400 font-medium">Connexion sécurisée...</p>
   </div>
 
   <!-- ÉCRAN DE CONNEXION GOOGLE -->
@@ -66,7 +66,7 @@
       <svg viewBox="0 0 100 100" class="w-10 h-10"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
     </div>
     <h1 class="text-2xl font-black text-white tracking-wide uppercase">FITAPP PRO</h1>
-    <p class="text-xs text-slate-400 mt-2 max-w-xs leading-relaxed">Ton entraînement sur-mesure avec suivi en temps réel et réinitialisation hebdomadaire.</p>
+    <p class="text-sm text-slate-400 mt-2 max-w-xs leading-relaxed">Ton entraînement sur-mesure avec suivi en temps réel et réinitialisation hebdomadaire.</p>
     
     <button onclick="loginWithGoogle()" class="mt-8 w-full max-w-xs bg-slate-900 border border-slate-800 hover:border-slate-700 py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 font-bold text-sm text-white shadow-xl transition active:scale-95">
       <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
@@ -92,19 +92,19 @@
         <form id="add-ex-form" onsubmit="saveNewExercise(event)" class="space-y-3">
           <input type="hidden" id="edit-ex-id" value="">
           <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase">Nom de l'exercice</label>
-            <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            <label class="text-xs font-bold text-slate-400 uppercase">Nom de l'exercice</label>
+            <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
           </div>
 
           <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase">Séance</label>
-            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            <label class="text-xs font-bold text-slate-400 uppercase">Séance</label>
+            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[11px] font-bold text-slate-400 uppercase">Type</label>
-              <select id="new-ex-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-400 uppercase">Type</label>
+              <select id="new-ex-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
                 <option value="Poids">Poids</option>
                 <option value="PdC">PdC (Poids du corps)</option>
                 <option value="Durée">Durée</option>
@@ -112,25 +112,25 @@
               </select>
             </div>
             <div>
-              <label class="text-[11px] font-bold text-slate-400 uppercase">Séries</label>
-              <input type="number" id="new-ex-sets" value="4" min="1" max="15" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-400 uppercase">Séries</label>
+              <input type="number" id="new-ex-sets" value="4" min="1" max="15" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[11px] font-bold text-slate-400 uppercase">Objectif (Reps/Dist)</label>
-              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5000m" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-400 uppercase">Objectif (Reps/Dist)</label>
+              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5000m" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
             <div>
-              <label class="text-[11px] font-bold text-slate-400 uppercase">Repos (sec)</label>
-              <input type="number" id="new-ex-rest" value="60" min="0" step="5" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-400 uppercase">Repos (sec)</label>
+              <input type="number" id="new-ex-rest" value="60" min="0" step="5" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
           </div>
 
           <div class="flex justify-end space-x-2 pt-3">
-            <button type="button" onclick="closeAddExModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
-            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Enregistrer</button>
+            <button type="button" onclick="closeAddExModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Enregistrer</button>
           </div>
         </form>
       </div>
@@ -149,12 +149,12 @@
         <form onsubmit="saveSessionName(event)" class="space-y-3">
           <input type="hidden" id="old-session-name" value="">
           <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase">Nouveau nom</label>
-            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            <label class="text-xs font-bold text-slate-400 uppercase">Nouveau nom</label>
+            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
           </div>
           <div class="flex justify-end space-x-2 pt-2">
-            <button type="button" onclick="closeEditSessionModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
-            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Mettre à jour</button>
+            <button type="button" onclick="closeEditSessionModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Mettre à jour</button>
           </div>
         </form>
       </div>
@@ -181,12 +181,12 @@
           <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
         </div>
         <div>
-          <h1 class="font-extrabold text-sm text-white leading-tight">FITAPP PRO</h1>
-          <span id="user-display-name" class="text-blue-400 text-[11px] font-bold block truncate max-w-[150px]">Chargement...</span>
+          <h1 class="font-extrabold text-base text-white leading-tight">FITAPP PRO</h1>
+          <span id="user-display-name" class="text-blue-400 text-xs font-bold block truncate max-w-[150px]">Chargement...</span>
         </div>
       </div>
       <button onclick="logout()" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Déconnexion">
-        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <i data-lucide="log-out" class="w-5 h-5"></i>
       </button>
     </header>
 
@@ -195,36 +195,36 @@
       <!-- VUE 1 : ENTRAINEMENT -->
       <div id="view-workout" class="space-y-5 block animate-pop">
         <section>
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between mb-2.5">
             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
-            <button onclick="openAddExModal()" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/30 transition active:scale-95">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ajouter
+            <button onclick="openAddExModal()" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/30 transition active:scale-95">
+              <i data-lucide="plus" class="w-4 h-4"></i> Ajouter
             </button>
           </div>
-          <div class="grid grid-cols-2 gap-2" id="session-tabs"></div>
+          <div class="grid grid-cols-2 gap-2.5" id="session-tabs"></div>
         </section>
 
         <!-- Minuteur -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center space-x-2">
-              <i data-lucide="timer" class="w-4 h-4 text-blue-400"></i>
-              <h3 class="font-bold text-sm text-white">Minuteur</h3>
+              <i data-lucide="timer" class="w-5 h-5 text-blue-400"></i>
+              <h3 class="font-bold text-base text-white">Minuteur</h3>
             </div>
-            <div class="flex items-center space-x-1">
-              <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">45s</button>
-              <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">60s</button>
-              <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">90s</button>
+            <div class="flex items-center space-x-1.5">
+              <button onclick="setTimerPreset(45)" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">45s</button>
+              <button onclick="setTimerPreset(60)" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">60s</button>
+              <button onclick="setTimerPreset(90)" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">90s</button>
             </div>
           </div>
           <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
-            <span id="timer-display" class="font-mono font-black text-xl text-white tracking-wider">01:30</span>
+            <span id="timer-display" class="font-mono font-black text-2xl text-white tracking-wider">01:30</span>
             <div class="flex items-center space-x-2">
-              <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition active:scale-90">
+              <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition active:scale-90">
                 <i data-lucide="play" class="w-5 h-5"></i>
               </button>
-              <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700 active:scale-90">
-                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <button onclick="resetRestTimer()" class="w-11 h-11 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700 active:scale-90">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
               </button>
             </div>
           </div>
@@ -234,11 +234,11 @@
         <section class="space-y-3" id="exercise-container">
           <div class="flex items-center justify-between sticky top-[60px] bg-slate-950/95 backdrop-blur z-20 py-2 border-b border-slate-800/50">
             <div class="flex items-center space-x-2">
-              <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-              <h2 id="session-title" class="font-black text-lg text-white">Aucune séance</h2>
+              <span id="session-badge" class="w-3 h-3 rounded-full bg-slate-600"></span>
+              <h2 id="session-title" class="font-black text-xl text-white">Aucune séance</h2>
             </div>
-            <button id="rename-session-btn" onclick="openEditSessionModal()" class="text-xs font-bold text-slate-400 hover:text-blue-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-lg transition hidden active:scale-95">
-              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Renommer
+            <button id="rename-session-btn" onclick="openEditSessionModal()" class="text-xs font-bold text-slate-400 hover:text-blue-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition hidden active:scale-95">
+              <i data-lucide="edit-2" class="w-4 h-4"></i> Renommer
             </button>
           </div>
           <div id="exercise-list" class="space-y-4"></div>
@@ -250,17 +250,17 @@
         <section>
           <div class="flex items-center space-x-2 mb-4">
             <i data-lucide="calendar-check" class="w-5 h-5 text-indigo-400"></i>
-            <h2 class="font-black text-lg text-white">Historique & Calendrier</h2>
+            <h2 class="font-black text-xl text-white">Historique & Calendrier</h2>
           </div>
           
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
             <div class="flex justify-between items-center mb-4">
-              <button onclick="changeMonth(-1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-              <h3 id="cal-month-year" class="font-bold text-sm text-white uppercase tracking-wider">Mois</h3>
-              <button onclick="changeMonth(1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+              <button onclick="changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+              <h3 id="cal-month-year" class="font-bold text-base text-white uppercase tracking-wider">Mois</h3>
+              <button onclick="changeMonth(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
             </div>
             
-            <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 mb-2">
+            <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500 mb-2">
               <div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div>
             </div>
             
@@ -278,22 +278,22 @@
         <section>
           <div class="flex items-center space-x-2 mb-4">
             <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
-            <h2 class="font-black text-lg text-white">Progression</h2>
+            <h2 class="font-black text-xl text-white">Progression</h2>
           </div>
           
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Choisir un exercice</label>
-            <select id="chart-exercise-select" onchange="renderChart()" class="w-full bg-slate-950 border border-slate-700 text-white text-sm font-semibold rounded-xl px-3 py-2.5 outline-none mb-4 focus:border-emerald-500 transition">
+            <select id="chart-exercise-select" onchange="renderChart()" class="w-full bg-slate-950 border border-slate-700 text-white text-base font-semibold rounded-xl px-3 py-3 outline-none mb-4 focus:border-emerald-500 transition">
               <option value="">Sélectionnez...</option>
             </select>
             
             <div class="relative h-72 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-2 flex items-center justify-center">
               <canvas id="progressionChart"></canvas>
-              <p id="no-data-msg" class="absolute text-slate-500 text-xs font-semibold hidden">Pas de données validées</p>
+              <p id="no-data-msg" class="absolute text-slate-500 text-sm font-semibold hidden">Pas de données validées</p>
             </div>
           </div>
 
-          <!-- NOUVEAU BLOC : TOP 3 RECORDS -->
+          <!-- BLOC : TOP 3 RECORDS -->
           <div id="stats-details" class="mt-5 space-y-3 hidden">
             <div class="flex items-center gap-2 mb-2 pl-1">
               <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
@@ -312,16 +312,16 @@
     <nav class="fixed bottom-0 w-full bg-slate-900 border-t border-slate-800 pb-safe z-40">
       <div class="flex justify-around items-center p-2">
         <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center p-2 text-blue-500 w-1/3 transition">
-          <i data-lucide="dumbbell" class="w-5 h-5 mb-1"></i>
-          <span class="text-[10px] font-bold">Séance</span>
+          <i data-lucide="dumbbell" class="w-6 h-6 mb-1"></i>
+          <span class="text-xs font-bold">Séance</span>
         </button>
         <button onclick="switchView('calendar')" id="nav-calendar" class="flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition">
-          <i data-lucide="calendar-days" class="w-5 h-5 mb-1"></i>
-          <span class="text-[10px] font-bold">Historique</span>
+          <i data-lucide="calendar-days" class="w-6 h-6 mb-1"></i>
+          <span class="text-xs font-bold">Historique</span>
         </button>
         <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition">
-          <i data-lucide="bar-chart-3" class="w-5 h-5 mb-1"></i>
-          <span class="text-[10px] font-bold">Stats</span>
+          <i data-lucide="bar-chart-3" class="w-6 h-6 mb-1"></i>
+          <span class="text-xs font-bold">Stats</span>
         </button>
       </div>
     </nav>
@@ -653,7 +653,7 @@
         const hasWorkout = !!workoutDates[dateStr];
         const isToday = (dateStr === todayStr);
 
-        const baseClass = "aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer active:scale-90";
+        const baseClass = "aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition cursor-pointer active:scale-90";
         let colorClass = "text-slate-400 hover:bg-slate-800 bg-slate-950/50 border border-transparent";
         
         if(hasWorkout) colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
@@ -679,13 +679,13 @@
         exGroups[log.exercise].push(log);
       });
 
-      let html = `<h4 class="font-bold text-sm text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
+      let html = `<h4 class="font-bold text-base text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
 
       for(const [exName, logs] of Object.entries(exGroups)) {
         html += `
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md">
-            <h5 class="text-xs font-black text-indigo-400 mb-2">${sanitizeHTML(exName)}</h5>
-            <div class="space-y-1">
+            <h5 class="text-sm font-black text-indigo-400 mb-2">${sanitizeHTML(exName)}</h5>
+            <div class="space-y-1.5">
         `;
         
         logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0));
@@ -695,12 +695,12 @@
           const v2 = log.reps ? sanitizeHTML(log.reps) : '-';
           const rawTime = log.time || "";
           const timeLabel = rawTime ? `Validé à ${sanitizeHTML(rawTime)}` : `Série ${log.set || '?'}`;
-          const note = log.comment ? `<span class="text-slate-500 text-[9px] ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
+          const note = log.comment ? `<span class="text-slate-500 text-xs ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
           
           html += `
-            <div class="text-[10px] text-slate-300 flex items-center justify-between bg-slate-950 px-2 py-1.5 rounded border border-slate-800/80">
+            <div class="text-xs text-slate-300 flex items-center justify-between bg-slate-950 px-2.5 py-2 rounded border border-slate-800/80">
               <span class="font-bold text-slate-400">${timeLabel} (Série ${log.set || '?'})</span>
-              <span class="font-mono text-white">${v1} / ${v2} ${note}</span>
+              <span class="font-mono text-white text-xs">${v1} / ${v2} ${note}</span>
             </div>`;
         });
         html += `</div></div>`;
@@ -943,7 +943,7 @@
           plugins: { 
             legend: { 
               display: true, position: 'top',
-              labels: { color: '#cbd5e1', font: { size: 11, family: "'Inter', sans-serif" }, padding: 10, usePointStyle: true, pointStyle: 'circle' } 
+              labels: { color: '#cbd5e1', font: { size: 12, family: "'Inter', sans-serif" }, padding: 10, usePointStyle: true, pointStyle: 'circle' } 
             },
             tooltip: {
               backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155',
@@ -953,17 +953,17 @@
           scales: {
             x: { 
               grid: { display: false }, 
-              ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 6 } 
+              ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 6 } 
             },
             y: { 
               type: 'linear', display: true, position: 'left',
               grid: { color: '#1e293b', drawBorder: false }, 
-              ticks: { color: '#94a3b8', font: { size: 10 } } 
+              ticks: { color: '#94a3b8', font: { size: 11 } } 
             },
             y1: {
               type: 'linear', display: true, position: 'right',
               grid: { drawOnChartArea: false }, 
-              ticks: { color: '#f59e0b', font: { size: 10 } }
+              ticks: { color: '#f59e0b', font: { size: 11 } }
             }
           }
         }
@@ -1013,12 +1013,12 @@
           htmlLogs += `
           <div class="flex justify-between items-center bg-slate-900 p-3.5 rounded-xl border border-slate-800 shadow-md">
              <div class="flex items-center gap-3">
-               <span class="font-black text-lg ${medalColor}">#${index + 1}</span>
-               <span class="text-xs font-bold text-slate-300">${perf.date}</span>
+               <span class="font-black text-xl ${medalColor}">#${index + 1}</span>
+               <span class="text-sm font-bold text-slate-300">${perf.date}</span>
              </div>
              <div class="flex items-center gap-2">
-               <span class="text-sm font-mono text-white font-bold tracking-wide">${val}</span>
-               <i data-lucide="medal" class="w-4 h-4 ${medalColor}"></i>
+               <span class="text-base font-mono text-white font-bold tracking-wide">${val}</span>
+               <i data-lucide="medal" class="w-5 h-5 ${medalColor}"></i>
              </div>
           </div>
           `;
@@ -1055,7 +1055,7 @@
         document.getElementById('rename-session-btn').classList.remove('hidden');
       } else {
         document.getElementById('session-title').innerText = "Aucun exercice";
-        document.getElementById('exercise-list').innerHTML = '<p class="text-xs text-slate-500 text-center py-8">Clique sur "+ Ajouter" pour créer tes premiers exercices !</p>';
+        document.getElementById('exercise-list').innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Clique sur "+ Ajouter" pour créer tes premiers exercices !</p>';
         document.getElementById('rename-session-btn').classList.add('hidden');
       }
     }
@@ -1092,11 +1092,11 @@
         else if (pct > 0) badgeColor = "bg-blue-500/20 text-blue-400 border-blue-500/40 font-bold";
 
         return `
-          <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'} active:scale-95">
-            <div class="font-bold text-xs text-white truncate mb-2 w-full">${sanitizeHTML(s.title.replace(currentUser + " - ", ""))}</div>
+          <button onclick="switchSession(${idx})" class="text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'} active:scale-95">
+            <div class="font-bold text-sm text-white truncate mb-2 w-full">${sanitizeHTML(s.title.replace(currentUser + " - ", ""))}</div>
             <div class="flex items-center justify-between w-full">
-              <span class="text-[10px] px-2 py-0.5 rounded-md border ${badgeColor}">${pct}%</span>
-              ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>' : ''}
+              <span class="text-xs px-2 py-0.5 rounded-md border ${badgeColor}">${pct}%</span>
+              ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>' : ''}
             </div>
           </button>
         `;
@@ -1148,19 +1148,19 @@
           const commentVal = sanitizeHTML(setLog.comment || '');
 
           const actionButtons = isDone ? `
-            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
-              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
             </button>
           ` : `
-            <button onclick="validateSet('${ex.id}', '${safeName.replace(/'/g, "\\'")}', ${setIdx}, ${ex.restSec})" class="w-6 h-6 rounded bg-slate-800 text-slate-500 hover:text-slate-200 flex items-center justify-center font-bold text-xs transition mx-auto hover:bg-slate-700">✓</button>
+            <button onclick="validateSet('${ex.id}', '${safeName.replace(/'/g, "\\'")}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition mx-auto hover:bg-slate-700">✓</button>
           `;
 
           setsHtml += `
-            <div class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800 text-center">
+            <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-2 rounded-xl border border-slate-800 text-center">
               <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
-              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1.5 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1.5 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded px-1 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-xs rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2 flex items-center justify-center space-x-1">
                 ${actionButtons}
               </div>
@@ -1174,20 +1174,20 @@
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md relative">
             <div>
               <div class="flex justify-between items-start">
-                <h3 class="font-black text-base text-white pr-16 leading-tight">${safeName}</h3>
+                <h3 class="font-black text-lg text-white pr-16 leading-tight">${safeName}</h3>
                 <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
-                  <button onclick='openAddExModal(${safeExJson})' class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition" title="Modifier l'exercice">
-                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                  <button onclick='openAddExModal(${safeExJson})' class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition" title="Modifier l'exercice">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
                   </button>
-                  <button onclick="archiveExercise('${ex.id}', '${safeName.replace(/'/g, "\\'")}')" class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Retirer l'exercice">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <button onclick="archiveExercise('${ex.id}', '${safeName.replace(/'/g, "\\'")}')" class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Retirer l'exercice">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                   </button>
                 </div>
               </div>
-              <p class="text-[11px] text-blue-400 font-medium mt-1">${seriesText}${pauseText}</p>
+              <p class="text-xs text-blue-400 font-medium mt-1">${seriesText}${pauseText}</p>
             </div>
             <div class="space-y-2 pt-1">
-              <div class="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
+              <div class="grid grid-cols-12 gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
                 <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Act.</span>
               </div>
               ${setsHtml}
@@ -1390,6 +1390,51 @@
       pauseRestTimer(); 
       restTimeRemaining = restTimeTotal; 
       updateTimerDisplay(); 
+    }
+
+    // === GESTION DU SWIPE LEFT / RIGHT ENTRE LES VUES ===
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    const minSwipeDistance = 50; // Distance minimale en pixels pour valider le swipe
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+      handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+
+      // S'assurer que le geste est bien un glissement horizontal et non un scroll vertical
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+        const views = ['workout', 'calendar', 'stats'];
+        
+        // Déterminer la vue actuellement affichée
+        let currentViewIdx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
+        if (currentViewIdx === -1) currentViewIdx = 0;
+
+        if (deltaX < 0) {
+          // Swipe vers la gauche -> Vue suivante
+          if (currentViewIdx < views.length - 1) {
+            switchView(views[currentViewIdx + 1]);
+          }
+        } else {
+          // Swipe vers la droite -> Vue précédente
+          if (currentViewIdx > 0) {
+            switchView(views[currentViewIdx - 1]);
+          }
+        }
+      }
     }
   </script>
 </body>
