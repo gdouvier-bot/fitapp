@@ -7,7 +7,6 @@
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Ajout de Chart.js pour les graphiques -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
@@ -22,7 +21,6 @@
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
 
-  <!-- Toasts -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
   <!-- Header -->
@@ -43,10 +41,9 @@
     </button>
   </header>
 
-  <!-- CONTENU PRINCIPAL -->
   <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24 relative" id="main-content">
     
-    <!-- VUE : ENTRAINEMENT -->
+    <!-- VUE 1 : ENTRAINEMENT -->
     <div id="view-workout" class="space-y-5 block">
       <section>
         <div class="flex items-center justify-between mb-2">
@@ -62,16 +59,16 @@
             <h3 class="font-bold text-sm text-white">Minuteur</h3>
           </div>
           <div class="flex items-center space-x-1">
-            <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">45s</button>
-            <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">60s</button>
-            <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">90s</button>
+            <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">45s</button>
+            <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">60s</button>
+            <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">90s</button>
           </div>
         </div>
         <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
           <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
           <div class="flex items-center space-x-2">
             <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition"><i data-lucide="play" class="w-5 h-5"></i></button>
-            <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+            <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
           </div>
         </div>
       </section>
@@ -87,7 +84,39 @@
       </section>
     </div>
 
-    <!-- VUE : PROGRESSION -->
+    <!-- VUE 2 : CALENDRIER -->
+    <div id="view-calendar" class="space-y-5 hidden">
+      <section>
+        <div class="flex items-center space-x-2 mb-4">
+          <i data-lucide="calendar-check" class="w-5 h-5 text-indigo-400"></i>
+          <h2 class="font-black text-lg text-white">Historique & Calendrier</h2>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <!-- Navigation Mois -->
+          <div class="flex justify-between items-center mb-4">
+            <button onclick="changeMonth(-1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+            <h3 id="cal-month-year" class="font-bold text-sm text-white uppercase tracking-wider">Mois</h3>
+            <button onclick="changeMonth(1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+          </div>
+          
+          <!-- Jours de la semaine -->
+          <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 mb-2">
+            <div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div>
+          </div>
+          
+          <!-- Grille du calendrier -->
+          <div id="cal-grid" class="grid grid-cols-7 gap-1.5"></div>
+        </div>
+
+        <!-- Détail de la journée sélectionnée -->
+        <div id="cal-day-details" class="space-y-3 mt-4">
+          <p class="text-xs text-center text-slate-500 mt-6">Sélectionne un jour pour voir ta séance</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- VUE 3 : PROGRESSION -->
     <div id="view-stats" class="space-y-5 hidden">
       <section>
         <div class="flex items-center space-x-2 mb-4">
@@ -97,13 +126,13 @@
         
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Choisir un exercice</label>
-          <select id="chart-exercise-select" onchange="renderChart()" class="w-full bg-slate-950 border border-slate-700 text-white text-sm font-semibold rounded-xl px-3 py-2.5 outline-none mb-4 focus:border-blue-500 transition">
+          <select id="chart-exercise-select" onchange="renderChart()" class="w-full bg-slate-950 border border-slate-700 text-white text-sm font-semibold rounded-xl px-3 py-2.5 outline-none mb-4 focus:border-emerald-500 transition">
             <option value="">Sélectionnez...</option>
           </select>
           
           <div class="relative h-64 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-2 flex items-center justify-center">
             <canvas id="progressionChart"></canvas>
-            <p id="no-data-msg" class="absolute text-slate-500 text-xs font-semibold hidden">Pas assez de données</p>
+            <p id="no-data-msg" class="absolute text-slate-500 text-xs font-semibold hidden">Pas de données validées</p>
           </div>
         </div>
       </section>
@@ -113,11 +142,15 @@
   <!-- NAVIGATION BAS -->
   <nav class="fixed bottom-0 w-full bg-slate-900 border-t border-slate-800 pb-safe z-40">
     <div class="flex justify-around items-center p-2">
-      <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center p-2 text-blue-500 w-1/2">
+      <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center p-2 text-blue-500 w-1/3 transition">
         <i data-lucide="dumbbell" class="w-5 h-5 mb-1"></i>
         <span class="text-[10px] font-bold">Séance</span>
       </button>
-      <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/2">
+      <button onclick="switchView('calendar')" id="nav-calendar" class="flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition">
+        <i data-lucide="calendar-days" class="w-5 h-5 mb-1"></i>
+        <span class="text-[10px] font-bold">Historique</span>
+      </button>
+      <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition">
         <i data-lucide="bar-chart-3" class="w-5 h-5 mb-1"></i>
         <span class="text-[10px] font-bold">Stats</span>
       </button>
@@ -125,7 +158,7 @@
   </nav>
 
   <script>
-    // URL DE TON SCRIPT APPS SCRIPT
+    // URL EXACTE DE TON SCRIPT APPS SCRIPT
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGcQdRgnQltX9OFVpSNg6VLkVh53NVqLznPfOklHwRO9IXRNuhx4EB_itLyLmhoBQi/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
@@ -137,6 +170,10 @@
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
+
+    // Variables du Calendrier
+    let currentCalDate = new Date();
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -159,21 +196,133 @@
 
     // --- SYSTEME DE VUES (Onglets du bas) ---
     function switchView(view) {
+      const vWork = document.getElementById('view-workout');
+      const vCal = document.getElementById('view-calendar');
+      const vStats = document.getElementById('view-stats');
+      
+      const nWork = document.getElementById('nav-workout');
+      const nCal = document.getElementById('nav-calendar');
+      const nStats = document.getElementById('nav-stats');
+
+      vWork.classList.add('hidden'); vCal.classList.add('hidden'); vStats.classList.add('hidden');
+      nWork.className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
+      nCal.className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
+      nStats.className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
+
       if (view === 'workout') {
-        document.getElementById('view-workout').classList.remove('hidden');
-        document.getElementById('view-stats').classList.add('hidden');
-        document.getElementById('nav-workout').className = "flex flex-col items-center p-2 text-blue-500 w-1/2";
-        document.getElementById('nav-stats').className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/2 transition";
-      } else {
-        document.getElementById('view-workout').classList.add('hidden');
-        document.getElementById('view-stats').classList.remove('hidden');
-        document.getElementById('nav-stats').className = "flex flex-col items-center p-2 text-emerald-500 w-1/2";
-        document.getElementById('nav-workout').className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/2 transition";
+        vWork.classList.remove('hidden');
+        nWork.className = "flex flex-col items-center p-2 text-blue-500 w-1/3 transition";
+      } else if (view === 'calendar') {
+        vCal.classList.remove('hidden');
+        nCal.className = "flex flex-col items-center p-2 text-indigo-500 w-1/3 transition";
+        renderCalendar();
+      } else if (view === 'stats') {
+        vStats.classList.remove('hidden');
+        nStats.className = "flex flex-col items-center p-2 text-emerald-500 w-1/3 transition";
         populateChartDropdown();
       }
+      window.scrollTo(0, 0);
     }
 
-    // CHARGEMENT VIA JSONP
+    // --- CALENDRIER & HISTORIQUE ---
+    function changeMonth(dir) {
+      currentCalDate.setMonth(currentCalDate.getMonth() + dir);
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      document.getElementById('cal-month-year').innerText = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const startDay = firstDay === 0 ? 6 : firstDay - 1; // Ajustement pour que la semaine commence le lundi (0)
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
+      const workoutDates = {};
+      
+      userLogs.forEach(log => {
+        const dPart = String(log.date).substring(0, 10); // Extrait "dd/MM/yyyy"
+        if(!workoutDates[dPart]) workoutDates[dPart] = [];
+        workoutDates[dPart].push(log);
+      });
+
+      let html = '';
+      
+      // Cases vides avant le 1er du mois
+      for(let i=0; i<startDay; i++) {
+        html += `<div class="aspect-square"></div>`;
+      }
+
+      // Jours du mois
+      for(let d=1; d<=daysInMonth; d++) {
+        const dateStr = String(d).padStart(2, '0') + '/' + String(month + 1).padStart(2, '0') + '/' + year;
+        const hasWorkout = !!workoutDates[dateStr];
+
+        const baseClass = "aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer";
+        let colorClass = "text-slate-400 hover:bg-slate-800 bg-slate-950/50 border border-transparent";
+        
+        if(hasWorkout) {
+          colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
+        }
+
+        // Si c'est aujourd'hui
+        const today = new Date();
+        if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear() && !hasWorkout) {
+          colorClass = "bg-slate-800 text-white border border-slate-600";
+        }
+
+        html += `<div onclick="showDayDetails('${dateStr}')" class="${baseClass} ${colorClass}">${d}</div>`;
+      }
+
+      document.getElementById('cal-grid').innerHTML = html;
+      document.getElementById('cal-day-details').innerHTML = `<p class="text-xs text-center text-slate-500 mt-4">Sélectionne un jour pour voir le détail de ta séance</p>`;
+    }
+
+    function showDayDetails(dateStr) {
+      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
+      const dayLogs = userLogs.filter(log => String(log.date).substring(0, 10) === dateStr);
+      const container = document.getElementById('cal-day-details');
+
+      if(dayLogs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-center text-slate-500 mt-4">Repos 😴 Aucune séance enregistrée le ${dateStr}.</p>`;
+        return;
+      }
+
+      // Grouper les séries par exercice
+      const exGroups = {};
+      dayLogs.forEach(log => {
+        if(!exGroups[log.exercise]) exGroups[log.exercise] = [];
+        exGroups[log.exercise].push(log);
+      });
+
+      let html = `<h4 class="font-bold text-sm text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${dateStr}</h4>`;
+
+      for(const [exName, logs] of Object.entries(exGroups)) {
+        html += `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md">
+            <h5 class="text-xs font-black text-indigo-400 mb-2">${exName}</h5>
+            <div class="space-y-1">
+        `;
+        logs.forEach((log, idx) => {
+          const v1 = log.weight ? log.weight : '-';
+          const v2 = log.reps ? log.reps : '-';
+          const note = log.comment ? `<span class="text-slate-500 text-[9px] ml-2 italic">"${log.comment}"</span>` : '';
+          
+          html += `
+            <div class="text-[10px] text-slate-300 flex items-center justify-between bg-slate-950 px-2 py-1.5 rounded border border-slate-800/80">
+              <span class="font-bold text-slate-500">Série ${idx + 1}</span>
+              <span class="font-mono text-white">${v1} / ${v2} ${note}</span>
+            </div>`;
+        });
+        html += `</div></div>`;
+      }
+      container.innerHTML = html;
+      container.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    // --- SYNCHRONISATION JSONP ---
     function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
       if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
@@ -195,14 +344,11 @@
       if (btn) btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>`;
       if (typeof lucide !== 'undefined') lucide.createIcons();
 
-      if (data.error) {
-        alert("Erreur Google : " + data.error);
-        return;
-      }
+      if (data.error) { alert("Erreur Google : " + data.error); return; }
 
       allUsers = data.users || [];
       rawExercises = data.exercises || [];
-      journalLogs = data.logs || []; // Les logs pour les graphiques !
+      journalLogs = data.logs || []; 
       
       localStorage.setItem('fitapp_all_users', JSON.stringify(allUsers));
       localStorage.setItem('fitapp_raw_exercises', JSON.stringify(rawExercises));
@@ -210,7 +356,11 @@
 
       populateUserSelect(allUsers);
       buildProgramForCurrentUser();
-      populateChartDropdown();
+      
+      // Rafraîchir les vues dynamiques si on est dessus
+      if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
+      if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
+
       showToast("Synchronisation réussie !", "success");
     }
 
@@ -228,16 +378,21 @@
       currentUser = user;
       localStorage.setItem('fitapp_user', currentUser);
       buildProgramForCurrentUser();
-      populateChartDropdown();
+      
+      if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
+      if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
+      
       showToast(`Profil chargé : ${currentUser}`);
     }
 
     // --- GRAPHIQUES (CHART.JS) ---
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
-      // Obtenir la liste des exercices uniques faits par cet utilisateur dans l'historique
       const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
-      const uniqueEx = [...new Set(userLogs.map(log => log.exercise))].sort();
+      const historyEx = userLogs.map(log => log.exercise);
+      const programEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase()).map(e => e.name);
+      
+      const uniqueEx = [...new Set([...historyEx, ...programEx])].sort();
       
       select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + 
                          uniqueEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
@@ -250,21 +405,16 @@
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
 
-      // Récupère l'historique de l'utilisateur pour cet exercice précis
       const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase() && log.exercise === selectedEx);
-      
-      // On va grouper par date et trouver le max (Performance du jour)
       const dailyPerf = {};
+      
       userLogs.forEach(log => {
-        const date = log.date.substring(0, 10); // Extrait jj/mm/yyyy
-        // On nettoie la valeur (ex: retire les 'kg', 'km' pour n'avoir que des chiffres)
+        const date = String(log.date).substring(0, 10);
         let val = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.'));
-        if (isNaN(val)) val = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')); // Si pas de poids, on prend l'autre case
+        if (isNaN(val)) val = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')); 
         
         if (!isNaN(val)) {
-          if (!dailyPerf[date] || val > dailyPerf[date]) {
-            dailyPerf[date] = val; // On garde le max du jour
-          }
+          if (!dailyPerf[date] || val > dailyPerf[date]) dailyPerf[date] = val; 
         }
       });
 
@@ -278,7 +428,6 @@
       }
       
       document.getElementById('no-data-msg').classList.add('hidden');
-
       if (chartInstance) chartInstance.destroy();
 
       const ctx = document.getElementById('progressionChart').getContext('2d');
@@ -289,7 +438,7 @@
           datasets: [{
             label: 'Performance Max',
             data: dataPoints,
-            borderColor: '#34d399', // Emerald 400
+            borderColor: '#34d399', 
             backgroundColor: 'rgba(52, 211, 153, 0.1)',
             borderWidth: 3,
             pointBackgroundColor: '#10b981',
@@ -302,24 +451,16 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            y: {
-              grid: { color: '#334155' },
-              ticks: { color: '#94a3b8' }
-            },
-            x: {
-              grid: { display: false },
-              ticks: { color: '#94a3b8', maxTicksLimit: 5 }
-            }
+            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 5 } }
           }
         }
       });
     }
 
-    // --- LE RESTE (WORKOUT) ---
+    // --- WORKOUT / ENTRAINEMENT ---
     function buildProgramForCurrentUser() {
       const userEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase());
       const grouped = {};
