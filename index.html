@@ -386,7 +386,7 @@
       });
 
       db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
-        journalLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        journalLogs = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
         syncSmartState();
         buildProgramForCurrentUser();
         
@@ -644,6 +644,7 @@
       container.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
+    // SYNCHRONISATION PAR IDENTIFIANT UNIQUE (exerciseId ET NON PAR NOM DUPLIQUÉ)
     function syncSmartState() {
       const now = new Date();
       const day = now.getDay() || 7; 
@@ -652,7 +653,12 @@
       monday.setDate(now.getDate() - day + 1);
 
       rawExercises.forEach(ex => {
-        const logsEx = journalLogs.filter(l => cleanString(l.exercise) === cleanString(ex.name));
+        // Filtrage strict par exerciseId (ou nom + séance en secours)
+        const logsEx = journalLogs.filter(l => {
+          if (l.exerciseId) return l.exerciseId === ex.id;
+          return cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance);
+        });
+
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
         const totalSets = isCardio ? 1 : (ex.sets || 4);
 
@@ -672,7 +678,7 @@
           let reps = "";
           let comment = "";
 
-          const logForSet = logsThisWeek.find(l => l.set == (i + 1));
+          const logForSet = logsThisWeek.find(l => Number(l.set) === (i + 1));
 
           if (logForSet) {
             setDone = true;
@@ -680,7 +686,7 @@
             reps = logForSet.reps;
             comment = logForSet.comment;
           } else {
-            const lastLogForSet = logsEx.find(l => l.set == (i + 1));
+            const lastLogForSet = logsEx.find(l => Number(l.set) === (i + 1));
             if (lastLogForSet) {
               weight = lastLogForSet.weight || "";
               reps = lastLogForSet.reps || "";
@@ -1019,6 +1025,7 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
+    // BOUTON VERT : VALIDATION AVEC ENREGISTREMENT DE exerciseId
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
@@ -1043,7 +1050,8 @@
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
 
-      const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exName}_${setIdx + 1}`;
+      // Clé unique absolue basée sur l'ID de l'exercice
+      const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
 
       showToast("Enregistré !", "success");
       
@@ -1054,6 +1062,7 @@
         user: currentUser,
         session: sessionsList[activeSessionIndex].title,
         exercise: exName,
+        exerciseId: exId, // Clé fondamentale pour l'unicité
         set: setIdx + 1,
         weight: wEl ? wEl.value : "",
         reps: rEl ? rEl.value : "",
@@ -1068,21 +1077,23 @@
       checkCongratsModal(isEditMode);
     }
 
-    // SUPPRESSION INSTANTANÉE SANS REBOND FIREBASE
+    // BOUTON POUBELLE : SUPPRESSION DIRECTE PAR ID UNIQUE
     function deleteSet(exId, exName, setIdx) {
       const today = new Date();
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+      const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
 
-      // 1. Nettoyage du tableau mémoire local immédiatement
+      // 1. Suppression du tableau mémoire
       journalLogs = journalLogs.filter(log => {
+        if (log.docId === docId) return false;
         const matchUser = log.userId === currentUserId;
         const matchDate = parseDateToJJMMAAAA(log.date) === dateStr;
         const matchSet = Number(log.set) === (setIdx + 1);
-        const matchEx = cleanString(log.exercise) === cleanString(exName);
-        return !(matchUser && matchDate && matchSet && matchEx);
+        const matchExId = log.exerciseId ? (log.exerciseId === exId) : (cleanString(log.exercise) === cleanString(exName) && cleanString(log.session) === cleanString(sessionsList[activeSessionIndex]?.title));
+        return !(matchUser && matchDate && matchSet && matchExId);
       });
 
-      // 2. Réinitialisation LocalStorage
+      // 2. Réinitialisation LocalStorage spécifique à cet exercice
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
@@ -1093,7 +1104,8 @@
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
       }
 
-      // 3. Suppression dans Firestore
+      // 3. Suppression dans Firestore (directe par docId et par requête)
+      db.collection("journal").doc(docId).delete().catch(() => {});
       db.collection("journal")
         .where("userId", "==", currentUserId)
         .where("date", "==", dateStr)
@@ -1102,14 +1114,15 @@
         .then((snapshot) => {
           snapshot.docs.forEach((doc) => {
             const data = doc.data();
-            if (cleanString(data.exercise) === cleanString(exName)) {
+            if (data.exerciseId === exId || (cleanString(data.exercise) === cleanString(exName) && cleanString(data.session) === cleanString(sessionsList[activeSessionIndex]?.title))) {
               db.collection("journal").doc(doc.id).delete();
             }
           });
-          showToast("Série supprimée !");
         });
 
-      // 4. Mise à jour immédiate
+      showToast("Série supprimée !");
+
+      // 4. Actualisation immédiate
       renderTabs();
       loadSession(activeSessionIndex);
     }
