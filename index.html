@@ -227,7 +227,7 @@
       const startDay = firstDay === 0 ? 6 : firstDay - 1;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
+      const userLogs = journalLogs.filter(log => String(log.user).toLowerCase() === currentUser.toLowerCase());
       const workoutDates = {};
       
       userLogs.forEach(log => {
@@ -260,7 +260,7 @@
     }
 
     function showDayDetails(dateStr) {
-      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
+      const userLogs = journalLogs.filter(log => String(log.user).toLowerCase() === currentUser.toLowerCase());
       const dayLogs = userLogs.filter(log => String(log.date).substring(0, 10) === dateStr);
       const container = document.getElementById('cal-day-details');
 
@@ -365,9 +365,9 @@
     // --- GRAPHIQUES ---
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
-      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
+      const userLogs = journalLogs.filter(log => String(log.user).toLowerCase() === currentUser.toLowerCase());
       const historyEx = userLogs.map(log => log.exercise);
-      const programEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase()).map(e => e.name);
+      const programEx = rawExercises.filter(e => String(e.user).toLowerCase() === currentUser.toLowerCase()).map(e => e.name);
       
       const uniqueEx = [...new Set([...historyEx, ...programEx])].sort();
       select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + uniqueEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
@@ -380,7 +380,7 @@
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
 
-      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase() && log.exercise === selectedEx);
+      const userLogs = journalLogs.filter(log => String(log.user).toLowerCase() === currentUser.toLowerCase() && log.exercise === selectedEx);
       const dailyPerf = {};
       
       userLogs.forEach(log => {
@@ -432,7 +432,7 @@
 
     // --- WORKOUT ---
     function buildProgramForCurrentUser() {
-      const userEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase());
+      const userEx = rawExercises.filter(e => String(e.user).toLowerCase() === currentUser.toLowerCase());
       const grouped = {};
       userEx.forEach(ex => {
         if (!grouped[ex.seance]) grouped[ex.seance] = [];
@@ -494,7 +494,6 @@
           const val2 = setLog.reps || (!isCardio ? ex.reps : ''); 
           const commentVal = setLog.comment || '';
 
-          // inputmode="decimal" ajouté sur les 2 premières cases
           setsHtml += `
             <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
               <span class="col-span-2 text-center text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
@@ -532,7 +531,7 @@
       return data ? JSON.parse(data) : {};
     }
 
-    // --- ENVOI & MISE A JOUR INSTANTANEE ---
+    // --- ENVOI & MISE A JOUR INSTANTANEE CORRIGEE ---
     function sendToGoogleSheets(payload) {
       fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
         .catch(err => console.error("Erreur Sync:", err));
@@ -549,6 +548,7 @@
       saved.sets[setIdx] = { weight: wEl.value, reps: rEl.value, comment: cEl.value, done: nextDone };
       localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
 
+      // Date exacte au format JJ/MM/AAAA sans l'heure
       const today = new Date();
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
 
@@ -556,8 +556,9 @@
         showToast("Enregistré !", "success");
         sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: wEl.value, reps: rEl.value, comments: cEl.value });
         
+        // CORRECTION : Date propre uniquement sans l'heure pour correspondre au filtre du calendrier
         journalLogs.push({
-          date: dateStr + " 12:00:00",
+          date: dateStr,
           user: currentUser,
           exercise: exName,
           weight: wEl.value,
@@ -570,12 +571,11 @@
         showToast("Série annulée !");
         sendToGoogleSheets({ action: "UNCHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1 });
         
+        // SUPPRESSION CORRIGEE DU LOG LOCAL
         const idxToRemove = journalLogs.findLastIndex(log => 
-          log.user.toLowerCase() === currentUser.toLowerCase() && 
+          String(log.user).toLowerCase() === currentUser.toLowerCase() && 
           log.exercise === exName && 
-          String(log.date).substring(0, 10) === dateStr &&
-          log.weight == wEl.value &&
-          log.reps == rEl.value
+          String(log.date).substring(0, 10) === dateStr
         );
         
         if (idxToRemove !== -1) {
@@ -585,12 +585,11 @@
 
       localStorage.setItem('fitapp_journal_logs', JSON.stringify(journalLogs));
       
+      // Rafraîchissement direct de toutes les vues
       loadSession(activeSessionIndex);
+      renderCalendar();
       if (!document.getElementById('view-stats').classList.contains('hidden')) renderChart();
-      if (!document.getElementById('view-calendar').classList.contains('hidden')) {
-        renderCalendar();
-        showDayDetails(dateStr);
-      }
+      if (!document.getElementById('view-calendar').classList.contains('hidden')) showDayDetails(dateStr);
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
