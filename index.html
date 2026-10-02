@@ -4,57 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>FitApp Pro</title>
-
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
-
-  <link rel="manifest" href="./manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
-    @keyframes toastIn {
-      from { transform: translateY(-20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .animate-toast { animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
 
+  <!-- Toasts -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
     <div class="flex items-center space-x-2.5">
       <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
-        <svg viewBox="0 0 100 100" class="w-full h-full">
-          <path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/>
-          <circle cx="50" cy="50" r="6" fill="#10b981"/>
-        </svg>
+        <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
       </div>
       <div>
-        <h1 class="font-extrabold text-sm tracking-tight leading-tight text-white flex items-center gap-1">
-          FITAPP <span class="text-[9px] font-bold px-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRO</span>
-        </h1>
-        <select id="user-select" onchange="changeUser(this.value)" class="bg-slate-950 border border-slate-700 text-blue-400 text-[11px] font-bold rounded px-2 py-0.5 outline-none mt-0.5">
+        <h1 class="font-extrabold text-sm tracking-tight text-white flex items-center gap-1">FITAPP <span class="text-[9px] font-bold px-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRO</span></h1>
+        <select id="user-select" onchange="changeUser(this.value)" class="bg-slate-950 border border-slate-700 text-blue-400 text-[11px] font-bold rounded px-2 py-0.5 outline-none mt-0.5 shadow-sm">
           <option value="">Chargement...</option>
         </select>
       </div>
     </div>
-    <button onclick="fetchSheetData()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1 border border-slate-700">
-      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync
+    <button onclick="fetchSheetData(true)" id="sync-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 border border-slate-700 transition">
+      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>
     </button>
   </header>
 
   <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24">
+    <!-- Onglets Séances -->
     <section>
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
@@ -76,9 +63,7 @@
         </div>
       </div>
       <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
-        <div class="flex items-center space-x-4">
-          <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
-        </div>
+        <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
         <div class="flex items-center space-x-2">
           <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><i data-lucide="play" class="w-5 h-5"></i></button>
           <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
@@ -86,12 +71,12 @@
       </div>
     </section>
 
-    <!-- Liste Exercices -->
-    <section class="space-y-3">
+    <!-- Liste d'exercices -->
+    <section class="space-y-3" id="exercise-container">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2">
           <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-          <h2 id="session-title" class="font-black text-lg text-white">Sélectionnez une séance</h2>
+          <h2 id="session-title" class="font-black text-lg text-white">Aucune séance</h2>
         </div>
       </div>
       <div id="exercise-list" class="space-y-4"></div>
@@ -99,48 +84,81 @@
   </main>
 
   <script>
-    // 🚨 REMPLACE PAR TA NOUVELLE URL EXACTE ICI :
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6tyTJyR5yQIFjWrult-5udSr65DiHnuF33sh9ctVCEu_DS9pehGvKZ0L5pYwfDsKX/exec";
-
+    // ==========================================
+    // 🚨 COLLE TA NOUVELLE URL APPS SCRIPT ICI :
+    // ==========================================
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbweldAq-6U3omk7gOemUH5_pB_kTuL4YFbBhJGhLBYDEQDyJnxc43hM8XlhMOcwVmHT/exec";
+    
     let currentUser = localStorage.getItem('fitapp_user') || "";
-    let rawExercises = [];
+    let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
+    let allUsers = JSON.parse(localStorage.getItem('fitapp_all_users')) || [];
     let sessionsList = [];
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
 
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof lucide !== 'undefined') lucide.createIcons();
-      fetchSheetData(); 
+      
+      // 1. Charger immédiatement l'interface avec les données en cache (Zéro attente)
+      if (allUsers.length > 0 && rawExercises.length > 0) {
+        populateUserSelect(allUsers);
+        buildProgramForCurrentUser();
+      }
+      
+      // 2. Lancer la synchronisation en arrière-plan
+      fetchSheetData(false);
     });
 
-    function showToast(msg) {
+    function showToast(msg, type="info") {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
-      toast.className = `bg-slate-800 text-slate-100 border border-slate-700 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast`;
-      toast.innerText = msg;
+      const color = type === "error" ? "bg-red-600 border-red-500" : type === "success" ? "bg-emerald-600 border-emerald-500" : "bg-slate-800 border-slate-700";
+      toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast`;
+      toast.innerHTML = `<span>${msg}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 2500);
     }
 
-    function fetchSheetData() {
-      // Ajout du paramètre cache-buster pour forcer le téléchargement
-      const url = GOOGLE_SCRIPT_URL + "?t=" + new Date().getTime();
-      
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (data.error) {
-            alert("Erreur Google Sheet : " + data.error);
-            return;
-          }
-          populateUserSelect(data.users || []);
+    function fetchSheetData(manualSync = false) {
+      const btn = document.getElementById('sync-btn');
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      fetch(GOOGLE_SCRIPT_URL + "?t=" + Date.now(), { method: "GET", redirect: "follow" })
+        .then(res => res.text())
+        .then(text => {
+          if (text.includes("<html")) throw new Error("Accès bloqué par Google. As-tu publié en 'N'importe qui' ?");
+          
+          const data = JSON.parse(text);
+          if (data.status === "error") throw new Error(data.message);
+
+          // Sauvegarde locale (Offline first)
+          allUsers = data.users || [];
           rawExercises = data.exercises || [];
+          localStorage.setItem('fitapp_all_users', JSON.stringify(allUsers));
+          localStorage.setItem('fitapp_raw_exercises', JSON.stringify(rawExercises));
+
+          populateUserSelect(allUsers);
           buildProgramForCurrentUser();
-          showToast("Synchronisation réussie !");
+          
+          if (manualSync) showToast("Synchronisation réussie !", "success");
+          btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>`;
+          if (typeof lucide !== 'undefined') lucide.createIcons();
         })
         .catch(err => {
           console.error(err);
-          alert("Impossible de joindre Google Sheets.\nAs-tu bien déployé avec 'Nouvelle Version' et accès 'N'importe qui' ?");
+          btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+          
+          if (rawExercises.length === 0) {
+            document.getElementById('exercise-list').innerHTML = `
+              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-md">
+                <p class="text-xs text-red-400 font-bold mb-2">Erreur de connexion</p>
+                <p class="text-[10px] text-slate-500">${err.message}</p>
+              </div>`;
+          } else if (manualSync) {
+            showToast("Mode hors-ligne : Impossible de joindre Google", "error");
+          }
         });
     }
 
@@ -164,7 +182,7 @@
     }
 
     function buildProgramForCurrentUser() {
-      const userEx = rawExercises.filter(e => !e.user || e.user.toLowerCase() === currentUser.toLowerCase());
+      const userEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase());
       
       const grouped = {};
       userEx.forEach(ex => {
@@ -179,13 +197,15 @@
       }));
 
       renderTabs();
+      
       if (sessionsList.length > 0) {
-        switchSession(0);
+        switchSession(activeSessionIndex !== null && activeSessionIndex < sessionsList.length ? activeSessionIndex : 0);
       } else {
+        document.getElementById('session-title').innerText = "Aucun programme";
         document.getElementById('exercise-list').innerHTML = `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-md">
             <p class="text-xs text-slate-400 font-bold mb-2">Aucun exercice trouvé !</p>
-            <p class="text-[10px] text-slate-500">Ajoute des lignes dans ton onglet 'Exercices' pour le profil <b>${currentUser}</b>.</p>
+            <p class="text-[10px] text-slate-500">Ajoute des lignes dans ton Google Sheet pour <b>${currentUser}</b> puis clique sur Sync.</p>
           </div>`;
       }
     }
@@ -194,7 +214,7 @@
       const container = document.getElementById('session-tabs');
       container.innerHTML = sessionsList.map((s, idx) => `
         <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'}">
-          <div class="font-bold text-xs text-white truncate">${s.title}</div>
+          <div class="font-bold text-xs text-white truncate">${s.title.replace(currentUser + " - ", "")}</div>
         </button>
       `).join('');
     }
@@ -222,44 +242,40 @@
                 <p class="text-xs text-blue-400 font-medium">${ex.sets} x ${ex.reps} reps • Pause: ${ex.restSec}s</p>
               </div>
             </div>
-            
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
                 <span class="col-span-2">Série</span>
-                <span class="col-span-3">Poids (kg)</span>
+                <span class="col-span-3">Poids</span>
                 <span class="col-span-2">Reps</span>
                 <span class="col-span-3">Note</span>
-                <span class="col-span-2">Valider</span>
+                <span class="col-span-2">Valid</span>
               </div>
               ${Array.from({ length: ex.sets }).map((_, setIdx) => {
                 const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
                 const isDone = (setLog.done === true);
                 const disabledAttr = isDone ? 'disabled' : '';
-                const disabledClass = isDone ? 'opacity-50 cursor-not-allowed bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700';
+                const disabledClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700';
 
                 return `
                   <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
                     <span class="col-span-2 text-center text-xs font-bold text-slate-400">#${setIdx + 1}</span>
                     <div class="col-span-3">
-                      <input type="number" id="weight-${ex.id}-${setIdx}" value="${setLog.weight \vert{}\vert{} ''}" placeholder="kg" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none border transition ${disabledClass}">
+                      <input type="number" id="weight-${ex.id}-${setIdx}" value="${setLog.weight \vert{}\vert{} ''}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disabledClass}">
                     </div>
                     <div class="col-span-2">
-                      <input type="number" id="reps-${ex.id}-${setIdx}" value="${setLog.reps \vert{}\vert{} ex.reps}" placeholder="reps" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disabledClass}">
+                      <input type="number" id="reps-${ex.id}-${setIdx}" value="${setLog.reps \vert{}\vert{} ex.reps}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disabledClass}">
                     </div>
                     <div class="col-span-3">
-                      <input type="text" id="comment-${ex.id}-${setIdx}" value="${setLog.comment \vert{}\vert{} ''}" placeholder="Note..." ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1.5 py-1 outline-none border transition ${disabledClass}">
+                      <input type="text" id="comment-${ex.id}-${setIdx}" value="${setLog.comment \vert{}\vert{} ''}" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disabledClass}">
                     </div>
                     <div class="col-span-2 flex justify-center">
-                      <button onclick="toggleSetDone('${ex.id}', '${ex.name}', ${setIdx},${ex.restSec})" id="btn-check-${ex.id}-${setIdx}" class="w-7 h-7 rounded-lg flex items-center justify-center transition font-bold ${isDone ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}">
-                        ✓
-                      </button>
+                      <button onclick="toggleSetDone('${ex.id}', '${ex.name}', ${setIdx},${ex.restSec})" id="btn-check-${ex.id}-${setIdx}" class="w-7 h-7 rounded-lg flex items-center justify-center transition font-bold ${isDone ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}">✓</button>
                     </div>
                   </div>`;
               }).join('')}
             </div>
           </div>`;
       }).join('');
-      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function getSavedLogs(exId) {
@@ -268,13 +284,12 @@
     }
 
     function sendToGoogleSheets(payload) {
-      if (!GOOGLE_SCRIPT_URL) return;
       fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
-      }).catch(err => console.error("Erreur d'envoi:", err));
+      }).catch(err => console.error("Erreur Sync:", err));
     }
 
     function toggleSetDone(exId, exName, setIdx, restSec) {
@@ -285,52 +300,19 @@
       const repsEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const commentEl = document.getElementById(`comment-${exId}-${setIdx}`);
 
-      const weightVal = weightEl.value;
-      const repsVal = repsEl.value;
-      const commentVal = commentEl.value;
       const nextDone = (saved.sets[setIdx]?.done !== true);
-
-      saved.sets[setIdx] = { weight: weightVal, reps: repsVal, comment: commentVal, done: nextDone };
+      saved.sets[setIdx] = { weight: weightEl.value, reps: repsEl.value, comment: commentEl.value, done: nextDone };
       localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
 
-      const btn = document.getElementById(`btn-check-${exId}-${setIdx}`);
-
       if (nextDone) {
-        btn.className = "w-7 h-7 rounded-lg flex items-center justify-center transition font-bold bg-emerald-500 text-white";
-        [weightEl, repsEl, commentEl].forEach(el => {
-          el.disabled = true;
-          el.className = "w-full text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none border transition opacity-50 cursor-not-allowed bg-slate-950 border-slate-800";
-        });
-        showToast("Série enregistrée !");
-
-        sendToGoogleSheets({
-          action: "CHECK",
-          user: currentUser,
-          session: sessionsList[activeSessionIndex].title,
-          exercise: exName,
-          set: setIdx + 1,
-          weight: weightVal,
-          reps: repsVal,
-          comments: commentVal
-        });
-
+        showToast("Série enregistrée !", "success");
+        sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: weightEl.value, reps: repsEl.value, comments: commentEl.value });
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
-        btn.className = "w-7 h-7 rounded-lg flex items-center justify-center transition font-bold bg-slate-800 text-slate-500";
-        [weightEl, repsEl, commentEl].forEach(el => {
-          el.disabled = false;
-          el.className = "w-full text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none border transition bg-slate-900 border-slate-700";
-        });
-        showToast("Série supprimée !");
-
-        sendToGoogleSheets({
-          action: "UNCHECK",
-          user: currentUser,
-          session: sessionsList[activeSessionIndex].title,
-          exercise: exName,
-          set: setIdx + 1
-        });
+        showToast("Série annulée !");
+        sendToGoogleSheets({ action: "UNCHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1 });
       }
+      loadSession(activeSessionIndex); // Recharge pour verrouiller/déverrouiller
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
@@ -344,10 +326,8 @@
       isRestTimerRunning = true;
       document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>';
       if (typeof lucide !== 'undefined') lucide.createIcons();
-      
       restTimerInterval = setInterval(() => {
-        if (restTimeRemaining > 0) { restTimeRemaining--; updateTimerDisplay(); } 
-        else { pauseRestTimer(); }
+        if (restTimeRemaining > 0) { restTimeRemaining--; updateTimerDisplay(); } else { pauseRestTimer(); }
       }, 1000);
     }
     function pauseRestTimer() { 
