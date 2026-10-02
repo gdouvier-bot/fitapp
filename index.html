@@ -428,7 +428,6 @@
       return s.substring(0, 10);
     }
 
-    // ROBUST DATE PARSER POUR CHART.JS
     function parseToDateObj(dateStr) {
       if (!dateStr) return new Date(0);
       const parts = String(dateStr).split('/');
@@ -585,8 +584,8 @@
       const restSec = parseInt(document.getElementById('new-ex-rest').value) || 0;
 
       const docId = editId ? editId : `EX_${Date.now()}`;
-
-      db.collection("exercises").doc(docId).set({
+      
+      const newExData = {
         id: docId,
         userId: currentUserId,
         user: currentUser,
@@ -596,12 +595,31 @@
         sets: sets,
         reps: reps,
         restSec: restSec,
-        archived: false,
+        archived: false
+      };
+
+      // Mettre à jour immédiatement le tableau local
+      const existingIdx = rawExercises.findIndex(ex => ex.id === docId);
+      if (existingIdx !== -1) {
+        rawExercises[existingIdx] = { ...rawExercises[existingIdx], ...newExData };
+      } else {
+        rawExercises.push(newExData);
+      }
+
+      db.collection("exercises").doc(docId).set({
+        ...newExData,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).then(() => {
         showToast(editId ? "Exercice mis à jour !" : "Exercice créé !", "success");
         closeAddExModal();
-      }).catch(() => showToast("Sauvegardé en cache hors-ligne", "info"));
+        syncSmartState();
+        buildProgramForCurrentUser(); // RAFRAÎCHISSEMENT DOM INSTANTANÉ (ONLINE)
+      }).catch(() => {
+        showToast("Sauvegardé en cache hors-ligne", "info");
+        closeAddExModal();
+        syncSmartState();
+        buildProgramForCurrentUser(); // RAFRAÎCHISSEMENT DOM INSTANTANÉ (OFFLINE)
+      });
     }
 
     function archiveExercise(exId, exName) {
@@ -654,7 +672,7 @@
         rawExercises.forEach(ex => { if (ex.seance === oldTitle) ex.seance = newTitle; });
         showToast(`Séance renommée en "${newTitle}"`, "success");
         closeEditSessionModal();
-        buildProgramForCurrentUser(); // Mise à jour instantanée du DOM
+        buildProgramForCurrentUser();
       }).catch(() => {
         rawExercises.forEach(ex => { if (ex.seance === oldTitle) ex.seance = newTitle; });
         closeEditSessionModal();
@@ -897,7 +915,6 @@
         }
       });
 
-      // TRI DE DATE SÉCURISÉ
       const dates = Object.keys(dailyPerf).sort((a, b) => parseToDateObj(a) - parseToDateObj(b));
 
       if (dates.length === 0) {
