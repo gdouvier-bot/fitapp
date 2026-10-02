@@ -187,7 +187,7 @@
   </nav>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIs7AFBaURyKSkSvIR41cewCiYmuRo1NOynk2M25Blf0sNxowUh5saSnZpgroBU2TH/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaFwHUcsYH1-U8rxsiela-3v8C6Xg_cWLuAwa_fXvRNNoMOqiDeEXNwNlGrDUQKoMT/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -207,25 +207,21 @@
       return String(str || '').trim().toLowerCase();
     }
 
-    // Gestion robuste des dates (ajout des 0 manquants et tous formats)
     function parseDateToJJMMAAAA(val) {
       if (!val) return "";
       let s = String(val).trim();
       if (s.includes('T')) s = s.split('T')[0];
       
-      // Sécurité 1 : Format YYYY-MM-DD (ex: 2026-10-02)
       if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
         let p = s.split(' ')[0].split('-');
         return `${String(p[2]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[0]}`;
       }
       
-      // Sécurité 2 : Format JJ/MM/AAAA ou J/M/AAAA (ex: 2/10/2026)
       if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
         let p = s.split(' ')[0].split('/');
         return `${String(p[0]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[2]}`;
       }
       
-      // Sécurité 3 : Objet Date natif
       let d = new Date(val);
       if (!isNaN(d.getTime())) {
         let day = String(d.getDate()).padStart(2, '0');
@@ -356,16 +352,20 @@
             <h5 class="text-xs font-black text-indigo-400 mb-2">${exName}</h5>
             <div class="space-y-1">
         `;
-        logs.forEach((log, idx) => {
+        
+        // Tri des logs par numéro de série pour un affichage propre
+        logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0));
+        
+        logs.forEach((log) => {
           const v1 = log.weight ? log.weight : '-';
           const v2 = log.reps ? log.reps : '-';
           let rawTime = log.time || (String(log.date).length > 10 ? String(log.date).substring(11, 19) : "");
-          const timeLabel = rawTime ? `Validé à ${rawTime}` : `Série ${idx + 1}`;
+          const timeLabel = rawTime ? `Validé à ${rawTime}` : `Série ${log.set || '?'}`;
           const note = log.comment ? `<span class="text-slate-500 text-[9px] ml-2 italic">"${log.comment}"</span>` : '';
           
           html += `
             <div class="text-[10px] text-slate-300 flex items-center justify-between bg-slate-950 px-2 py-1.5 rounded border border-slate-800/80">
-              <span class="font-bold text-slate-400">${timeLabel}</span>
+              <span class="font-bold text-slate-400">${timeLabel} (Série ${log.set || '?'})</span>
               <span class="font-mono text-white">${v1} / ${v2} ${note}</span>
             </div>`;
         });
@@ -386,27 +386,12 @@
       const userLogs = journalLogs.filter(log => cleanString(log.user) === cleanString(currentUser));
 
       userExs.forEach(ex => {
-        // Filtrage strict par nom d'exercice ET par séance 
         const logsEx = userLogs.filter(l => {
           const matchName = cleanString(l.exercise) === cleanString(ex.name);
           const matchSession = l.session ? cleanString(l.session) === cleanString(ex.seance) : true;
           return matchName && matchSession;
         });
         
-        logsEx.sort((a, b) => {
-          const safeA = parseDateToJJMMAAAA(a.date) || ""; 
-          const safeB = parseDateToJJMMAAAA(b.date) || "";
-          const dA = safeA.split('/'); 
-          const dB = safeB.split('/');
-          const timeA = a.time ? a.time.split(':') : [0,0,0];
-          const timeB = b.time ? b.time.split(':') : [0,0,0];
-          
-          const dateA = dA.length === 3 ? new Date(dA[2], dA[1]-1, dA[0], timeA[0], timeA[1], timeA[2]) : new Date(0);
-          const dateB = dB.length === 3 ? new Date(dB[2], dB[1]-1, dB[0], timeB[0], timeB[1], timeB[2]) : new Date(0);
-          return dateB - dateA;
-        });
-
-        let saved = { sets: {} };
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
         const totalSets = isCardio ? 1 : (ex.sets || 4);
 
@@ -418,8 +403,7 @@
           return d >= monday;
         });
 
-        const recentLogs = logsThisWeek.slice(0, totalSets);
-        recentLogs.reverse(); 
+        let saved = { sets: {} };
 
         for(let i = 0; i < totalSets; i++) {
           let setDone = false;
@@ -427,13 +411,21 @@
           let reps = "";
           let comment = "";
 
-          if (i < recentLogs.length) {
+          // Vérifie de manière 100% stricte si CETTE série spécifique a été faite cette semaine
+          const logForSet = logsThisWeek.find(l => l.set == (i + 1));
+
+          if (logForSet) {
             setDone = true;
-            weight = recentLogs[i].weight;
-            reps = recentLogs[i].reps;
-            comment = recentLogs[i].comment;
+            weight = logForSet.weight;
+            reps = logForSet.reps;
+            comment = logForSet.comment;
           } else {
-            if (logsEx.length > 0) {
+            // Si pas faite, on cherche la dernière fois qu'on a fait cette série précise
+            const lastLogForSet = logsEx.find(l => l.set == (i + 1));
+            if (lastLogForSet) {
+              weight = lastLogForSet.weight || "";
+              reps = lastLogForSet.reps || "";
+            } else if (logsEx.length > 0) {
               weight = logsEx[0].weight || "";
               reps = logsEx[0].reps || "";
             }
@@ -869,12 +861,24 @@
         showToast("Enregistré !", "success");
         sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: wEl.value, reps: rEl.value, comments: cEl.value });
         
+        // Anti-Duplication Locale : On efface l'ancienne ligne de la même série aujourd'hui avant d'ajouter la nouvelle
+        const idxToRemove = journalLogs.findLastIndex(log => 
+          cleanString(log.user) === cleanString(currentUser) && 
+          log.exercise === exName && 
+          log.set == (setIdx + 1) &&
+          parseDateToJJMMAAAA(log.date) === dateStr
+        );
+        if (idxToRemove !== -1) {
+          journalLogs.splice(idxToRemove, 1);
+        }
+
         journalLogs.push({
           date: dateStr,
           time: timeStr,
           user: currentUser,
           session: sessionsList[activeSessionIndex].title,
           exercise: exName,
+          set: setIdx + 1,
           weight: wEl.value,
           reps: rEl.value,
           comment: cEl.value
@@ -888,6 +892,7 @@
         const idxToRemove = journalLogs.findLastIndex(log => 
           cleanString(log.user) === cleanString(currentUser) && 
           log.exercise === exName && 
+          log.set == (setIdx + 1) &&
           parseDateToJJMMAAAA(log.date) === dateStr
         );
         
