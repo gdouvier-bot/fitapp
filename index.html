@@ -292,6 +292,18 @@
               <p id="no-data-msg" class="absolute text-slate-500 text-xs font-semibold hidden">Pas de données validées</p>
             </div>
           </div>
+
+          <!-- NOUVEAU BLOC : TOP 3 RECORDS -->
+          <div id="stats-details" class="mt-5 space-y-3 hidden">
+            <div class="flex items-center gap-2 mb-2 pl-1">
+              <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+              <h3 class="text-xs font-black text-white uppercase tracking-wider">Top 3 Records (PR)</h3>
+            </div>
+            <div id="top-records-list" class="space-y-2">
+              <!-- Injecté via JS -->
+            </div>
+          </div>
+
         </section>
       </div>
     </main>
@@ -767,7 +779,7 @@
       });
     }
 
-    // Statistiques et Graphique (Double Axe)
+    // Statistiques et Graphique (Double Axe + Podium Top 3)
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
       const historyEx = journalLogs.map(log => log.exercise);
@@ -779,6 +791,7 @@
       
       if(chartInstance) chartInstance.destroy();
       document.getElementById('no-data-msg').classList.add('hidden');
+      document.getElementById('stats-details').classList.add('hidden');
     }
 
     function renderChart() {
@@ -831,6 +844,7 @@
       if (dates.length === 0) {
         if(chartInstance) chartInstance.destroy();
         document.getElementById('no-data-msg').classList.remove('hidden');
+        document.getElementById('stats-details').classList.add('hidden');
         return;
       }
       
@@ -924,12 +938,70 @@
             },
             y1: {
               type: 'linear', display: true, position: 'right',
-              grid: { drawOnChartArea: false }, // Indispensable pour ne pas superposer les lignes de fond
+              grid: { drawOnChartArea: false }, 
               ticks: { color: '#f59e0b', font: { size: 10 } }
             }
           }
         }
       });
+
+      // === PODIUM : TOP 3 RECORDS ===
+      const statsDetails = document.getElementById('stats-details');
+      const topRecordsList = document.getElementById('top-records-list');
+      statsDetails.classList.remove('hidden');
+
+      // 1. Transformer les données en tableau
+      let records = Object.keys(dailyPerf).map(date => ({ date, ...dailyPerf[date] }));
+
+      // 2. Trier UNIQUEMENT sur la performance Max (ou Min) absolue
+      if (exType === 'poids' || exType === 'km') {
+          records.sort((a, b) => b.max_w - a.max_w);
+      } else if (exType === 'pdc') {
+          records.sort((a, b) => b.max_w - a.max_w || b.max_r - a.max_r);
+      } else if (exType === 'durée' || exType === 'duree') {
+          records.sort((a, b) => a.min_w - b.min_w);
+      }
+
+      // 3. Garder uniquement le Top 3
+      const top3 = records.slice(0, 3);
+      let htmlLogs = "";
+
+      // 4. Générer l'affichage HTML
+      top3.forEach((perf, index) => {
+          let val = "";
+          
+          if (exType === 'poids') {
+              val = `${perf.max_w !== -Infinity ? perf.max_w : 0} kg`;
+          } else if (exType === 'pdc') {
+              let lest = perf.max_w !== -Infinity && perf.max_w > 0 ? `+${perf.max_w}kg ` : '';
+              let reps = perf.max_r !== -Infinity ? `${perf.max_r} reps` : '';
+              val = lest + reps;
+          } else if (exType === 'km') {
+              val = `${perf.max_w !== -Infinity ? perf.max_w : 0} km`;
+          } else {
+              val = `${perf.min_w !== Infinity ? perf.min_w : 0} (Temps)`;
+          }
+
+          // Couleurs des médailles : Or, Argent, Bronze
+          const medalColors = ['text-amber-400', 'text-slate-300', 'text-amber-600'];
+          const medalColor = medalColors[index];
+
+          htmlLogs += `
+          <div class="flex justify-between items-center bg-slate-900 p-3.5 rounded-xl border border-slate-800 shadow-md">
+             <div class="flex items-center gap-3">
+               <span class="font-black text-lg ${medalColor}">#${index + 1}</span>
+               <span class="text-xs font-bold text-slate-300">${perf.date}</span>
+             </div>
+             <div class="flex items-center gap-2">
+               <span class="text-sm font-mono text-white font-bold tracking-wide">${val}</span>
+               <i data-lucide="medal" class="w-4 h-4 ${medalColor}"></i>
+             </div>
+          </div>
+          `;
+      });
+
+      topRecordsList.innerHTML = htmlLogs;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Gestion de l'Entraînement
