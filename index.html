@@ -21,6 +21,7 @@
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
 
+  <!-- Toasts -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
   <!-- Header -->
@@ -68,7 +69,7 @@
           <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
           <div class="flex items-center space-x-2">
             <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition"><i data-lucide="play" class="w-5 h-5"></i></button>
-            <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+            <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
           </div>
         </div>
       </section>
@@ -93,23 +94,19 @@
         </div>
         
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <!-- Navigation Mois -->
           <div class="flex justify-between items-center mb-4">
             <button onclick="changeMonth(-1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
             <h3 id="cal-month-year" class="font-bold text-sm text-white uppercase tracking-wider">Mois</h3>
             <button onclick="changeMonth(1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
           </div>
           
-          <!-- Jours de la semaine -->
           <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 mb-2">
             <div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div>
           </div>
           
-          <!-- Grille du calendrier -->
           <div id="cal-grid" class="grid grid-cols-7 gap-1.5"></div>
         </div>
 
-        <!-- Détail de la journée sélectionnée -->
         <div id="cal-day-details" class="space-y-3 mt-4">
           <p class="text-xs text-center text-slate-500 mt-6">Sélectionne un jour pour voir ta séance</p>
         </div>
@@ -158,7 +155,6 @@
   </nav>
 
   <script>
-    // URL EXACTE DE TON SCRIPT APPS SCRIPT
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGcQdRgnQltX9OFVpSNg6VLkVh53NVqLznPfOklHwRO9IXRNuhx4EB_itLyLmhoBQi/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
@@ -171,7 +167,6 @@
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
 
-    // Variables du Calendrier
     let currentCalDate = new Date();
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
@@ -194,12 +189,10 @@
       setTimeout(() => toast.remove(), 2500);
     }
 
-    // --- SYSTEME DE VUES (Onglets du bas) ---
     function switchView(view) {
       const vWork = document.getElementById('view-workout');
       const vCal = document.getElementById('view-calendar');
       const vStats = document.getElementById('view-stats');
-      
       const nWork = document.getElementById('nav-workout');
       const nCal = document.getElementById('nav-calendar');
       const nStats = document.getElementById('nav-stats');
@@ -210,21 +203,16 @@
       nStats.className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
 
       if (view === 'workout') {
-        vWork.classList.remove('hidden');
-        nWork.className = "flex flex-col items-center p-2 text-blue-500 w-1/3 transition";
+        vWork.classList.remove('hidden'); nWork.className = "flex flex-col items-center p-2 text-blue-500 w-1/3 transition";
       } else if (view === 'calendar') {
-        vCal.classList.remove('hidden');
-        nCal.className = "flex flex-col items-center p-2 text-indigo-500 w-1/3 transition";
-        renderCalendar();
+        vCal.classList.remove('hidden'); nCal.className = "flex flex-col items-center p-2 text-indigo-500 w-1/3 transition"; renderCalendar();
       } else if (view === 'stats') {
-        vStats.classList.remove('hidden');
-        nStats.className = "flex flex-col items-center p-2 text-emerald-500 w-1/3 transition";
-        populateChartDropdown();
+        vStats.classList.remove('hidden'); nStats.className = "flex flex-col items-center p-2 text-emerald-500 w-1/3 transition"; populateChartDropdown();
       }
       window.scrollTo(0, 0);
     }
 
-    // --- CALENDRIER & HISTORIQUE ---
+    // --- CALENDRIER ---
     function changeMonth(dir) {
       currentCalDate.setMonth(currentCalDate.getMonth() + dir);
       renderCalendar();
@@ -236,26 +224,21 @@
       document.getElementById('cal-month-year').innerText = `${monthNames[month]} ${year}`;
 
       const firstDay = new Date(year, month, 1).getDay();
-      const startDay = firstDay === 0 ? 6 : firstDay - 1; // Ajustement pour que la semaine commence le lundi (0)
+      const startDay = firstDay === 0 ? 6 : firstDay - 1;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
       const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
       const workoutDates = {};
       
       userLogs.forEach(log => {
-        const dPart = String(log.date).substring(0, 10); // Extrait "dd/MM/yyyy"
+        const dPart = String(log.date).substring(0, 10);
         if(!workoutDates[dPart]) workoutDates[dPart] = [];
         workoutDates[dPart].push(log);
       });
 
       let html = '';
-      
-      // Cases vides avant le 1er du mois
-      for(let i=0; i<startDay; i++) {
-        html += `<div class="aspect-square"></div>`;
-      }
+      for(let i=0; i<startDay; i++) { html += `<div class="aspect-square"></div>`; }
 
-      // Jours du mois
       for(let d=1; d<=daysInMonth; d++) {
         const dateStr = String(d).padStart(2, '0') + '/' + String(month + 1).padStart(2, '0') + '/' + year;
         const hasWorkout = !!workoutDates[dateStr];
@@ -263,11 +246,8 @@
         const baseClass = "aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer";
         let colorClass = "text-slate-400 hover:bg-slate-800 bg-slate-950/50 border border-transparent";
         
-        if(hasWorkout) {
-          colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
-        }
-
-        // Si c'est aujourd'hui
+        if(hasWorkout) colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
+        
         const today = new Date();
         if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear() && !hasWorkout) {
           colorClass = "bg-slate-800 text-white border border-slate-600";
@@ -275,7 +255,6 @@
 
         html += `<div onclick="showDayDetails('${dateStr}')" class="${baseClass} ${colorClass}">${d}</div>`;
       }
-
       document.getElementById('cal-grid').innerHTML = html;
       document.getElementById('cal-day-details').innerHTML = `<p class="text-xs text-center text-slate-500 mt-4">Sélectionne un jour pour voir le détail de ta séance</p>`;
     }
@@ -290,7 +269,6 @@
         return;
       }
 
-      // Grouper les séries par exercice
       const exGroups = {};
       dayLogs.forEach(log => {
         if(!exGroups[log.exercise]) exGroups[log.exercise] = [];
@@ -312,7 +290,7 @@
           
           html += `
             <div class="text-[10px] text-slate-300 flex items-center justify-between bg-slate-950 px-2 py-1.5 rounded border border-slate-800/80">
-              <span class="font-bold text-slate-500">Série ${idx + 1}</span>
+              <span class="font-bold text-slate-500">Validation</span>
               <span class="font-mono text-white">${v1} / ${v2} ${note}</span>
             </div>`;
         });
@@ -357,7 +335,6 @@
       populateUserSelect(allUsers);
       buildProgramForCurrentUser();
       
-      // Rafraîchir les vues dynamiques si on est dessus
       if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
       if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
 
@@ -385,7 +362,7 @@
       showToast(`Profil chargé : ${currentUser}`);
     }
 
-    // --- GRAPHIQUES (CHART.JS) ---
+    // --- GRAPHIQUES ---
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
       const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
@@ -393,9 +370,7 @@
       const programEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase()).map(e => e.name);
       
       const uniqueEx = [...new Set([...historyEx, ...programEx])].sort();
-      
-      select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + 
-                         uniqueEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
+      select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + uniqueEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
       
       if(chartInstance) chartInstance.destroy();
       document.getElementById('no-data-msg').classList.add('hidden');
@@ -412,10 +387,7 @@
         const date = String(log.date).substring(0, 10);
         let val = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.'));
         if (isNaN(val)) val = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')); 
-        
-        if (!isNaN(val)) {
-          if (!dailyPerf[date] || val > dailyPerf[date]) dailyPerf[date] = val; 
-        }
+        if (!isNaN(val)) { if (!dailyPerf[date] || val > dailyPerf[date]) dailyPerf[date] = val; }
       });
 
       const dates = Object.keys(dailyPerf);
@@ -449,9 +421,7 @@
           }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
           scales: {
             y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
             x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 5 } }
@@ -460,7 +430,7 @@
       });
     }
 
-    // --- WORKOUT / ENTRAINEMENT ---
+    // --- WORKOUT ---
     function buildProgramForCurrentUser() {
       const userEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase());
       const grouped = {};
@@ -468,8 +438,7 @@
         if (!grouped[ex.seance]) grouped[ex.seance] = [];
         grouped[ex.seance].push(ex);
       });
-
-      sessionsList = Object.keys(grouped).map((seanceName, idx) => ({ id: "s" + idx, title: seanceName, exercises: grouped[seanceName] }));
+      sessionsList = Object.keys(grouped).map((seName, idx) => ({ id: "s" + idx, title: seName, exercises: grouped[seName] }));
       renderTabs();
       if (sessionsList.length > 0) switchSession(activeSessionIndex !== null && activeSessionIndex < sessionsList.length ? activeSessionIndex : 0);
     }
@@ -525,11 +494,12 @@
           const val2 = setLog.reps || (!isCardio ? ex.reps : ''); 
           const commentVal = setLog.comment || '';
 
+          // inputmode="decimal" ajouté sur les 2 premières cases
           setsHtml += `
             <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
               <span class="col-span-2 text-center text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
-              <div class="col-span-3"><input type="text" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-2"><input type="text" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}"></div>
               <div class="col-span-2 flex justify-center"><button onclick="toggleSetDone('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button></div>
             </div>`;
@@ -562,6 +532,7 @@
       return data ? JSON.parse(data) : {};
     }
 
+    // --- ENVOI & MISE A JOUR INSTANTANEE ---
     function sendToGoogleSheets(payload) {
       fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
         .catch(err => console.error("Erreur Sync:", err));
@@ -578,15 +549,48 @@
       saved.sets[setIdx] = { weight: wEl.value, reps: rEl.value, comment: cEl.value, done: nextDone };
       localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
 
+      const today = new Date();
+      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+
       if (nextDone) {
         showToast("Enregistré !", "success");
         sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: wEl.value, reps: rEl.value, comments: cEl.value });
+        
+        journalLogs.push({
+          date: dateStr + " 12:00:00",
+          user: currentUser,
+          exercise: exName,
+          weight: wEl.value,
+          reps: rEl.value,
+          comment: cEl.value
+        });
+        
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
         showToast("Série annulée !");
         sendToGoogleSheets({ action: "UNCHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1 });
+        
+        const idxToRemove = journalLogs.findLastIndex(log => 
+          log.user.toLowerCase() === currentUser.toLowerCase() && 
+          log.exercise === exName && 
+          String(log.date).substring(0, 10) === dateStr &&
+          log.weight == wEl.value &&
+          log.reps == rEl.value
+        );
+        
+        if (idxToRemove !== -1) {
+          journalLogs.splice(idxToRemove, 1);
+        }
       }
+
+      localStorage.setItem('fitapp_journal_logs', JSON.stringify(journalLogs));
+      
       loadSession(activeSessionIndex);
+      if (!document.getElementById('view-stats').classList.contains('hidden')) renderChart();
+      if (!document.getElementById('view-calendar').classList.contains('hidden')) {
+        renderCalendar();
+        showDayDetails(dateStr);
+      }
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
