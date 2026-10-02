@@ -715,18 +715,34 @@
       document.getElementById('no-data-msg').classList.add('hidden');
     }
 
+    // FONCTION CHART INTELLIGENTE (VOLUME)
     function renderChart() {
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
 
-      const userLogs = journalLogs.filter(log => log.exercise === selectedEx);
+      const exDef = rawExercises.find(e => cleanString(e.name) === cleanString(selectedEx));
+      const exType = exDef ? (exDef.type || "Poids").trim().toLowerCase() : "poids";
+
+      const userLogs = journalLogs.filter(log => cleanString(log.exercise) === cleanString(selectedEx));
       const dailyPerf = {};
       
       userLogs.forEach(log => {
         const date = parseDateToJJMMAAAA(log.date);
-        let val = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.'));
-        if (isNaN(val)) val = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')); 
-        if (!isNaN(val)) { if (!dailyPerf[date] || val > dailyPerf[date]) dailyPerf[date] = val; }
+        
+        let w = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+        let r = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0; 
+
+        if (!dailyPerf[date]) dailyPerf[date] = 0;
+
+        if (exType === "poids") {
+          dailyPerf[date] += (w * r); 
+        } else if (exType === "pdc") {
+          dailyPerf[date] += r;       
+        } else if (exType === "km") {
+          dailyPerf[date] += w;       
+        } else if (exType === "durée" || exType === "duree") {
+          dailyPerf[date] += (r > 0 ? r : w); 
+        }
       });
 
       const dates = Object.keys(dailyPerf);
@@ -741,13 +757,18 @@
       document.getElementById('no-data-msg').classList.add('hidden');
       if (chartInstance) chartInstance.destroy();
 
+      let labelTxt = 'Volume Total (kg)';
+      if (exType === 'pdc') labelTxt = 'Répétitions Totales';
+      else if (exType === 'km') labelTxt = 'Distance Totale (km)';
+      else if (exType === 'durée' || exType === 'duree') labelTxt = 'Distance / Temps Total';
+
       const ctx = document.getElementById('progressionChart').getContext('2d');
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels: dates,
           datasets: [{
-            label: 'Performance Max',
+            label: labelTxt,
             data: dataPoints,
             borderColor: '#34d399', 
             backgroundColor: 'rgba(52, 211, 153, 0.1)',
@@ -760,7 +781,14 @@
           }]
         },
         options: {
-          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { 
+              display: true, 
+              labels: { color: '#94a3b8', font: { size: 11, weight: 'bold' } } 
+            } 
+          },
           scales: {
             y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
             x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 5 } }
@@ -886,7 +914,7 @@
           const val2 = setLog.reps || ex.reps || '';
           const commentVal = setLog.comment || '';
 
-          // PLUS DE POUBELLE : UNIQUEMENT BOUTON MODIFIER AU CENTRE
+          // PLUS DE POUBELLE : UNIQUEMENT LE CRAYON
           const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -1024,7 +1052,6 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
-    // VALIDATION OU MISE À JOUR DE LA SÉRIE (PLUS DE SUPPRESSION DE SÉRIE)
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
@@ -1038,7 +1065,6 @@
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
 
-      // Soit on met à jour le doc existant, soit on en crée un nouveau
       let firestoreId = saved.sets[setIdx]?.firestoreId;
       let docRef;
 
