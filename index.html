@@ -34,7 +34,7 @@
 
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
-  <!-- Header -->
+  <!-- Header Bar -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
     <div class="flex items-center space-x-2.5">
       <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
@@ -54,7 +54,7 @@
     </div>
 
     <button onclick="fetchSheetData()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1 border border-slate-700">
-      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync
     </button>
   </header>
 
@@ -112,7 +112,7 @@
   </main>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1NUiuR1GUspfkCuuWaxisKp38Dm3QxX6U3gGZGekSJmBxUhlIm3DFzR7T89ux7fXP/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfKe8vQVKt1R6IhamUtu6UP2fDqZ5u6B7L67niUgknAtSUYRGxCJkA48GMNafRrpK9/exec";
 
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = [];
@@ -150,7 +150,7 @@
 
     function populateUserSelect(users) {
       const select = document.getElementById('user-select');
-      if (users.length === 0) users = ["Doudou"];
+      if (!users || users.length === 0) users = ["Doudou"];
       
       select.innerHTML = users.map(u => `<option value="${u}" ${u === currentUser ? 'selected' : ''}>${u}</option>`).join('');
       
@@ -186,7 +186,7 @@
       if (sessionsList.length > 0) {
         switchSession(0);
       } else {
-        document.getElementById('exercise-list').innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Aucun exercice pour ${currentUser}</p>`;
+        document.getElementById('exercise-list').innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Aucun exercice trouvé pour ${currentUser}</p>`;
       }
     }
 
