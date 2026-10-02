@@ -861,10 +861,11 @@
             data: dataSum, 
             yAxisID: 'y', 
             borderColor: '#3b82f6', 
-            backgroundColor: 'rgba(59, 130, 246, 0.1)', 
-            borderWidth: 3, 
-            pointBackgroundColor: '#2563eb',
-            pointRadius: 4,
+            backgroundColor: 'rgba(59, 130, 246, 0.08)', 
+            borderWidth: 2.5, 
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#3b82f6',
             fill: true, 
             tension: 0.3 
           },
@@ -873,10 +874,11 @@
             data: dataMaxW, 
             yAxisID: 'y1', 
             borderColor: '#f59e0b', 
-            pointBackgroundColor: '#d97706',
-            pointRadius: 4,
+            pointBackgroundColor: '#f59e0b',
+            pointRadius: 3,
+            pointHoverRadius: 6,
             borderWidth: 2, 
-            borderDash: [5, 5], 
+            borderDash: [4, 4], 
             fill: false, 
             tension: 0.3 
           }
@@ -888,10 +890,11 @@
             data: dataSum, 
             yAxisID: 'y', 
             borderColor: '#10b981', 
-            backgroundColor: 'rgba(16, 185, 129, 0.1)', 
-            borderWidth: 3, 
-            pointBackgroundColor: '#059669',
-            pointRadius: 4,
+            backgroundColor: 'rgba(16, 185, 129, 0.08)', 
+            borderWidth: 2.5, 
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#10b981',
             fill: true, 
             tension: 0.3 
           },
@@ -900,10 +903,11 @@
             data: usedLest ? dataMaxW : dataMaxR, 
             yAxisID: 'y1', 
             borderColor: '#f59e0b', 
-            pointBackgroundColor: '#d97706',
-            pointRadius: 4,
+            pointBackgroundColor: '#f59e0b',
+            pointRadius: 3,
+            pointHoverRadius: 6,
             borderWidth: 2, 
-            borderDash: [5, 5], 
+            borderDash: [4, 4], 
             fill: false, 
             tension: 0.3 
           }
@@ -914,10 +918,11 @@
           data: dataMaxW, 
           yAxisID: 'y', 
           borderColor: '#8b5cf6', 
-          backgroundColor: 'rgba(139, 92, 246, 0.1)', 
-          borderWidth: 3, 
-          pointBackgroundColor: '#7c3aed',
-          pointRadius: 4,
+          backgroundColor: 'rgba(139, 92, 246, 0.08)', 
+          borderWidth: 2.5, 
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#8b5cf6',
           fill: true, 
           tension: 0.3 
         });
@@ -934,34 +939,43 @@
             legend: { 
               display: true, 
               position: 'top',
+              align: 'end',
               labels: { 
-                color: '#cbd5e1',
-                font: { size: 11, family: "'Inter', sans-serif" },
-                usePointStyle: true,
-                pointStyleWidth: 10,
-                boxWidth: 8,
-                boxHeight: 8,
-                padding: 12
+                color: '#94a3b8',
+                font: { size: 10, family: "'Inter', sans-serif", weight: '600' },
+                usePointStyle: false,
+                boxWidth: 16,
+                boxHeight: 2,
+                padding: 10
               } 
-            } 
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: '#0f172a',
+              borderColor: '#334155',
+              borderWidth: 1,
+              titleColor: '#f8fafc',
+              bodyColor: '#cbd5e1'
+            }
           },
           scales: {
             x: { 
-              ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 5 }, 
+              ticks: { color: '#64748b', font: { size: 10 }, maxTicksLimit: 5 }, 
               grid: { display: false } 
             },
             y: { 
               type: 'linear', 
               display: true, 
               position: 'left', 
-              ticks: { color: '#94a3b8', font: { size: 10 } }, 
+              ticks: { color: '#3b82f6', font: { size: 10, weight: '600' } }, 
               grid: { color: '#1e293b' } 
             },
             y1: { 
               type: 'linear', 
               display: datasets.length > 1, 
               position: 'right', 
-              ticks: { color: '#f59e0b', font: { size: 10 } }, 
+              ticks: { color: '#f59e0b', font: { size: 10, weight: '600' } }, 
               grid: { drawOnChartArea: false } 
             }
           }
