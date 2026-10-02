@@ -874,27 +874,31 @@
           
           const disabledAttr = isDone ? 'disabled' : '';
           const disClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700 focus:border-blue-500';
-          const btnClass = isDone ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-800 text-slate-500 hover:text-slate-200';
           
           const val1 = setLog.weight || '';
           const val2 = setLog.reps || ex.reps || '';
           const commentVal = setLog.comment || '';
 
-          const editBtnHtml = isDone ? `
+          // DEUX CHOIX EN MODE VALIDÉ : BOUTON MODIFIER ET BOUTON POUBELLE
+          const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30" title="Modifier">
-              <i data-lucide="edit-3" class="w-3 h-3"></i>
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             </button>
-          ` : '';
+            <button onclick="deleteSet('${ex.id}', '${safeName}', ${setIdx})" class="w-6 h-6 rounded bg-red-500/20 text-red-400 border border-red-500/40 flex items-center justify-center transition hover:bg-red-500/30" title="Supprimer">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          ` : `
+            <button onclick="validateSet('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-6 h-6 rounded bg-slate-800 text-slate-500 hover:text-slate-200 flex items-center justify-center font-bold text-xs transition">✓</button>
+          `;
 
           setsHtml += `
-            <div ondblclick="deleteSet('${ex.id}', '${safeName}', ${setIdx})" class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800 text-center">
+            <div class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800 text-center">
               <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
               <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2 flex items-center justify-center space-x-1">
-                ${editBtnHtml}
-                <button onclick="validateSet('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" ondblclick="deleteSet('${ex.id}', '${safeName}', ${setIdx})" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition ${btnClass}">✓</button>
+                ${actionButtons}
               </div>
             </div>`;
         }
@@ -1016,7 +1020,7 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
-    // ACTION 1 : VALIDER LA SÉRIE (CLIC SIMPLE)
+    // BOUTON VERT : VALIDATION DE LA SÉRIE
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
@@ -1066,7 +1070,7 @@
       checkCongratsModal(isEditMode);
     }
 
-    // ACTION 2 : SUPPRIMER / ANNULER LA SÉRIE (DOUBLE CLIC)
+    // BOUTON POUBELLE : SUPPRESSION NETTE DE LA SÉRIE
     function deleteSet(exId, exName, setIdx) {
       const saved = getSavedLogs(exId);
       if (!saved.sets || !saved.sets[setIdx]) return;
