@@ -198,7 +198,7 @@
       </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-20 relative" id="main-content">
+    <main class="flex-1 overflow-y-auto px-4 pt-5 pb-20 space-y-5 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
       <div id="view-workout" class="space-y-5 block animate-pop">
@@ -256,11 +256,6 @@
       <!-- VUE 2 : CALENDRIER -->
       <div id="view-calendar" class="space-y-5 hidden animate-pop">
         <section>
-          <div class="flex items-center space-x-2 mb-4">
-            <i data-lucide="calendar-check" class="w-5 h-5 text-indigo-400"></i>
-            <h2 class="font-black text-xl text-white">Historique & Calendrier</h2>
-          </div>
-          
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
             <div class="flex justify-between items-center mb-4">
               <button onclick="changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -284,11 +279,6 @@
       <!-- VUE 3 : PROGRESSION -->
       <div id="view-stats" class="space-y-5 hidden animate-pop">
         <section>
-          <div class="flex items-center space-x-2 mb-4">
-            <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
-            <h2 class="font-black text-xl text-white">Progression</h2>
-          </div>
-          
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Choisir un exercice</label>
             
