@@ -33,7 +33,7 @@
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
 
-  <!-- ÉCRAN DE CHARGEMENT INITIAL (Anti-clignotement) -->
+  <!-- ÉCRAN DE CHARGEMENT INITIAL -->
   <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center">
     <div class="w-12 h-12 rounded-xl border-2 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
     <p class="text-xs text-slate-400 font-medium">Vérification de la session...</p>
@@ -718,7 +718,7 @@
               reps = logsEx[0].reps || "";
             }
           }
-          saved.sets[i] = { weight, reps, comment, done: setDone };
+          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false };
         }
         
         localStorage.setItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
@@ -963,6 +963,7 @@
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
+        saved.sets[setIdx].isEditing = true; // Activer le marqueur d'édition
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
         loadSession(activeSessionIndex);
         renderTabs();
@@ -992,9 +993,9 @@
       pendingDeleteCallback = null;
     }
 
-    function checkCongratsModal(was100Before = false) {
-      // Si la séance était déjà terminée à 100 % avant la modification, on n'affiche pas la pop-up
-      if (was100Before) return;
+    function checkCongratsModal(isEdit = false) {
+      // Bloquer l'affichage du pop-up si la série est en mode modification
+      if (isEdit) return;
 
       const currentSession = sessionsList[activeSessionIndex];
       const currentPct = calculateSessionProgress(currentSession);
@@ -1049,6 +1050,7 @@
           if (saved.sets) {
             Object.keys(saved.sets).forEach(setIdx => {
               saved.sets[setIdx].done = false;
+              saved.sets[setIdx].isEditing = false;
             });
             localStorage.setItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
           }
@@ -1081,12 +1083,16 @@
       const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
       const nextDone = (saved.sets[setIdx]?.done !== true);
+      
+      const isEditMode = saved.sets[setIdx]?.isEditing === true;
 
-      // Vérification de l'état avant enregistrement
-      const currentSession = sessionsList[activeSessionIndex];
-      const was100Before = currentSession ? (calculateSessionProgress(currentSession) === 100) : false;
-
-      saved.sets[setIdx] = { weight: wEl.value, reps: rEl.value, comment: cEl.value, done: nextDone };
+      saved.sets[setIdx] = { 
+        weight: wEl.value, 
+        reps: rEl.value, 
+        comment: cEl.value, 
+        done: nextDone,
+        isEditing: false 
+      };
       localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
 
       const today = new Date();
@@ -1121,9 +1127,8 @@
       renderTabs();
       loadSession(activeSessionIndex);
 
-      // Ne déclencher les félicitations que si la séance n'était pas déjà validée
       if (nextDone) {
-        checkCongratsModal(was100Before);
+        checkCongratsModal(isEditMode);
       }
     }
 
