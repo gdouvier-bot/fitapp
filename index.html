@@ -715,7 +715,7 @@
       document.getElementById('no-data-msg').classList.add('hidden');
     }
 
-    // FONCTION CHART INTELLIGENTE (VOLUME)
+    // FONCTION GRAPHIQUE INTELLIGENT AVEC GESTION DU LEST
     function renderChart() {
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
@@ -726,6 +726,8 @@
       const userLogs = journalLogs.filter(log => cleanString(log.exercise) === cleanString(selectedEx));
       const dailyPerf = {};
       
+      let usedLest = false;
+
       userLogs.forEach(log => {
         const date = parseDateToJJMMAAAA(log.date);
         
@@ -737,7 +739,12 @@
         if (exType === "poids") {
           dailyPerf[date] += (w * r); 
         } else if (exType === "pdc") {
-          dailyPerf[date] += r;       
+          if (w > 0) {
+            dailyPerf[date] += (w * r); 
+            usedLest = true;
+          } else {
+            dailyPerf[date] += r;       
+          }
         } else if (exType === "km") {
           dailyPerf[date] += w;       
         } else if (exType === "durée" || exType === "duree") {
@@ -758,7 +765,7 @@
       if (chartInstance) chartInstance.destroy();
 
       let labelTxt = 'Volume Total (kg)';
-      if (exType === 'pdc') labelTxt = 'Répétitions Totales';
+      if (exType === 'pdc') labelTxt = usedLest ? 'Volume Lesté (kg)' : 'Répétitions Totales';
       else if (exType === 'km') labelTxt = 'Distance Totale (km)';
       else if (exType === 'durée' || exType === 'duree') labelTxt = 'Distance / Temps Total';
 
@@ -914,7 +921,7 @@
           const val2 = setLog.reps || ex.reps || '';
           const commentVal = setLog.comment || '';
 
-          // PLUS DE POUBELLE : UNIQUEMENT LE CRAYON
+          // BOUTONS : UNIQUEMENT CRAYON POUR MODIFIER, PLUS DE SUPPRESSION
           const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -1052,6 +1059,7 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
+    // VALIDATION OU MISE À JOUR DE LA SÉRIE UNIQUEMENT
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
