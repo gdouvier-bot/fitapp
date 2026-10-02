@@ -35,11 +35,12 @@
       -webkit-tap-highlight-color: transparent; /* Supprime le flash bleu sur mobile */
     }
     
-    /* Scrollbar personnalisée multi-navigateurs */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; } /* Firefox */
+    /* Masquer complètement la scrollbar tout en conservant le défilement */
+    ::-webkit-scrollbar { display: none; }
+    * { 
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
 
     /* Utilitaires CSS */
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
@@ -174,8 +175,8 @@
       </div>
     </div>
 
-    <!-- Header -->
-    <header class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex items-center justify-between shadow-md pt-safe">
+    <!-- Header (Trait gris sous le header supprimé) -->
+    <header class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md px-4 py-3 flex items-center justify-between shadow-md pt-safe">
       <div class="flex items-center space-x-2.5">
         <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
           <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
@@ -939,11 +940,21 @@
         options: {
           responsive: true, 
           maintainAspectRatio: false, 
-          layout: { padding: { top: 10 } },
+          layout: { padding: { top: 15, bottom: 5 } },
           plugins: { 
             legend: { 
-              display: true, position: 'top',
-              labels: { color: '#cbd5e1', font: { size: 12, family: "'Inter', sans-serif" }, padding: 10, usePointStyle: true, pointStyle: 'circle' } 
+              display: true, 
+              position: 'top',
+              labels: { 
+                color: '#cbd5e1', 
+                font: { size: 11, family: "'Inter', sans-serif" }, 
+                padding: 15, 
+                usePointStyle: true, 
+                pointStyle: 'circle',
+                boxWidth: 8,
+                boxHeight: 8,
+                pointStyleWidth: 8
+              } 
             },
             tooltip: {
               backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155',
