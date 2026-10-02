@@ -2,7 +2,6 @@
 <html lang="fr" class="dark h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
-  <!-- Viewport PWA optimisé, empêche le zoom involontaire et supporte les encoches (Notch) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>FitApp Pro</title>
   <meta name="theme-color" content="#020617">
@@ -11,9 +10,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FitApp Pro">
-
-  <!-- Manifest PWA -->
-  <link rel="manifest" href="manifest.json">
 
   <!-- External Libraries (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -35,16 +31,14 @@
       -webkit-tap-highlight-color: transparent;
     }
     
-    /* Masquer la scrollbar tout en conservant le défilement */
     ::-webkit-scrollbar { display: none; }
     * { 
       -ms-overflow-style: none;  
       scrollbar-width: none;  
     }
 
-    /* Utilitaires CSS & Marges PWA */
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
-    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+    .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
     .pt-safe { padding-top: max(0.75rem, env(safe-area-inset-top)); }
 
     select {
@@ -53,14 +47,12 @@
       appearance: none;
     }
 
-    /* Animations de transition */
     @keyframes toastIn { 
       from { transform: translateY(-20px); opacity: 0; } 
       to { transform: translateY(0); opacity: 1; } 
     }
     .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     
-    /* Animation verticale stricte pour éviter les sauts de hauteur entre les vues */
     @keyframes popIn { 
       0% { transform: translateY(6px); opacity: 0; } 
       100% { transform: translateY(0); opacity: 1; } 
@@ -92,23 +84,20 @@
 
   <!-- APPLICATION PRINCIPALE -->
   <div id="app-screen" class="h-full flex flex-col hidden">
-    <!-- Toasts (Notifications) -->
     <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
-    <!-- Modal Confirmation de Suppression / Archivage (PERSONNALISÉE) -->
+    <!-- Modal Confirmation -->
     <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-pop">
         <div class="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto text-red-400">
           <i data-lucide="trash-2" class="w-7 h-7"></i>
         </div>
-        
         <div>
           <h3 class="font-bold text-lg text-white" id="confirm-modal-title">Retirer l'exercice ?</h3>
           <p class="text-xs text-slate-400 mt-1.5 leading-relaxed" id="confirm-modal-desc">
             Es-tu sûr de vouloir retirer cet exercice ? L'historique sera conservé.
           </p>
         </div>
-
         <div class="flex gap-2.5 pt-2">
           <button id="confirm-btn-cancel" onclick="closeConfirmModal()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition active:scale-95">
             Annuler
@@ -120,7 +109,7 @@
       </div>
     </div>
 
-    <!-- Modal Création / Modification d'Exercice -->
+    <!-- Modal Création / Modification -->
     <div id="add-ex-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -161,7 +150,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-xs font-bold text-slate-400 uppercase">Objectif (Reps/Dist)</label>
-              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5000m" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5km" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
             <div>
               <label class="text-xs font-bold text-slate-400 uppercase">Repos (sec)</label>
@@ -177,7 +166,7 @@
       </div>
     </div>
 
-    <!-- Modal Modification du Nom de Séance -->
+    <!-- Modal Renommer Séance -->
     <div id="edit-session-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -215,7 +204,7 @@
       </div>
     </div>
 
-    <!-- Header (Trait supprimé) -->
+    <!-- Header (Sans bordure inférieure) -->
     <header class="sticky top-0 z-30 bg-slate-950 px-4 py-3 flex items-center justify-between pt-safe">
       <div class="flex items-center space-x-2.5">
         <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
@@ -231,7 +220,7 @@
       </button>
     </header>
 
-    <!-- MAIN CONTAINER : pt-6 unifié (marge augmentée avec le header) -->
+    <!-- Content (Espace augmenté sous le header avec pt-6) -->
     <main class="flex-1 overflow-y-auto px-4 pt-6 pb-20 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
@@ -328,7 +317,6 @@
           </div>
         </div>
 
-        <!-- BLOC : TOP 3 RECORDS -->
         <div id="stats-details" class="mt-5 space-y-3 hidden">
           <div class="flex items-center gap-2 mb-2 pl-1">
             <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
@@ -339,7 +327,7 @@
       </div>
     </main>
 
-    <!-- NAVIGATION BAS (Footer) -->
+    <!-- Navigation -->
     <nav class="fixed bottom-0 w-full bg-slate-900/95 backdrop-blur-md border-t border-slate-800/80 pb-safe z-40">
       <div class="flex justify-around items-center py-1 px-2">
         <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center py-1 text-blue-500 w-1/3 transition">
@@ -359,15 +347,20 @@
   </div>
 
   <script>
-    // Safe PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .catch(err => console.warn('PWA non active (fichier sw.js introuvable ou erreur) :', err));
+        navigator.serviceWorker.register('./sw.js').catch(() => {
+          const swCode = `
+            const CACHE_NAME = 'fitapp-v1';
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+          `;
+          const blob = new Blob([swCode], { type: 'application/javascript' });
+          navigator.serviceWorker.register(URL.createObjectURL(blob));
+        });
       });
     }
 
-    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDmyDdWOiucYk6rdyO_E3v631401z6bdJw",
       authDomain: "fitapp-pro-5bd6b.firebaseapp.com",
@@ -378,22 +371,14 @@
       measurementId: "G-LHVP0Q81FS"
     };
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
     
-    db.enablePersistence().catch((err) => {
-      console.warn("Persistance Firestore non activée:", err.code);
-    });
+    db.enablePersistence().catch((err) => console.warn("Persistance Firestore non active:", err.code));
 
-    // État Global de l'Application
-    let currentUser = "";
-    let currentUserId = "";
-    let rawExercises = [];
-    let journalLogs = [];
-    let sessionsList = [];
+    let currentUser = "", currentUserId = "";
+    let rawExercises = [], journalLogs = [], sessionsList = [];
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
@@ -402,7 +387,6 @@
     
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-    // Fonctions Utilitaires & Sécurité HTML
     function cleanString(str) { return String(str || '').trim().toLowerCase(); }
     
     function sanitizeHTML(str) {
@@ -429,7 +413,6 @@
       return s.split(' ')[0].substring(0, 10);
     }
 
-    // Gestion de la Connexion / Authentification
     auth.onAuthStateChanged((user) => {
       const loader = document.getElementById('loading-screen');
       if (loader) {
@@ -455,10 +438,7 @@
 
     function loginWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch((error) => {
-        showToast("Erreur de connexion Google", "error");
-        console.error(error);
-      });
+      auth.signInWithPopup(provider).catch(() => showToast("Erreur de connexion Google", "error"));
     }
 
     function logout() { 
@@ -466,7 +446,6 @@
       auth.signOut(); 
     }
 
-    // Écouteurs Firestore temps réel
     function initFirebaseListeners() {
       db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         rawExercises = snapshot.docs
@@ -475,7 +454,7 @@
           
         syncSmartState();
         buildProgramForCurrentUser();
-      }, (error) => console.error("Erreur Exercises Listener:", error));
+      }, (err) => console.error(err));
 
       db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         journalLogs = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
@@ -484,23 +463,19 @@
         
         if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
         if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
-      }, (error) => console.error("Erreur Journal Listener:", error));
+      }, (err) => console.error(err));
     }
 
-    // Modal de confirmation personnalisée
     function openConfirmModal({ title, message, confirmText = "Retirer", onConfirm }) {
       document.getElementById('confirm-modal-title').innerText = title;
       document.getElementById('confirm-modal-desc').innerText = message;
       
       const actionBtn = document.getElementById('confirm-btn-action');
       actionBtn.innerText = confirmText;
-      
       pendingConfirmAction = onConfirm;
       
       actionBtn.onclick = () => {
-        if (typeof pendingConfirmAction === 'function') {
-          pendingConfirmAction();
-        }
+        if (typeof pendingConfirmAction === 'function') pendingConfirmAction();
         closeConfirmModal();
       };
 
@@ -513,7 +488,6 @@
       pendingConfirmAction = null;
     }
 
-    // Modals Exercices
     function openAddExModal(ex = null) {
       const titleEl = document.getElementById('ex-modal-title');
       const editIdEl = document.getElementById('edit-ex-id');
@@ -531,7 +505,6 @@
         titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice`;
         editIdEl.value = "";
         document.getElementById('add-ex-form').reset();
-        
         if (activeSessionIndex !== null && sessionsList[activeSessionIndex]) {
           document.getElementById('new-ex-session').value = sessionsList[activeSessionIndex].title;
         }
@@ -570,29 +543,25 @@
         archived: false,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).then(() => {
-        showToast(editId ? "Exercice mis à jour !" : "Exercice créé avec succès !", "success");
+        showToast(editId ? "Exercice mis à jour !" : "Exercice créé !", "success");
         closeAddExModal();
-      }).catch((err) => {
-        showToast("Erreur lors de la sauvegarde", "error");
-        console.error(err);
-      });
+      }).catch(() => showToast("Erreur lors de la sauvegarde", "error"));
     }
 
     function archiveExercise(exId, exName) {
       openConfirmModal({
         title: "Retirer l'exercice ?",
-        message: `Es-tu sûr de vouloir retirer "${exName}" de ton programme ? L'historique sera conservé.`,
+        message: `Es-tu sûr de vouloir retirer "${exName}" ? L'historique sera conservé.`,
         confirmText: "Supprimer",
         onConfirm: () => {
           db.collection("exercises").doc(exId).update({
             archived: true,
             archivedAt: firebase.firestore.FieldValue.serverTimestamp()
           }).then(() => {
-            showToast(`"${exName}" a été retiré.`, "success");
-          }).catch((err) => {
-            showToast("Erreur lors de l'archivage", "error");
-            console.error(err);
-          });
+            safeRemoveItem(`fitapp_log_${currentUserId}_${exId}`);
+            showToast(`"${exName}" retiré.`, "success");
+            buildProgramForCurrentUser();
+          }).catch(() => showToast("Erreur d'archivage", "error"));
         }
       });
     }
@@ -620,25 +589,16 @@
       }
 
       const batch = db.batch();
-      const sessionExercises = rawExercises.filter(ex => ex.seance === oldTitle);
-
-      sessionExercises.forEach(ex => {
-        const ref = db.collection("exercises").doc(ex.id);
-        batch.update(ref, { seance: newTitle });
+      rawExercises.filter(ex => ex.seance === oldTitle).forEach(ex => {
+        batch.update(db.collection("exercises").doc(ex.id), { seance: newTitle });
       });
 
       batch.commit().then(() => {
-        rawExercises.forEach(ex => {
-          if (ex.seance === oldTitle) ex.seance = newTitle;
-        });
         showToast(`Séance renommée en "${newTitle}"`, "success");
         closeEditSessionModal();
         syncSmartState();
         buildProgramForCurrentUser();
-      }).catch((err) => {
-        showToast("Erreur lors du changement de nom", "error");
-        console.error(err);
-      });
+      }).catch(() => showToast("Erreur de renommage", "error"));
     }
 
     function showToast(msg, type="info") {
@@ -651,35 +611,26 @@
       setTimeout(() => toast.remove(), 2500);
     }
 
-    // Gestion du basculement des onglets (Navigation)
     function switchView(view) {
-      const views = ['workout', 'calendar', 'stats'];
-      
-      views.forEach(v => {
+      ['workout', 'calendar', 'stats'].forEach(v => {
         document.getElementById(`view-${v}`).classList.add('hidden');
         document.getElementById(`nav-${v}`).className = "flex flex-col items-center py-1 text-slate-500 hover:text-slate-300 w-1/3 transition";
       });
 
       document.getElementById(`view-${view}`).classList.remove('hidden');
-      
-      const activeNavClasses = "flex flex-col items-center py-1 w-1/3 transition " + 
-        (view === 'workout' ? "text-blue-500" : view === 'calendar' ? "text-indigo-500" : "text-emerald-500");
-      
-      document.getElementById(`nav-${view}`).className = activeNavClasses;
+      const activeColor = view === 'workout' ? "text-blue-500" : view === 'calendar' ? "text-indigo-500" : "text-emerald-500";
+      document.getElementById(`nav-${view}`).className = `flex flex-col items-center py-1 w-1/3 transition ${activeColor}`;
 
       if (view === 'calendar') {
         currentCalDate = new Date();
         renderCalendar();
-        const todayStr = parseDateToJJMMAAAA(new Date());
-        showDayDetails(todayStr);
+        showDayDetails(parseDateToJJMMAAAA(new Date()));
       } else if (view === 'stats') {
         populateChartDropdown();
       }
-      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Calendrier
     function changeMonth(dir) {
       currentCalDate.setMonth(currentCalDate.getMonth() + dir);
       renderCalendar();
@@ -704,7 +655,7 @@
       });
 
       let html = '';
-      for(let i=0; i<startDay; i++) { html += `<div class="aspect-square"></div>`; }
+      for(let i=0; i<startDay; i++) html += `<div class="aspect-square"></div>`;
 
       const todayStr = parseDateToJJMMAAAA(new Date());
 
@@ -713,13 +664,11 @@
         const hasWorkout = !!workoutDates[dateStr];
         const isToday = (dateStr === todayStr);
 
-        const baseClass = "aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition cursor-pointer active:scale-90";
         let colorClass = "text-slate-400 hover:bg-slate-800 bg-slate-950/50 border border-transparent";
-        
         if(hasWorkout) colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
         if(isToday) colorClass += " ring-2 ring-indigo-500 border-indigo-500 text-white font-extrabold";
 
-        html += `<div onclick="showDayDetails('${dateStr}')" class="${baseClass} ${colorClass}">${d}</div>`;
+        html += `<div onclick="showDayDetails('${dateStr}')" class="aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition cursor-pointer active:scale-90 ${colorClass}">${d}</div>`;
       }
       document.getElementById('cal-grid').innerHTML = html;
     }
@@ -742,23 +691,17 @@
       let html = `<h4 class="font-bold text-base text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
 
       for(const [exName, logs] of Object.entries(exGroups)) {
-        html += `
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md">
+        html += `<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md mb-2">
             <h5 class="text-sm font-black text-indigo-400 mb-2">${sanitizeHTML(exName)}</h5>
-            <div class="space-y-1.5">
-        `;
+            <div class="space-y-1.5">`;
         
-        logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0));
-        
-        logs.forEach((log) => {
+        logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0)).forEach((log) => {
           const v1 = log.weight ? sanitizeHTML(log.weight) : '-';
           const v2 = log.reps ? sanitizeHTML(log.reps) : '-';
-          const rawTime = log.time || "";
-          const timeLabel = rawTime ? `Validé à ${sanitizeHTML(rawTime)}` : `Série ${log.set || '?'}`;
+          const timeLabel = log.time ? `Validé à ${sanitizeHTML(log.time)}` : `Série ${log.set || '?'}`;
           const note = log.comment ? `<span class="text-slate-500 text-xs ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
           
-          html += `
-            <div class="text-xs text-slate-300 flex items-center justify-between bg-slate-950 px-2.5 py-2 rounded border border-slate-800/80">
+          html += `<div class="text-xs text-slate-300 flex items-center justify-between bg-slate-950 px-2.5 py-2 rounded border border-slate-800/80">
               <span class="font-bold text-slate-400">${timeLabel} (Série ${log.set || '?'})</span>
               <span class="font-mono text-white text-xs">${v1} / ${v2} ${note}</span>
             </div>`;
@@ -769,18 +712,10 @@
       container.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // Protection LocalStorage PWA/Private Mode
-    function safeSetItem(key, value) {
-      try { localStorage.setItem(key, value); } 
-      catch (e) { console.warn("Erreur LocalStorage:", e); }
-    }
-    
-    function safeGetItem(key) {
-      try { return localStorage.getItem(key); } 
-      catch (e) { return null; }
-    }
+    function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+    function safeGetItem(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function safeRemoveItem(key) { try { localStorage.removeItem(key); } catch (e) {} }
 
-    // Synchronisation Intelligente (Réinitialisation Hebdomadaire)
     function syncSmartState() {
       const now = new Date();
       const day = now.getDay() || 7; 
@@ -789,11 +724,7 @@
       monday.setDate(now.getDate() - day + 1);
 
       rawExercises.forEach(ex => {
-        const logsEx = journalLogs.filter(l => {
-          if (l.exerciseId) return l.exerciseId === ex.id;
-          return cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance);
-        });
-
+        const logsEx = journalLogs.filter(l => l.exerciseId === ex.id || (cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance)));
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
         const totalSets = isCardio ? 1 : (ex.sets || 4);
 
@@ -801,19 +732,13 @@
           const safeDate = parseDateToJJMMAAAA(l.date);
           if (!safeDate || !safeDate.includes('/')) return false;
           const p = safeDate.split('/');
-          const d = new Date(p[2], p[1]-1, p[0]);
-          return d >= monday;
+          return new Date(p[2], p[1]-1, p[0]) >= monday;
         });
 
         let saved = { sets: {} };
 
         for(let i = 0; i < totalSets; i++) {
-          let setDone = false;
-          let weight = "";
-          let reps = "";
-          let comment = "";
-          let firestoreId = null;
-
+          let setDone = false, weight = "", reps = "", comment = "", firestoreId = null;
           const logForSet = logsThisWeek.find(l => Number(l.set) === (i + 1));
 
           if (logForSet) {
@@ -827,19 +752,14 @@
             if (lastLogForSet) {
               weight = lastLogForSet.weight || "";
               reps = lastLogForSet.reps || "";
-            } else if (logsEx.length > 0) {
-              weight = logsEx[0].weight || "";
-              reps = logsEx[0].reps || "";
             }
           }
           saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId };
         }
-        
         safeSetItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
       });
     }
 
-    // Statistiques & Graphiques
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
       const historyEx = journalLogs.map(log => log.exercise);
@@ -848,26 +768,13 @@
       if (uniqueDoneEx.length === 0) {
         select.innerHTML = '<option value="">Aucun exercice validé...</option>';
         if(chartInstance) chartInstance.destroy();
-        document.getElementById('no-data-msg').innerText = "Aucun historique disponible";
         document.getElementById('no-data-msg').classList.remove('hidden');
         document.getElementById('stats-details').classList.add('hidden');
         return;
       }
 
       select.innerHTML = uniqueDoneEx.map(ex => `<option value="${sanitizeHTML(ex)}">${sanitizeHTML(ex)}</option>`).join('');
-      
-      const lastLog = journalLogs.reduce((latest, current) => {
-         const dLatest = parseDateToJJMMAAAA(latest.date).split('/').reverse().join('');
-         const dCurrent = parseDateToJJMMAAAA(current.date).split('/').reverse().join('');
-         return dCurrent >= dLatest ? current : latest;
-      }, journalLogs[0]);
-      
-      if (lastLog && lastLog.exercise) {
-        select.value = sanitizeHTML(lastLog.exercise);
-      } else {
-        select.value = sanitizeHTML(uniqueDoneEx[0]);
-      }
-      
+      select.value = sanitizeHTML(uniqueDoneEx[0]);
       renderChart();
     }
 
@@ -877,7 +784,6 @@
 
       const exDef = rawExercises.find(e => cleanString(e.name) === cleanString(selectedEx));
       const exType = exDef ? (exDef.type || "Poids").trim().toLowerCase() : "poids";
-
       const userLogs = journalLogs.filter(log => cleanString(log.exercise) === cleanString(selectedEx));
       const dailyPerf = {};
       let usedLest = false;
@@ -887,26 +793,21 @@
         let w = parseFloat(String(log.weight).replace(/[^0-9.,-]/g, '').replace(',', '.')) || 0;
         let r = parseFloat(String(log.reps).replace(/[^0-9.,-]/g, '').replace(',', '.')) || 0; 
 
-        if (!dailyPerf[date]) {
-          dailyPerf[date] = { sum: 0, max_w: -Infinity, max_r: -Infinity, min_w: Infinity };
-        }
+        if (!dailyPerf[date]) dailyPerf[date] = { sum: 0, max_w: -Infinity, max_r: -Infinity, min_w: Infinity };
 
         if (exType === "poids") {
           dailyPerf[date].sum += (w * r); 
           if (w > dailyPerf[date].max_w) dailyPerf[date].max_w = w; 
-        } 
-        else if (exType === "pdc") {
+        } else if (exType === "pdc") {
           let lest = w > 0 ? w : 1; 
           dailyPerf[date].sum += (r * lest);       
           if (w > dailyPerf[date].max_w) dailyPerf[date].max_w = w; 
           if (r > dailyPerf[date].max_r) dailyPerf[date].max_r = r; 
           if (w > 0) usedLest = true;
-        } 
-        else if (exType === "km") {
+        } else if (exType === "km") {
           dailyPerf[date].sum += w; 
           if (w > dailyPerf[date].max_w) dailyPerf[date].max_w = w; 
-        } 
-        else if (exType === "durée" || exType === "duree") {
+        } else if (exType === "durée" || exType === "duree") {
           dailyPerf[date].sum += w; 
           if (w > 0 && w < dailyPerf[date].min_w) dailyPerf[date].min_w = w; 
         }
@@ -936,52 +837,17 @@
       let datasets = [];
 
       if (exType === 'poids') {
-        datasets.push({
-          label: 'Volume (Poids × Reps)', data: dataSum, yAxisID: 'y',
-          borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', 
-          borderWidth: 3, pointBackgroundColor: '#2563eb', fill: true, tension: 0.3
-        });
-        datasets.push({
-          label: 'Poids Max (kg)', data: dataMaxW, yAxisID: 'y1',
-          borderColor: '#f59e0b', backgroundColor: 'transparent', 
-          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
-        });
-      } 
-      else if (exType === 'pdc') {
-        datasets.push({
-          label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions (Total)', data: dataSum, yAxisID: 'y',
-          borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', 
-          borderWidth: 3, pointBackgroundColor: '#059669', fill: true, tension: 0.3
-        });
-        datasets.push({
-          label: usedLest ? 'Lest Max (kg)' : 'Série Max (Reps)', data: usedLest ? dataMaxW : dataMaxR, yAxisID: 'y1',
-          borderColor: '#f59e0b', backgroundColor: 'transparent', 
-          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
-        });
-      } 
-      else if (exType === 'km') {
-        datasets.push({
-          label: 'Distance (Total)', data: dataSum, yAxisID: 'y',
-          borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', 
-          borderWidth: 3, pointBackgroundColor: '#7c3aed', fill: true, tension: 0.3
-        });
-        datasets.push({
-          label: 'Plus longue série (Max)', data: dataMaxW, yAxisID: 'y1',
-          borderColor: '#f59e0b', backgroundColor: 'transparent', 
-          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
-        });
-      } 
-      else if (exType === 'durée' || exType === 'duree') {
-        datasets.push({
-          label: 'Temps (Total)', data: dataSum, yAxisID: 'y',
-          borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.1)', 
-          borderWidth: 3, pointBackgroundColor: '#e11d48', fill: true, tension: 0.3
-        });
-        datasets.push({
-          label: 'Série la + rapide (Min)', data: dataMinW, yAxisID: 'y1',
-          borderColor: '#0ea5e9', backgroundColor: 'transparent', 
-          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#0284c7', fill: false, tension: 0.3
-        });
+        datasets.push(
+          { label: 'Volume (Poids × Reps)', data: dataSum, yAxisID: 'y', borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.3 },
+          { label: 'Poids Max (kg)', data: dataMaxW, yAxisID: 'y1', borderColor: '#f59e0b', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.3 }
+        );
+      } else if (exType === 'pdc') {
+        datasets.push(
+          { label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions', data: dataSum, yAxisID: 'y', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, fill: true, tension: 0.3 },
+          { label: usedLest ? 'Lest Max (kg)' : 'Série Max', data: usedLest ? dataMaxW : dataMaxR, yAxisID: 'y1', borderColor: '#f59e0b', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.3 }
+        );
+      } else {
+        datasets.push({ label: 'Performance Max', data: dataMaxW, yAxisID: 'y', borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.3 });
       }
 
       const ctx = document.getElementById('progressionChart').getContext('2d');
@@ -989,102 +855,36 @@
         type: 'line',
         data: { labels: dates, datasets: datasets },
         options: {
-          responsive: true, 
-          maintainAspectRatio: false, 
-          layout: { padding: { top: 0, bottom: 5, left: 0, right: 0 } },
-          plugins: { 
-            legend: { 
-              display: true, 
-              position: 'top',
-              labels: { 
-                color: '#cbd5e1', 
-                font: { size: 12, family: "'Inter', sans-serif" }, 
-                padding: 20, 
-                usePointStyle: true, 
-                pointStyle: 'circle', 
-                boxWidth: 8,
-                boxHeight: 8
-              } 
-            },
-            tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155',
-              borderWidth: 1, padding: 12, usePointStyle: true, boxPadding: 4
-            }
-          },
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
           scales: {
-            x: { 
-              grid: { display: false }, 
-              ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 6 } 
-            },
-            y: { 
-              type: 'linear', display: true, position: 'left',
-              grid: { color: '#1e293b', drawBorder: false }, 
-              ticks: { color: '#94a3b8', font: { size: 11 } } 
-            },
-            y1: {
-              type: 'linear', display: true, position: 'right',
-              grid: { drawOnChartArea: false }, 
-              ticks: { color: '#f59e0b', font: { size: 11 } }
-            }
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { type: 'linear', display: true, position: 'left', ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            y1: { type: 'linear', display: datasets.length > 1, position: 'right', ticks: { color: '#f59e0b' }, grid: { drawOnChartArea: false } }
           }
         }
       });
 
-      // Podium Top 3 Records
       const statsDetails = document.getElementById('stats-details');
       const topRecordsList = document.getElementById('top-records-list');
       statsDetails.classList.remove('hidden');
 
       let records = Object.keys(dailyPerf).map(date => ({ date, ...dailyPerf[date] }));
+      records.sort((a, b) => b.max_w - a.max_w || b.max_r - a.max_r);
 
-      if (exType === 'poids' || exType === 'km') {
-          records.sort((a, b) => b.max_w - a.max_w);
-      } else if (exType === 'pdc') {
-          records.sort((a, b) => b.max_w - a.max_w || b.max_r - a.max_r);
-      } else if (exType === 'durée' || exType === 'duree') {
-          records.sort((a, b) => a.min_w - b.min_w);
-      }
-
-      const top3 = records.slice(0, 3);
-      let htmlLogs = "";
-
-      top3.forEach((perf, index) => {
-          let val = "";
-          
-          if (exType === 'poids') {
-              val = `${perf.max_w !== -Infinity ? perf.max_w : 0} kg`;
-          } else if (exType === 'pdc') {
-              let lest = perf.max_w !== -Infinity && perf.max_w > 0 ? `+${perf.max_w}kg ` : '';
-              let reps = perf.max_r !== -Infinity ? `${perf.max_r} reps` : '';
-              val = lest + reps;
-          } else if (exType === 'km') {
-              val = `${perf.max_w !== -Infinity ? perf.max_w : 0} km`;
-          } else {
-              val = `${perf.min_w !== Infinity ? perf.min_w : 0} (Temps)`;
-          }
-
-          const medalColors = ['text-amber-400', 'text-slate-300', 'text-amber-600'];
-          const medalColor = medalColors[index];
-
-          htmlLogs += `
-          <div class="flex justify-between items-center bg-slate-900 p-3.5 rounded-xl border border-slate-800 shadow-md">
+      topRecordsList.innerHTML = records.slice(0, 3).map((perf, index) => {
+        const medalColors = ['text-amber-400', 'text-slate-300', 'text-amber-600'];
+        return `<div class="flex justify-between items-center bg-slate-900 p-3.5 rounded-xl border border-slate-800">
              <div class="flex items-center gap-3">
-               <span class="font-black text-xl ${medalColor}">#${index + 1}</span>
+               <span class="font-black text-xl ${medalColors[index]}">#${index + 1}</span>
                <span class="text-sm font-bold text-slate-300">${perf.date}</span>
              </div>
-             <div class="flex items-center gap-2">
-               <span class="text-base font-mono text-white font-bold tracking-wide">${val}</span>
-               <i data-lucide="medal" class="w-5 h-5 ${medalColor}"></i>
-             </div>
-          </div>
-          `;
-      });
-
-      topRecordsList.innerHTML = htmlLogs;
+             <span class="text-base font-mono text-white font-bold">${perf.max_w > 0 ? perf.max_w + 'kg' : perf.sum}</span>
+          </div>`;
+      }).join('');
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    // Gestion de l'Entraînement
     function buildProgramForCurrentUser() {
       const grouped = {};
       rawExercises.forEach(ex => {
@@ -1095,18 +895,13 @@
       
       let nextSessionIdx = 0;
       for (let i = 0; i < sessionsList.length; i++) {
-        if (calculateSessionProgress(sessionsList[i]) < 100) {
-          nextSessionIdx = i;
-          break;
-        }
+        if (calculateSessionProgress(sessionsList[i]) < 100) { nextSessionIdx = i; break; }
       }
 
       renderTabs();
       
       if (sessionsList.length > 0) {
-        let targetIdx = (activeSessionIndex !== null && activeSessionIndex < sessionsList.length) 
-                        ? activeSessionIndex 
-                        : nextSessionIdx;
+        let targetIdx = (activeSessionIndex !== null && activeSessionIndex < sessionsList.length) ? activeSessionIndex : nextSessionIdx;
         switchSession(targetIdx);
         document.getElementById('rename-session-btn').classList.remove('hidden');
       } else {
@@ -1117,11 +912,9 @@
     }
 
     function calculateSessionProgress(session) {
-      let totalSets = 0;
-      let doneSets = 0;
+      let totalSets = 0, doneSets = 0;
       session.exercises.forEach(ex => {
-        const exType = (ex.type || "Poids").trim().toLowerCase();
-        const isCardio = (exType === "durée" || exType === "duree" || exType === "km");
+        const isCardio = (ex.type || "").toLowerCase().includes("dur") || (ex.type || "").toLowerCase().includes("km");
         const setsCount = isCardio ? 1 : ex.sets;
         totalSets += setsCount;
         
@@ -1137,25 +930,17 @@
 
     function renderTabs() {
       const container = document.getElementById('session-tabs');
-      let all100 = sessionsList.length > 0;
-
       container.innerHTML = sessionsList.map((s, idx) => {
         const pct = calculateSessionProgress(s);
-        if (pct < 100) all100 = false;
-        
-        let badgeColor = "bg-slate-800 text-slate-400 border-slate-700";
-        if (pct === 100) badgeColor = "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-bold";
-        else if (pct > 0) badgeColor = "bg-blue-500/20 text-blue-400 border-blue-500/40 font-bold";
+        let badgeColor = pct === 100 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" : pct > 0 ? "bg-blue-500/20 text-blue-400 border-blue-500/40" : "bg-slate-800 text-slate-400 border-slate-700";
 
-        return `
-          <button onclick="switchSession(${idx})" class="text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'} active:scale-95">
-            <div class="font-bold text-sm text-white truncate mb-2 w-full">${sanitizeHTML(s.title.replace(currentUser + " - ", ""))}</div>
+        return `<button onclick="switchSession(${idx})" class="text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'} active:scale-95">
+            <div class="font-bold text-sm text-white truncate mb-2 w-full">${sanitizeHTML(s.title)}</div>
             <div class="flex items-center justify-between w-full">
-              <span class="text-xs px-2 py-0.5 rounded-md border ${badgeColor}">${pct}%</span>
+              <span class="text-xs px-2 py-0.5 rounded-md border font-bold ${badgeColor}">${pct}%</span>
               ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>' : ''}
             </div>
-          </button>
-        `;
+          </button>`;
       }).join('');
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -1194,7 +979,6 @@
         for (let setIdx = 0; setIdx < totalSets; setIdx++) {
           const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
           const isDone = (setLog.done === true);
-          
           const disabledAttr = isDone ? 'disabled' : '';
           const disClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700 focus:border-blue-500';
           
@@ -1205,42 +989,27 @@
           const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
               <i data-lucide="edit-3" class="w-4 h-4"></i>
-            </button>
-          ` : `
-            <button onclick="validateSet('${ex.id}', '${safeName.replace(/'/g, "\\'")}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition mx-auto hover:bg-slate-700">✓</button>
-          `;
+            </button>` : `
+            <button onclick="validateSet('${ex.id}', '${safeName.replace(/'/g, "\\'")}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition mx-auto hover:bg-slate-700">✓</button>`;
 
-          setsHtml += `
-            <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-2 rounded-xl border border-slate-800 text-center">
+          setsHtml += `<div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-2 rounded-xl border border-slate-800 text-center">
               <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
               <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-xs rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-2 flex items-center justify-center space-x-1">
-                ${actionButtons}
-              </div>
+              <div class="col-span-2 flex items-center justify-center space-x-1">${actionButtons}</div>
             </div>`;
         }
 
-        const seriesText = isCardio ? `<span class="text-amber-400">Objectif: ${sanitizeHTML(ex.reps)}</span>` : `${ex.sets} séries`;
-        const pauseText = ex.restSec > 0 ? ` • Pause: ${ex.restSec}s` : '';
-        
-        html += `
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md relative">
-            <div>
-              <div class="flex justify-between items-start">
-                <h3 class="font-black text-lg text-white pr-16 leading-tight">${safeName}</h3>
-                <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
-                  <button onclick='openAddExModal(${safeExJson})' class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition" title="Modifier l'exercice">
-                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                  </button>
-                  <button onclick="archiveExercise('${ex.id}', '${safeName.replace(/'/g, "\\'")}')" class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Retirer l'exercice">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                  </button>
-                </div>
+        html += `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md relative">
+            <div class="flex justify-between items-start">
+              <h3 class="font-black text-lg text-white pr-16 leading-tight">${safeName}</h3>
+              <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
+                <button onclick='openAddExModal(${safeExJson})' class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 transition" title="Modifier"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button onclick="archiveExercise('${ex.id}', '${safeName.replace(/'/g, "\\'")}')" class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 transition" title="Supprimer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
               </div>
-              <p class="text-xs text-blue-400 font-medium mt-1">${seriesText}${pauseText}</p>
             </div>
+            <p class="text-xs text-blue-400 font-medium">${isCardio ? 'Objectif: ' + sanitizeHTML(ex.reps) : ex.sets + ' séries'}${ex.restSec > 0 ? ' • Pause: ' + ex.restSec + 's' : ''}</p>
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
                 <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Act.</span>
@@ -1272,70 +1041,15 @@
 
     function checkCongratsModal(isEdit = false) {
       if (isEdit) return;
-
       const currentSession = sessionsList[activeSessionIndex];
-      const currentPct = calculateSessionProgress(currentSession);
-      
-      if (currentPct === 100) {
-        if (typeof confetti === 'function') {
-          confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
-        }
-        
-        let allSessionsDone = true;
-        sessionsList.forEach(s => {
-          if (calculateSessionProgress(s) < 100) allSessionsDone = false;
-        });
-
-        const modal = document.getElementById('congrats-modal');
-        const mainBtn = document.getElementById('congrats-main-btn');
-        
-        if (allSessionsDone) {
-          document.getElementById('congrats-title').innerText = "SEMAINE COMPLÈTE ! 🔥";
-          document.getElementById('congrats-title').className = "font-black text-2xl text-amber-400 uppercase tracking-wide";
-          document.getElementById('congrats-subtitle').innerHTML = "Tu as terminé <strong>100%</strong> de tes séances de la semaine ! Tes données vont être réinitialisées dans ton programme pour te préparer à la semaine prochaine.<br><br><span class='text-xs text-slate-400'>(Tes performances restent sauvegardées)</span>";
-          
-          mainBtn.innerText = "Clôturer la semaine & Réinitialiser";
-          mainBtn.className = "w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-sm rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.4)] transition active:scale-95";
-          
-          mainBtn.onclick = () => {
-            resetWeekData();
-            closeCongratsModal();
-          };
-        } else {
-          document.getElementById('congrats-title').innerText = "SÉANCE TERMINÉE ! 🎉";
-          document.getElementById('congrats-title').className = "font-black text-2xl text-white uppercase tracking-wide";
-          document.getElementById('congrats-subtitle').innerText = `Ta séance "${currentSession.title.replace(currentUser + " - ", "")}" est validée à 100%. Excellent travail !`;
-          
-          mainBtn.innerText = "Continuer";
-          mainBtn.className = "w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition active:scale-95";
-          
-          mainBtn.onclick = () => closeCongratsModal();
-        }
-        modal.classList.remove('hidden');
+      if (calculateSessionProgress(currentSession) === 100) {
+        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+        document.getElementById('congrats-modal').classList.remove('hidden');
       }
     }
 
     function closeCongratsModal() {
       document.getElementById('congrats-modal').classList.add('hidden');
-    }
-
-    function resetWeekData() {
-      sessionsList.forEach(s => {
-        s.exercises.forEach(ex => {
-          const saved = getSavedLogs(ex.id);
-          if (saved.sets) {
-            Object.keys(saved.sets).forEach(setIdx => {
-              saved.sets[setIdx].done = false;
-              saved.sets[setIdx].isEditing = false;
-            });
-            safeSetItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
-          }
-        });
-      });
-      
-      activeSessionIndex = null;
-      buildProgramForCurrentUser(); 
-      showToast("Nouvelle semaine ! Tes perfs sont affichées comme repère.", "success");
     }
 
     function validateSet(exId, exName, setIdx, restSec) {
@@ -1348,49 +1062,27 @@
       
       const isEditMode = saved.sets[setIdx]?.isEditing === true;
       const today = new Date();
-      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-      const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
+      const dateStr = parseDateToJJMMAAAA(today);
+      const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
 
       let firestoreId = saved.sets[setIdx]?.firestoreId;
-      let docRef;
-
-      if (firestoreId) {
-        docRef = db.collection("journal").doc(firestoreId);
-      } else {
-        docRef = db.collection("journal").doc();
-        firestoreId = docRef.id;
-      }
+      let docRef = firestoreId ? db.collection("journal").doc(firestoreId) : db.collection("journal").doc();
+      firestoreId = docRef.id;
 
       saved.sets[setIdx] = { 
-        weight: wEl ? wEl.value : "", 
-        reps: rEl ? rEl.value : "", 
-        comment: cEl ? cEl.value : "", 
-        done: true,
-        isEditing: false,
-        firestoreId: firestoreId
+        weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : "", 
+        done: true, isEditing: false, firestoreId: firestoreId
       };
       
       safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
-
       showToast("Enregistré !", "success");
       
       docRef.set({
-        userId: currentUserId,
-        date: dateStr,
-        time: timeStr,
-        user: currentUser,
-        session: sessionsList[activeSessionIndex].title,
-        exercise: exName,
-        exerciseId: exId,
-        set: setIdx + 1,
-        weight: wEl ? wEl.value : "",
-        reps: rEl ? rEl.value : "",
-        comment: cEl ? cEl.value : "",
+        userId: currentUserId, date: dateStr, time: timeStr, user: currentUser,
+        session: sessionsList[activeSessionIndex].title, exercise: exName, exerciseId: exId,
+        set: setIdx + 1, weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : "",
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }).catch(err => {
-         showToast("Série non sauvegardée sur le cloud", "error");
-         console.error(err);
-      });
+      }, { merge: true }).catch(() => showToast("Série sauvegardée en local", "error"));
       
       if (restSec > 0 && !isEditMode) { setTimerPreset(restSec); startRestTimer(); }
 
@@ -1399,12 +1091,7 @@
       checkCongratsModal(isEditMode);
     }
 
-    // Minuteur
-    function setTimerPreset(sec) { 
-      restTimeTotal = sec; 
-      restTimeRemaining = sec; 
-      updateTimerDisplay(); 
-    }
+    function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
     
     function updateTimerDisplay() {
       const mins = Math.floor(restTimeRemaining / 60);
@@ -1412,10 +1099,7 @@
       document.getElementById('timer-display').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
     
-    function toggleRestTimer() { 
-      if (isRestTimerRunning) pauseRestTimer(); 
-      else startRestTimer(); 
-    }
+    function toggleRestTimer() { isRestTimerRunning ? pauseRestTimer() : startRestTimer(); }
     
     function startRestTimer() {
       if (isRestTimerRunning) clearInterval(restTimerInterval);
@@ -1441,52 +1125,21 @@
       if (typeof lucide !== 'undefined') lucide.createIcons(); 
     }
     
-    function resetRestTimer() { 
-      pauseRestTimer(); 
-      restTimeRemaining = restTimeTotal; 
-      updateTimerDisplay(); 
-    }
+    function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
 
-    // GESTION DU SWIPE GESTURE (ÉCRANS TACTILES MULTI-PLATEFORMES)
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
-
-    const minSwipeDistance = 50;
-
-    document.addEventListener('touchstart', (e) => {
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
-    }, { passive: true });
-
-    document.addEventListener('touchend', (e) => {
+    // Swipe Gesture
+    let touchStartX = 0, touchEndX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+    document.addEventListener('touchend', e => {
       touchEndX = e.changedTouches[0].screenX;
-      touchEndY = e.changedTouches[0].screenY;
-      handleSwipe();
-    }, { passive: true });
-
-    function handleSwipe() {
       const deltaX = touchEndX - touchStartX;
-      const deltaY = touchEndY - touchStartY;
-
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+      if (Math.abs(deltaX) > 60) {
         const views = ['workout', 'calendar', 'stats'];
-        
-        let currentViewIdx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
-        if (currentViewIdx === -1) currentViewIdx = 0;
-
-        if (deltaX < 0) {
-          if (currentViewIdx < views.length - 1) {
-            switchView(views[currentViewIdx + 1]);
-          }
-        } else {
-          if (currentViewIdx > 0) {
-            switchView(views[currentViewIdx - 1]);
-          }
-        }
+        let idx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
+        if (deltaX < 0 && idx < views.length - 1) switchView(views[idx + 1]);
+        if (deltaX > 0 && idx > 0) switchView(views[idx - 1]);
       }
-    }
+    }, { passive: true });
   </script>
 </body>
 </html>
