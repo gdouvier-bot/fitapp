@@ -2,7 +2,6 @@
 <html lang="fr" class="dark h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
-  <!-- Viewport optimisé pour PWA, empêche le zoom intempestif et gère les encoches (Notch) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>FitApp Pro</title>
   <meta name="theme-color" content="#020617">
@@ -32,28 +31,24 @@
     body { 
       font-family: 'Inter', sans-serif; 
       user-select: none; 
-      -webkit-tap-highlight-color: transparent; /* Supprime le flash bleu sur mobile */
+      -webkit-tap-highlight-color: transparent;
     }
     
-    /* Masquer complètement la scrollbar tout en conservant le défilement */
     ::-webkit-scrollbar { display: none; }
     * { 
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
+      -ms-overflow-style: none;  
+      scrollbar-width: none;  
     }
 
-    /* Utilitaires CSS */
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
-    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); } /* Sécurité iPhone compactée */
+    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
 
-    /* Custom select style */
     select {
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
     }
 
-    /* Animations */
     @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -198,12 +193,12 @@
       </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto px-4 pt-5 pb-20 space-y-5 relative" id="main-content">
+    <main class="flex-1 overflow-y-auto px-4 pt-6 pb-20 space-y-5 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
       <div id="view-workout" class="space-y-5 block animate-pop">
         <section>
-          <div class="flex items-center justify-between mb-2.5">
+          <div class="flex items-center justify-between mb-3">
             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
             <button onclick="openAddExModal()" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/30 transition active:scale-95">
               <i data-lucide="plus" class="w-4 h-4"></i> Ajouter
