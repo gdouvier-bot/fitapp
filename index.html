@@ -10,9 +10,14 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; user-select: none; }
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
+    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
+
+  <!-- Toasts -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
@@ -27,7 +32,7 @@
         </select>
       </div>
     </div>
-    <button onclick="fetchSheetData()" id="sync-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 border border-slate-700">
+    <button onclick="fetchSheetData()" id="sync-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 border border-slate-700 transition">
       <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>
     </button>
   </header>
@@ -49,16 +54,16 @@
           <h3 class="font-bold text-sm text-white">Minuteur</h3>
         </div>
         <div class="flex items-center space-x-1">
-          <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">45s</button>
-          <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">60s</button>
-          <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">90s</button>
+          <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">45s</button>
+          <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">60s</button>
+          <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">90s</button>
         </div>
       </div>
       <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
         <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
         <div class="flex items-center space-x-2">
-          <button onclick="toggleRestTimer()" id="timer-toggle-btn" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><i data-lucide="play" class="w-5 h-5"></i></button>
-          <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+          <button onclick="toggleRestTimer()" id="timer-toggle-btn" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition"><i data-lucide="play" class="w-5 h-5"></i></button>
+          <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
         </div>
       </div>
     </section>
@@ -75,7 +80,7 @@
 
   <script>
     // ==========================================
-    // 🚨 COLLE TA NOUVELLE URL EXACTE ICI :
+    // 🚨 1. COLLE TA NOUVELLE URL EXACTE ICI :
     // ==========================================
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaojRJ0Wn1izHyjAilv6VIF90oGSR5Cs289mvtz3BSDu5d9mJ239uF9xVxRvOB1x2U/exec";
     
@@ -95,6 +100,16 @@
       fetchSheetData();
     });
 
+    function showToast(msg, type="info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const color = type === "error" ? "bg-red-600 border-red-500" : type === "success" ? "bg-emerald-600 border-emerald-500" : "bg-slate-800 border-slate-700";
+      toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast`;
+      toast.innerHTML = `<span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+
     function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
       btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
@@ -104,13 +119,17 @@
         .then(async response => {
           const text = await response.text();
           if (text.includes("<html") || text.includes("<HTML")) {
-            throw new Error("Erreur de droits. Le script Google demande une connexion.");
+            throw new Error("ERREUR DE DROITS GOOGLE : Ton script n'est pas public.");
           }
-          return JSON.parse(text);
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            throw new Error("L'URL Apps Script ne renvoie pas de bonnes données. As-tu publié la Nouvelle Version ?");
+          }
         })
         .then(data => {
           if (data.status === "error" || data.error) {
-            throw new Error(data.message || data.error);
+            throw new Error("Erreur Script : " + (data.message || data.error));
           }
           allUsers = data.users || [];
           rawExercises = data.exercises || [];
@@ -128,15 +147,16 @@
           console.error(err);
           btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
           lucide.createIcons();
+          document.getElementById('user-select').innerHTML = '<option value="">Bloqué</option>';
           
-          if (rawExercises.length === 0) {
-            document.getElementById('session-title').innerText = "Erreur";
-            document.getElementById('exercise-list').innerHTML = `
-              <div class="bg-red-500/10 border border-red-500/50 p-5 rounded-2xl">
-                <h3 class="font-black text-red-400 mb-2">Impossible de charger</h3>
-                <p class="text-xs text-slate-300">${err.message}</p>
-              </div>`;
-          }
+          document.getElementById('session-title').innerText = "Connexion échouée";
+          document.getElementById('exercise-list').innerHTML = `
+            <div class="bg-red-500/10 border border-red-500/50 p-5 rounded-2xl shadow-lg">
+              <h3 class="font-black text-red-400 mb-2 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> POURQUOI ÇA BLOQUE :</h3>
+              <p class="text-xs text-white font-mono bg-red-950 p-2 rounded mb-4">${err.message}</p>
+            </div>
+          `;
+          lucide.createIcons();
         });
     }
 
@@ -172,7 +192,8 @@
         document.getElementById('session-title').innerText = "Aucun programme";
         document.getElementById('exercise-list').innerHTML = `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
-            <p class="text-xs text-slate-400 font-bold">Aucun exercice !</p>
+            <p class="text-xs text-slate-400 font-bold mb-2">Aucun exercice !</p>
+            <p class="text-[10px] text-slate-500">Ajoute des lignes dans ton Google Sheet pour <b>${currentUser}</b>.</p>
           </div>`;
       }
     }
@@ -199,10 +220,10 @@
       const container = document.getElementById('exercise-list');
       
       let html = '';
-      session.exercises.forEach(ex => {
+      session.exercises.forEach((ex) => {
         const savedData = getSavedLogs(ex.id);
-        const safeName = ex.name.replace(/'/g, "\\'"); // Sécurise les apostrophes
-
+        const safeName = ex.name.replace(/'/g, "\\'"); // Sécuriser les apostrophes
+        
         let setsHtml = '';
         for (let setIdx = 0; setIdx < ex.sets; setIdx++) {
           const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
@@ -219,9 +240,15 @@
           setsHtml += `
             <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
               <span class="col-span-2 text-center text-xs font-bold text-slate-400">#${setIdx + 1}</span>
-              <div class="col-span-3"><input type="number" id="weight-${ex.id}-${setIdx}" value="${weightVal}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border ${disClass}"></div>
-              <div class="col-span-2"><input type="number" id="reps-${ex.id}-${setIdx}" value="${repsVal}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border ${disClass}"></div>
-              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border ${disClass}"></div>
+              <div class="col-span-3">
+                <input type="number" id="weight-${ex.id}-${setIdx}" value="${weightVal}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
+              </div>
+              <div class="col-span-2">
+                <input type="number" id="reps-${ex.id}-${setIdx}" value="${repsVal}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
+              </div>
+              <div class="col-span-3">
+                <input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}">
+              </div>
               <div class="col-span-2 flex justify-center">
                 <button onclick="toggleSetDone('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button>
               </div>
@@ -242,6 +269,7 @@
             </div>
           </div>`;
       });
+      
       container.innerHTML = html;
       lucide.createIcons();
     }
@@ -259,6 +287,7 @@
     function toggleSetDone(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
+      
       const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
       const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
@@ -268,9 +297,11 @@
       localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
 
       if (nextDone) {
+        showToast("Série enregistrée !", "success");
         sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: wEl.value, reps: rEl.value, comments: cEl.value });
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
+        showToast("Série annulée !");
         sendToGoogleSheets({ action: "UNCHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1 });
       }
       loadSession(activeSessionIndex);
