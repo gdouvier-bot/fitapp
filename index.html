@@ -187,7 +187,7 @@
   </nav>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaFwHUcsYH1-U8rxsiela-3v8C6Xg_cWLuAwa_fXvRNNoMOqiDeEXNwNlGrDUQKoMT/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlZGlDbJBVsXFN0eBdA64T4ZusQOAP1X6VP6WNGSDwasKISZ1VWLH0CsnzU5EKKvxN/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -704,6 +704,8 @@
         }
 
         const seriesText = isCardio ? `<span class="text-amber-400">Objectif: ${ex.reps}</span>` : `${ex.sets} séries`;
+        const pauseText = ex.restSec > 0 ? ` • Pause: ${ex.restSec}s` : ''; // Magie : Disparaît si c'est 0 !
+        
         html += `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md">
             <div>
@@ -711,7 +713,7 @@
                 <h3 class="font-black text-base text-white">${ex.name}</h3>
                 <span class="text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 px-2 py-0.5 rounded">${ex.type || 'Poids'}</span>
               </div>
-              <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText} • Pause: ${ex.restSec}s</p>
+              <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText}${pauseText}</p>
             </div>
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
