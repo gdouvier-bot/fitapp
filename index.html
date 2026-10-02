@@ -2,6 +2,7 @@
 <html lang="fr" class="dark h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
+  <!-- Viewport optimisé pour PWA, empêche le zoom intempestif et gère les encoches (Notch) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>FitApp Pro</title>
   <meta name="theme-color" content="#020617">
@@ -31,24 +32,28 @@
     body { 
       font-family: 'Inter', sans-serif; 
       user-select: none; 
-      -webkit-tap-highlight-color: transparent;
+      -webkit-tap-highlight-color: transparent; /* Supprime le flash bleu sur mobile */
     }
     
+    /* Masquer complètement la scrollbar tout en conservant le défilement */
     ::-webkit-scrollbar { display: none; }
     * { 
-      -ms-overflow-style: none;  
-      scrollbar-width: none;  
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
     }
 
+    /* Utilitaires CSS */
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
-    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); } /* Sécurité iPhone compactée */
 
+    /* Custom select style */
     select {
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
     }
 
+    /* Animations */
     @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -178,7 +183,7 @@
     </div>
 
     <!-- Header -->
-    <header class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md px-4 py-3 flex items-center justify-between shadow-md pt-safe">
+    <header class="sticky top-0 z-30 bg-slate-950 px-4 py-3 flex items-center justify-between pt-safe">
       <div class="flex items-center space-x-2.5">
         <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
           <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
@@ -193,11 +198,11 @@
       </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto px-4 pt-6 pb-20 space-y-5 relative" id="main-content">
+    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-20 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
       <div id="view-workout" class="space-y-5 block animate-pop">
-        <section>
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
             <button onclick="openAddExModal()" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/30 transition active:scale-95">
@@ -1130,7 +1135,6 @@
       session.exercises.forEach((ex) => {
         const savedData = getSavedLogs(ex.id);
         const safeName = sanitizeHTML(ex.name);
-        // Sécurisation stricte de l'objet pour l'injection dans onlick
         const safeExJson = JSON.stringify(ex).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
         
         const exType = (ex.type || "Poids").trim().toLowerCase();
@@ -1325,7 +1329,7 @@
         firestoreId: firestoreId
       };
       
-      safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
 
       showToast("Enregistré !", "success");
       
@@ -1408,7 +1412,7 @@
     let touchEndX = 0;
     let touchEndY = 0;
 
-    const minSwipeDistance = 50; // Distance minimale en pixels pour valider le swipe
+    const minSwipeDistance = 50;
 
     document.addEventListener('touchstart', (e) => {
       touchStartX = e.changedTouches[0].screenX;
@@ -1425,21 +1429,17 @@
       const deltaX = touchEndX - touchStartX;
       const deltaY = touchEndY - touchStartY;
 
-      // S'assurer que le geste est bien un glissement horizontal et non un scroll vertical
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
         const views = ['workout', 'calendar', 'stats'];
         
-        // Déterminer la vue actuellement affichée
         let currentViewIdx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
         if (currentViewIdx === -1) currentViewIdx = 0;
 
         if (deltaX < 0) {
-          // Swipe vers la gauche -> Vue suivante
           if (currentViewIdx < views.length - 1) {
             switchView(views[currentViewIdx + 1]);
           }
         } else {
-          // Swipe vers la droite -> Vue précédente
           if (currentViewIdx > 0) {
             switchView(views[currentViewIdx - 1]);
           }
