@@ -715,7 +715,7 @@
       document.getElementById('no-data-msg').classList.add('hidden');
     }
 
-    // FONCTION GRAPHIQUE INTELLIGENT AVEC GESTION DU LEST
+    // FONCTION CHART INTELLIGENTE (VOLUME + MAX/MIN AVEC LÉGENDES)
     function renderChart() {
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
@@ -734,26 +734,36 @@
         let w = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
         let r = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0; 
 
-        if (!dailyPerf[date]) dailyPerf[date] = 0;
+        if (!dailyPerf[date]) {
+          dailyPerf[date] = { sum: 0, max_w: -Infinity, max_r: -Infinity, min_w: Infinity };
+        }
 
         if (exType === "poids") {
-          dailyPerf[date] += (w * r); 
-        } else if (exType === "pdc") {
-          if (w > 0) {
-            dailyPerf[date] += (w * r); 
-            usedLest = true;
-          } else {
-            dailyPerf[date] += r;       
-          }
-        } else if (exType === "km") {
-          dailyPerf[date] += w;       
-        } else if (exType === "durée" || exType === "duree") {
-          dailyPerf[date] += (r > 0 ? r : w); 
+          dailyPerf[date].sum += (w * r); 
+          if (w > dailyPerf[date].max_w) dailyPerf[date].max_w = w; 
+        } 
+        else if (exType === "pdc") {
+          let lest = w > 0 ? w : 1; 
+          dailyPerf[date].sum += (r * lest);       
+          if (w > dailyPerf[date].max_w) dailyPerf[date].max_w = w; 
+          if (r > dailyPerf[date].max_r) dailyPerf[date].max_r = r; 
+          if (w > 0) usedLest = true;
+        } 
+        else if (exType === "km") {
+          dailyPerf[date].sum += w; 
+          if (w > dailyPerf[date].max_w) dailyPerf[date].max_w = w; 
+        } 
+        else if (exType === "durée" || exType === "duree") {
+          dailyPerf[date].sum += w; 
+          if (w > 0 && w < dailyPerf[date].min_w) dailyPerf[date].min_w = w; 
         }
       });
 
-      const dates = Object.keys(dailyPerf);
-      const dataPoints = Object.values(dailyPerf);
+      const dates = Object.keys(dailyPerf).sort((a, b) => {
+        const [d1, m1, y1] = a.split('/');
+        const [d2, m2, y2] = b.split('/');
+        return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
+      });
 
       if (dates.length === 0) {
         if(chartInstance) chartInstance.destroy();
@@ -764,36 +774,73 @@
       document.getElementById('no-data-msg').classList.add('hidden');
       if (chartInstance) chartInstance.destroy();
 
-      let labelTxt = 'Volume Total (kg)';
-      if (exType === 'pdc') labelTxt = usedLest ? 'Volume Lesté (kg)' : 'Répétitions Totales';
-      else if (exType === 'km') labelTxt = 'Distance Totale (km)';
-      else if (exType === 'durée' || exType === 'duree') labelTxt = 'Distance / Temps Total';
+      const dataSum = dates.map(d => dailyPerf[d].sum);
+      const dataMaxW = dates.map(d => dailyPerf[d].max_w !== -Infinity ? dailyPerf[d].max_w : 0);
+      const dataMaxR = dates.map(d => dailyPerf[d].max_r !== -Infinity ? dailyPerf[d].max_r : 0);
+      const dataMinW = dates.map(d => dailyPerf[d].min_w !== Infinity ? dailyPerf[d].min_w : 0);
+
+      let datasets = [];
+
+      if (exType === 'poids') {
+        datasets.push({
+          label: 'Volume (Poids × Reps)', data: dataSum,
+          borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+          borderWidth: 3, pointBackgroundColor: '#2563eb', fill: true, tension: 0.3
+        });
+        datasets.push({
+          label: 'Poids Max (kg)', data: dataMaxW,
+          borderColor: '#f59e0b', backgroundColor: 'transparent', 
+          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
+        });
+      } 
+      else if (exType === 'pdc') {
+        datasets.push({
+          label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions (Somme)', data: dataSum,
+          borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', 
+          borderWidth: 3, pointBackgroundColor: '#059669', fill: true, tension: 0.3
+        });
+        datasets.push({
+          label: usedLest ? 'Lest Max (kg)' : 'Série Max (Reps)', data: usedLest ? dataMaxW : dataMaxR,
+          borderColor: '#f59e0b', backgroundColor: 'transparent', 
+          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
+        });
+      } 
+      else if (exType === 'km') {
+        datasets.push({
+          label: 'Distance (Somme)', data: dataSum,
+          borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', 
+          borderWidth: 3, pointBackgroundColor: '#7c3aed', fill: true, tension: 0.3
+        });
+        datasets.push({
+          label: 'Plus longue série (Max)', data: dataMaxW,
+          borderColor: '#f59e0b', backgroundColor: 'transparent', 
+          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
+        });
+      } 
+      else if (exType === 'durée' || exType === 'duree') {
+        datasets.push({
+          label: 'Temps (Somme)', data: dataSum,
+          borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.1)', 
+          borderWidth: 3, pointBackgroundColor: '#e11d48', fill: true, tension: 0.3
+        });
+        datasets.push({
+          label: 'Série la + rapide (Min)', data: dataMinW,
+          borderColor: '#0ea5e9', backgroundColor: 'transparent', 
+          borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#0284c7', fill: false, tension: 0.3
+        });
+      }
 
       const ctx = document.getElementById('progressionChart').getContext('2d');
       chartInstance = new Chart(ctx, {
         type: 'line',
-        data: {
-          labels: dates,
-          datasets: [{
-            label: labelTxt,
-            data: dataPoints,
-            borderColor: '#34d399', 
-            backgroundColor: 'rgba(52, 211, 153, 0.1)',
-            borderWidth: 3,
-            pointBackgroundColor: '#10b981',
-            pointBorderColor: '#fff',
-            pointRadius: 4,
-            fill: true,
-            tension: 0.3
-          }]
-        },
+        data: { labels: dates, datasets: datasets },
         options: {
           responsive: true, 
           maintainAspectRatio: false, 
           plugins: { 
             legend: { 
               display: true, 
-              labels: { color: '#94a3b8', font: { size: 11, weight: 'bold' } } 
+              labels: { color: '#cbd5e1', font: { size: 10, weight: 'bold' }, padding: 15 } 
             } 
           },
           scales: {
@@ -921,7 +968,6 @@
           const val2 = setLog.reps || ex.reps || '';
           const commentVal = setLog.comment || '';
 
-          // BOUTONS : UNIQUEMENT CRAYON POUR MODIFIER, PLUS DE SUPPRESSION
           const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -1059,7 +1105,6 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
-    // VALIDATION OU MISE À JOUR DE LA SÉRIE UNIQUEMENT
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
