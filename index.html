@@ -1,3 +1,802 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>FitApp Pro</title>
+  <meta name="theme-color" content="#020617">
+
+  <!-- PWA iOS Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FitApp Pro">
+
+  <!-- External Libraries (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- SDK Firebase (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+      user-select: none; 
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    ::-webkit-scrollbar { display: none; }
+    * { 
+      -ms-overflow-style: none;  
+      scrollbar-width: none;  
+    }
+
+    .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
+    .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+    .pt-safe { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    @keyframes toastIn { 
+      from { transform: translateY(-20px); opacity: 0; } 
+      to { transform: translateY(0); opacity: 1; } 
+    }
+    .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
+    @keyframes popIn { 
+      0% { transform: translateY(6px); opacity: 0; } 
+      100% { transform: translateY(0); opacity: 1; } 
+    }
+    .animate-pop { animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  </style>
+</head>
+<body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
+
+  <!-- ÉCRAN DE CHARGEMENT INITIAL -->
+  <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
+    <div class="w-12 h-12 rounded-xl border-2 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
+    <p class="text-sm text-slate-400 font-medium">Connexion sécurisée...</p>
+  </div>
+
+  <!-- ÉCRAN DE CONNEXION GOOGLE -->
+  <div id="login-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center hidden">
+    <div class="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center mb-6 shadow-2xl active-glow">
+      <svg viewBox="0 0 100 100" class="w-10 h-10"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
+    </div>
+    <h1 class="text-2xl font-black text-white tracking-wide uppercase">FITAPP PRO</h1>
+    <p class="text-sm text-slate-400 mt-2 max-w-xs leading-relaxed">Ton entraînement sur-mesure avec suivi en temps réel et réinitialisation hebdomadaire.</p>
+    
+    <button onclick="loginWithGoogle()" class="mt-8 w-full max-w-xs bg-slate-900 border border-slate-800 hover:border-slate-700 py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 font-bold text-sm text-white shadow-xl transition active:scale-95">
+      <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+      Se connecter avec Google
+    </button>
+  </div>
+
+  <!-- APPLICATION PRINCIPALE -->
+  <div id="app-screen" class="h-full flex flex-col hidden">
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
+
+    <!-- Modal Confirmation -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-pop">
+        <div class="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto text-red-400">
+          <i data-lucide="trash-2" class="w-7 h-7"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg text-white" id="confirm-modal-title">Retirer l'exercice ?</h3>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed" id="confirm-modal-desc">
+            Es-tu sûr de vouloir retirer cet exercice ? L'historique sera conservé.
+          </p>
+        </div>
+        <div class="flex gap-2.5 pt-2">
+          <button id="confirm-btn-cancel" onclick="closeConfirmModal()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition active:scale-95">
+            Annuler
+          </button>
+          <button id="confirm-btn-action" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-600/20 transition active:scale-95">
+            Retirer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Création / Modification -->
+    <div id="add-ex-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 id="ex-modal-title" class="font-bold text-base text-white flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice
+          </h3>
+          <button onclick="closeAddExModal()" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <form id="add-ex-form" onsubmit="saveNewExercise(event)" class="space-y-3">
+          <input type="hidden" id="edit-ex-id" value="">
+          <div>
+            <label class="text-xs font-bold text-slate-400 uppercase">Nom de l'exercice</label>
+            <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-400 uppercase">Séance</label>
+            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs font-bold text-slate-400 uppercase">Type</label>
+              <select id="new-ex-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+                <option value="Poids">Poids</option>
+                <option value="PdC">PdC (Poids du corps)</option>
+                <option value="Durée">Durée</option>
+                <option value="KM">Distance (KM)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-400 uppercase">Séries</label>
+              <input type="number" id="new-ex-sets" value="4" min="1" max="15" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs font-bold text-slate-400 uppercase">Objectif (Reps/Dist)</label>
+              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5km" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-400 uppercase">Repos (sec)</label>
+              <input type="number" id="new-ex-rest" value="60" min="0" step="5" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-2 pt-3">
+            <button type="button" onclick="closeAddExModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Renommer Séance -->
+    <div id="edit-session-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="font-bold text-base text-white flex items-center gap-2">
+            <i data-lucide="edit-3" class="w-5 h-5 text-blue-400"></i> Renommer la séance
+          </h3>
+          <button onclick="closeEditSessionModal()" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <form onsubmit="saveSessionName(event)" class="space-y-3">
+          <input type="hidden" id="old-session-name" value="">
+          <div>
+            <label class="text-xs font-bold text-slate-400 uppercase">Nouveau nom</label>
+            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+          </div>
+          <div class="flex justify-end space-x-2 pt-2">
+            <button type="button" onclick="closeEditSessionModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Mettre à jour</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Félicitations -->
+    <div id="congrats-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-sm w-full text-center space-y-5 shadow-2xl relative overflow-hidden animate-pop">
+        <div class="w-20 h-20 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
+          <i data-lucide="trophy" class="w-10 h-10"></i>
+        </div>
+        <div>
+          <h3 class="font-black text-2xl text-white uppercase tracking-wide" id="congrats-title">SÉANCE TERMINÉE ! 🎉</h3>
+          <p class="text-sm text-slate-300 mt-2 font-medium leading-relaxed" id="congrats-subtitle">Bien joué ! Tu as validé 100% de tes exercices aujourd'hui.</p>
+        </div>
+        <button id="congrats-main-btn" onclick="closeCongratsModal()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition active:scale-95">Continuer</button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 bg-slate-950 px-4 py-3 flex items-center justify-between pt-safe">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
+          <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base text-white leading-tight">FITAPP PRO</h1>
+          <span id="user-display-name" class="text-blue-400 text-xs font-bold block truncate max-w-[150px]">Chargement...</span>
+        </div>
+      </div>
+      <button onclick="logout()" class="p-2 rounded-xl bg-slate-900 text-slate-400 hover:text-red-400 hover:bg-slate-800 transition" title="Déconnexion">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+      </button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto px-4 pt-6 pb-20 relative" id="main-content">
+      
+      <!-- VUE 1 : ENTRAINEMENT -->
+      <div id="view-workout" class="space-y-5 block animate-pop">
+        <div>
+          <div class="flex items-center justify-between mb-2.5">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
+            <button onclick="openAddExModal()" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/30 transition active:scale-95">
+              <i data-lucide="plus" class="w-4 h-4"></i> Ajouter
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5" id="session-tabs"></div>
+        </div>
+
+        <!-- Minuteur -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="timer" class="w-5 h-5 text-blue-400"></i>
+              <h3 class="font-bold text-base text-white">Minuteur</h3>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <button onclick="setTimerPreset(45)" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">45s</button>
+              <button onclick="setTimerPreset(60)" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">60s</button>
+              <button onclick="setTimerPreset(90)" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">90s</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
+            <span id="timer-display" class="font-mono font-black text-2xl text-white tracking-wider">01:30</span>
+            <div class="flex items-center space-x-2">
+              <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition active:scale-90">
+                <i data-lucide="play" class="w-5 h-5"></i>
+              </button>
+              <button onclick="resetRestTimer()" class="w-11 h-11 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700 active:scale-90">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liste des exercices -->
+        <div class="space-y-3" id="exercise-container">
+          <div class="flex items-center justify-between py-2 border-b border-slate-800/50">
+            <div class="flex items-center space-x-2">
+              <span id="session-badge" class="w-3 h-3 rounded-full bg-slate-600"></span>
+              <h2 id="session-title" class="font-black text-xl text-white">Aucune séance</h2>
+            </div>
+            <button id="rename-session-btn" onclick="openEditSessionModal()" class="text-xs font-bold text-slate-400 hover:text-blue-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition hidden active:scale-95">
+              <i data-lucide="edit-2" class="w-4 h-4"></i> Renommer
+            </button>
+          </div>
+          <div id="exercise-list" class="space-y-4"></div>
+        </div>
+      </div>
+
+      <!-- VUE 2 : CALENDRIER -->
+      <div id="view-calendar" class="space-y-5 hidden animate-pop">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex justify-between items-center mb-4">
+            <button onclick="changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+            <h3 id="cal-month-year" class="font-bold text-base text-white uppercase tracking-wider">Mois</h3>
+            <button onclick="changeMonth(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+          </div>
+          
+          <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500 mb-2">
+            <div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div>
+          </div>
+          
+          <div id="cal-grid" class="grid grid-cols-7 gap-1.5"></div>
+        </div>
+
+        <div id="cal-day-details" class="space-y-3 mt-4">
+          <p class="text-xs text-center text-slate-500 mt-6">Sélectionne un jour pour voir ta séance</p>
+        </div>
+      </div>
+
+      <!-- VUE 3 : PROGRESSION -->
+      <div id="view-stats" class="space-y-5 hidden animate-pop">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Choisir un exercice</label>
+          
+          <div class="relative mb-4">
+            <select id="chart-exercise-select" onchange="renderChart()" class="w-full bg-slate-950 border border-slate-700 text-white text-base font-semibold rounded-xl pl-3.5 pr-10 py-3 outline-none focus:border-emerald-500 transition cursor-pointer">
+              <option value="">Sélectionnez...</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+              <i data-lucide="chevron-down" class="w-5 h-5"></i>
+            </div>
+          </div>
+          
+          <div class="relative h-80 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-1 flex items-center justify-center">
+            <canvas id="progressionChart"></canvas>
+            <p id="no-data-msg" class="absolute text-slate-500 text-sm font-semibold hidden">Pas de données validées</p>
+          </div>
+        </div>
+
+        <div id="stats-details" class="mt-5 space-y-3 hidden">
+          <div class="flex items-center gap-2 mb-2 pl-1">
+            <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+            <h3 class="text-xs font-black text-white uppercase tracking-wider">Top 3 Records (PR)</h3>
+          </div>
+          <div id="top-records-list" class="space-y-2"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 w-full bg-slate-900/95 backdrop-blur-md border-t border-slate-800/80 pb-safe z-40">
+      <div class="flex justify-around items-center py-1 px-2">
+        <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center py-1 text-blue-500 w-1/3 transition">
+          <i data-lucide="dumbbell" class="w-5 h-5 mb-0.5"></i>
+          <span class="text-[10px] font-bold">Séance</span>
+        </button>
+        <button onclick="switchView('calendar')" id="nav-calendar" class="flex flex-col items-center py-1 text-slate-500 hover:text-slate-300 w-1/3 transition">
+          <i data-lucide="calendar-days" class="w-5 h-5 mb-0.5"></i>
+          <span class="text-[10px] font-bold">Historique</span>
+        </button>
+        <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center py-1 text-slate-500 hover:text-slate-300 w-1/3 transition">
+          <i data-lucide="bar-chart-3" class="w-5 h-5 mb-0.5"></i>
+          <span class="text-[10px] font-bold">Stats</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {
+          const swCode = `
+            const CACHE_NAME = 'fitapp-v1';
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+          `;
+          const blob = new Blob([swCode], { type: 'application/javascript' });
+          navigator.serviceWorker.register(URL.createObjectURL(blob));
+        });
+      });
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmyDdWOiucYk6rdyO_E3v631401z6bdJw",
+      authDomain: "fitapp-pro-5bd6b.firebaseapp.com",
+      projectId: "fitapp-pro-5bd6b",
+      storageBucket: "fitapp-pro-5bd6b.firebasestorage.app",
+      messagingSenderId: "920616527918",
+      appId: "1:920616527918:web:2f6851a173bae8d7b357bf",
+      measurementId: "G-LHVP0Q81FS"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    db.enablePersistence().catch((err) => console.warn("Persistance Firestore non active:", err.code));
+
+    let currentUser = "", currentUserId = "";
+    let rawExercises = [], journalLogs = [], sessionsList = [];
+    let activeSessionIndex = null;
+    let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
+    let chartInstance = null;
+    let currentCalDate = new Date();
+    let pendingConfirmAction = null;
+    
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+    function cleanString(str) { return String(str || '').trim().toLowerCase(); }
+    
+    function sanitizeHTML(str) {
+      if(!str) return "";
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function parseDateToJJMMAAAA(val) {
+      if (!val) return "";
+      let s = String(val).trim();
+      if (s.includes('T')) s = s.split('T')[0];
+      if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
+        let p = s.split(' ')[0].split('-');
+        return `${String(p[2]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[0]}`;
+      }
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
+        let p = s.split(' ')[0].split('/');
+        return `${String(p[0]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[2]}`;
+      }
+      let d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+      }
+      return s.split(' ')[0].substring(0, 10);
+    }
+
+    auth.onAuthStateChanged((user) => {
+      const loader = document.getElementById('loading-screen');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.classList.add('hidden'), 300);
+      }
+
+      if (user) {
+        currentUser = user.displayName || user.email.split('@')[0];
+        currentUserId = user.uid;
+        document.getElementById('user-display-name').innerText = currentUser;
+        
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.remove('hidden');
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        initFirebaseListeners();
+      } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('app-screen').classList.add('hidden');
+      }
+    });
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(() => showToast("Erreur de connexion Google", "error"));
+    }
+
+    function logout() { 
+      pauseRestTimer();
+      auth.signOut(); 
+    }
+
+    function initFirebaseListeners() {
+      db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
+        rawExercises = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(ex => ex.archived !== true);
+          
+        syncSmartState();
+        buildProgramForCurrentUser();
+      }, (err) => console.error(err));
+
+      db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
+        journalLogs = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+        syncSmartState();
+        buildProgramForCurrentUser();
+        
+        if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
+        if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
+      }, (err) => console.error(err));
+    }
+
+    function openConfirmModal({ title, message, confirmText = "Retirer", onConfirm }) {
+      document.getElementById('confirm-modal-title').innerText = title;
+      document.getElementById('confirm-modal-desc').innerText = message;
+      
+      const actionBtn = document.getElementById('confirm-btn-action');
+      actionBtn.innerText = confirmText;
+      pendingConfirmAction = onConfirm;
+      
+      actionBtn.onclick = () => {
+        if (typeof pendingConfirmAction === 'function') pendingConfirmAction();
+        closeConfirmModal();
+      };
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      document.getElementById('confirm-modal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirm-modal').classList.add('hidden');
+      pendingConfirmAction = null;
+    }
+
+    function openAddExModal(ex = null) {
+      const titleEl = document.getElementById('ex-modal-title');
+      const editIdEl = document.getElementById('edit-ex-id');
+      
+      if (ex) {
+        titleEl.innerHTML = `<i data-lucide="edit" class="w-5 h-5 text-blue-400"></i> Modifier l'exercice`;
+        editIdEl.value = ex.id;
+        document.getElementById('new-ex-name').value = ex.name || '';
+        document.getElementById('new-ex-session').value = ex.seance || '';
+        document.getElementById('new-ex-type').value = ex.type || 'Poids';
+        document.getElementById('new-ex-sets').value = ex.sets || 4;
+        document.getElementById('new-ex-reps').value = ex.reps || '';
+        document.getElementById('new-ex-rest').value = ex.restSec || 60;
+      } else {
+        titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice`;
+        editIdEl.value = "";
+        document.getElementById('add-ex-form').reset();
+        if (activeSessionIndex !== null && sessionsList[activeSessionIndex]) {
+          document.getElementById('new-ex-session').value = sessionsList[activeSessionIndex].title;
+        }
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      document.getElementById('add-ex-modal').classList.remove('hidden');
+    }
+
+    function closeAddExModal() { 
+      document.getElementById('add-ex-modal').classList.add('hidden'); 
+      document.getElementById('add-ex-form').reset();
+    }
+
+    function saveNewExercise(e) {
+      e.preventDefault();
+      const editId = document.getElementById('edit-ex-id').value;
+      const name = document.getElementById('new-ex-name').value.trim();
+      const seance = document.getElementById('new-ex-session').value.trim();
+      const type = document.getElementById('new-ex-type').value;
+      const sets = parseInt(document.getElementById('new-ex-sets').value) || 4;
+      const reps = document.getElementById('new-ex-reps').value.trim();
+      const restSec = parseInt(document.getElementById('new-ex-rest').value) || 0;
+
+      const docId = editId ? editId : `EX_${Date.now()}`;
+
+      db.collection("exercises").doc(docId).set({
+        id: docId,
+        userId: currentUserId,
+        user: currentUser,
+        name: name,
+        seance: seance,
+        type: type,
+        sets: sets,
+        reps: reps,
+        restSec: restSec,
+        archived: false,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).then(() => {
+        showToast(editId ? "Exercice mis à jour !" : "Exercice créé !", "success");
+        closeAddExModal();
+        syncSmartState();
+        buildProgramForCurrentUser();
+      }).catch(() => showToast("Erreur lors de la sauvegarde", "error"));
+    }
+
+    function archiveExercise(exId, exName) {
+      openConfirmModal({
+        title: "Retirer l'exercice ?",
+        message: `Es-tu sûr de vouloir retirer "${exName}" ? L'historique sera conservé.`,
+        confirmText: "Supprimer",
+        onConfirm: () => {
+          db.collection("exercises").doc(exId).update({
+            archived: true,
+            archivedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).then(() => {
+            safeRemoveItem(`fitapp_log_${currentUserId}_${exId}`);
+            rawExercises = rawExercises.filter(ex => ex.id !== exId);
+            syncSmartState();
+            buildProgramForCurrentUser();
+            showToast(`"${exName}" retiré.`, "success");
+          }).catch(() => showToast("Erreur d'archivage", "error"));
+        }
+      });
+    }
+
+    function openEditSessionModal() {
+      if (activeSessionIndex === null || !sessionsList[activeSessionIndex]) return;
+      const currentTitle = sessionsList[activeSessionIndex].title;
+      document.getElementById('old-session-name').value = currentTitle;
+      document.getElementById('new-session-title').value = currentTitle;
+      document.getElementById('edit-session-modal').classList.remove('hidden');
+    }
+
+    function closeEditSessionModal() {
+      document.getElementById('edit-session-modal').classList.add('hidden');
+    }
+
+    function saveSessionName(e) {
+      e.preventDefault();
+      const oldTitle = document.getElementById('old-session-name').value;
+      const newTitle = document.getElementById('new-session-title').value.trim();
+
+      if (!newTitle || oldTitle === newTitle) {
+        closeEditSessionModal();
+        return;
+      }
+
+      const batch = db.batch();
+      rawExercises.filter(ex => ex.seance === oldTitle).forEach(ex => {
+        batch.update(db.collection("exercises").doc(ex.id), { seance: newTitle });
+      });
+
+      batch.commit().then(() => {
+        rawExercises.forEach(ex => {
+          if (ex.seance === oldTitle) ex.seance = newTitle;
+        });
+        showToast(`Séance renommée en "${newTitle}"`, "success");
+        closeEditSessionModal();
+        syncSmartState();
+        buildProgramForCurrentUser();
+      }).catch(() => showToast("Erreur de renommage", "error"));
+    }
+
+    function showToast(msg, type="info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const color = type === "error" ? "bg-red-600 border-red-500" : type === "success" ? "bg-emerald-600 border-emerald-500" : "bg-slate-800 border-slate-700";
+      toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast pointer-events-auto`;
+      toast.innerHTML = `<span>${sanitizeHTML(msg)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+
+    function switchView(view) {
+      ['workout', 'calendar', 'stats'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        document.getElementById(`nav-${v}`).className = "flex flex-col items-center py-1 text-slate-500 hover:text-slate-300 w-1/3 transition";
+      });
+
+      document.getElementById(`view-${view}`).classList.remove('hidden');
+      const activeColor = view === 'workout' ? "text-blue-500" : view === 'calendar' ? "text-indigo-500" : "text-emerald-500";
+      document.getElementById(`nav-${view}`).className = `flex flex-col items-center py-1 w-1/3 transition ${activeColor}`;
+
+      if (view === 'calendar') {
+        currentCalDate = new Date();
+        renderCalendar();
+        showDayDetails(parseDateToJJMMAAAA(new Date()));
+      } else if (view === 'stats') {
+        populateChartDropdown();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function changeMonth(dir) {
+      currentCalDate.setMonth(currentCalDate.getMonth() + dir);
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      document.getElementById('cal-month-year').innerText = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const startDay = firstDay === 0 ? 6 : firstDay - 1;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const workoutDates = {};
+      journalLogs.forEach(log => {
+        const dPart = parseDateToJJMMAAAA(log.date);
+        if(dPart) {
+          if(!workoutDates[dPart]) workoutDates[dPart] = [];
+          workoutDates[dPart].push(log);
+        }
+      });
+
+      let html = '';
+      for(let i=0; i<startDay; i++) html += `<div class="aspect-square"></div>`;
+
+      const todayStr = parseDateToJJMMAAAA(new Date());
+
+      for(let d=1; d<=daysInMonth; d++) {
+        const dateStr = String(d).padStart(2, '0') + '/' + String(month + 1).padStart(2, '0') + '/' + year;
+        const hasWorkout = !!workoutDates[dateStr];
+        const isToday = (dateStr === todayStr);
+
+        let colorClass = "text-slate-400 hover:bg-slate-800 bg-slate-950/50 border border-transparent";
+        if(hasWorkout) colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
+        if(isToday) colorClass += " ring-2 ring-indigo-500 border-indigo-500 text-white font-extrabold";
+
+        html += `<div onclick="showDayDetails('${dateStr}')" class="aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition cursor-pointer active:scale-90 ${colorClass}">${d}</div>`;
+      }
+      document.getElementById('cal-grid').innerHTML = html;
+    }
+
+    function showDayDetails(dateStr) {
+      const dayLogs = journalLogs.filter(log => parseDateToJJMMAAAA(log.date) === dateStr);
+      const container = document.getElementById('cal-day-details');
+
+      if(dayLogs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-center text-slate-500 mt-4">Repos 😴 Aucune séance enregistrée le ${dateStr}.</p>`;
+        return;
+      }
+
+      const exGroups = {};
+      dayLogs.forEach(log => {
+        if(!exGroups[log.exercise]) exGroups[log.exercise] = [];
+        exGroups[log.exercise].push(log);
+      });
+
+      let html = `<h4 class="font-bold text-base text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
+
+      for(const [exName, logs] of Object.entries(exGroups)) {
+        html += `<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md mb-2">
+            <h5 class="text-sm font-black text-indigo-400 mb-2">${sanitizeHTML(exName)}</h5>
+            <div class="space-y-1.5">`;
+        
+        logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0)).forEach((log) => {
+          const v1 = log.weight ? sanitizeHTML(log.weight) : '-';
+          const v2 = log.reps ? sanitizeHTML(log.reps) : '-';
+          const timeLabel = log.time ? `Validé à ${sanitizeHTML(log.time)}` : `Série ${log.set || '?'}`;
+          const note = log.comment ? `<span class="text-slate-500 text-xs ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
+          
+          html += `<div class="text-xs text-slate-300 flex items-center justify-between bg-slate-950 px-2.5 py-2 rounded border border-slate-800/80">
+              <span class="font-bold text-slate-400">${timeLabel} (Série ${log.set || '?'})</span>
+              <span class="font-mono text-white text-xs">${v1} / ${v2} ${note}</span>
+            </div>`;
+        });
+        html += `</div></div>`;
+      }
+      container.innerHTML = html;
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+    function safeGetItem(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function safeRemoveItem(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
+    function syncSmartState() {
+      const now = new Date();
+      const day = now.getDay() || 7; 
+      const monday = new Date(now);
+      monday.setHours(0,0,0,0);
+      monday.setDate(now.getDate() - day + 1);
+
+      rawExercises.forEach(ex => {
+        const logsEx = journalLogs.filter(l => l.exerciseId === ex.id || (cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance)));
+        const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
+        const totalSets = isCardio ? 1 : (ex.sets || 4);
+
+        const logsThisWeek = logsEx.filter(l => {
+          const safeDate = parseDateToJJMMAAAA(l.date);
+          if (!safeDate || !safeDate.includes('/')) return false;
+          const p = safeDate.split('/');
+          return new Date(p[2], p[1]-1, p[0]) >= monday;
+        });
+
+        let saved = { sets: {} };
+
+        for(let i = 0; i < totalSets; i++) {
+          let setDone = false, weight = "", reps = "", comment = "", firestoreId = null;
+          const logForSet = logsThisWeek.find(l => Number(l.set) === (i + 1));
+
+          if (logForSet) {
+            setDone = true;
+            weight = logForSet.weight;
+            reps = logForSet.reps;
+            comment = logForSet.comment;
+            firestoreId = logForSet.firestoreId;
+          } else {
+            const lastLogForSet = logsEx.find(l => Number(l.set) === (i + 1));
+            if (lastLogForSet) {
+              weight = lastLogForSet.weight || "";
+              reps = lastLogForSet.reps || "";
+            }
+          }
+          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId };
+        }
+        safeSetItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
+      });
+    }
+
+    function populateChartDropdown() {
+      const select = document.getElementById('chart-exercise-select');
+      const historyEx = journalLogs.map(log => log.exercise);
+      const uniqueDoneEx = [...new Set(historyEx)].sort();
+      
+      if (uniqueDoneEx.length === 0) {
+        select.innerHTML = '<option value="">Aucun exercice validé...</option>';
+        if(chartInstance) chartInstance.destroy();
+        document.getElementById('no-data-msg').classList.remove('hidden');
+        document.getElementById('stats-details').classList.add('hidden');
+        return;
+      }
+
+      select.innerHTML = uniqueDoneEx.map(ex => `<option value="${sanitizeHTML(ex)}">${sanitizeHTML(ex)}</option>`).join('');
+      
+      const lastLog = journalLogs.reduce((latest, current) => {
+         const dLatest = parseDateToJJMMAAAA(latest.date).split('/').reverse().join('');
+         const dCurrent = parseDateToJJMMAAAA(current.date).split('/').reverse().join('');
+         return dCurrent >= dLatest ? current : latest;
+      }, journalLogs[0]);
+
+      if (lastLog && lastLog.exercise) {
+        select.value = sanitizeHTML(lastLog.exercise);
+      } else {
+        select.value = sanitizeHTML(uniqueDoneEx[0]);
+      }
+
+      renderChart();
+    }
+
     function renderChart() {
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
@@ -145,7 +944,7 @@
             legend: { 
               display: true, 
               position: 'top',
-              align: 'end',
+              align: 'center',
               labels: { 
                 color: '#94a3b8',
                 font: { size: 10, family: "'Inter', sans-serif", weight: '600' },
@@ -175,14 +974,14 @@
               display: true, 
               position: 'left', 
               ticks: { color: '#3b82f6', font: { size: 10, weight: '600' } }, 
-              grid: { display: false } // Desactive le quadrillage principal
+              grid: { display: false } 
             },
             y1: { 
               type: 'linear', 
               display: datasets.length > 1, 
               position: 'right', 
               ticks: { color: '#f59e0b', font: { size: 10, weight: '600' } }, 
-              grid: { display: false } // Desactive le quadrillage secondaire
+              grid: { display: false } 
             }
           }
         }
@@ -207,3 +1006,262 @@
       }).join('');
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
+
+    function buildProgramForCurrentUser() {
+      const grouped = {};
+      rawExercises.forEach(ex => {
+        if (!grouped[ex.seance]) grouped[ex.seance] = [];
+        grouped[ex.seance].push(ex);
+      });
+      sessionsList = Object.keys(grouped).map((seName, idx) => ({ id: "s" + idx, title: seName, exercises: grouped[seName] }));
+      
+      let nextSessionIdx = 0;
+      for (let i = 0; i < sessionsList.length; i++) {
+        if (calculateSessionProgress(sessionsList[i]) < 100) { nextSessionIdx = i; break; }
+      }
+
+      renderTabs();
+      
+      if (sessionsList.length > 0) {
+        let targetIdx = (activeSessionIndex !== null && activeSessionIndex < sessionsList.length) ? activeSessionIndex : nextSessionIdx;
+        switchSession(targetIdx);
+        document.getElementById('rename-session-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('session-title').innerText = "Aucun exercice";
+        document.getElementById('exercise-list').innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Clique sur "+ Ajouter" pour créer tes premiers exercices !</p>';
+        document.getElementById('rename-session-btn').classList.add('hidden');
+      }
+    }
+
+    function calculateSessionProgress(session) {
+      let totalSets = 0, doneSets = 0;
+      session.exercises.forEach(ex => {
+        const isCardio = (ex.type || "").toLowerCase().includes("dur") || (ex.type || "").toLowerCase().includes("km");
+        const setsCount = isCardio ? 1 : ex.sets;
+        totalSets += setsCount;
+        
+        const saved = getSavedLogs(ex.id);
+        if (saved.sets) {
+          for (let s = 0; s < setsCount; s++) {
+            if (saved.sets[s]?.done) doneSets++;
+          }
+        }
+      });
+      return totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+    }
+
+    function renderTabs() {
+      const container = document.getElementById('session-tabs');
+      container.innerHTML = sessionsList.map((s, idx) => {
+        const pct = calculateSessionProgress(s);
+        let badgeColor = pct === 100 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" : pct > 0 ? "bg-blue-500/20 text-blue-400 border-blue-500/40" : "bg-slate-800 text-slate-400 border-slate-700";
+
+        return `<button onclick="switchSession(${idx})" class="text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'} active:scale-95">
+            <div class="font-bold text-sm text-white truncate mb-2 w-full">${sanitizeHTML(s.title)}</div>
+            <div class="flex items-center justify-between w-full">
+              <span class="text-xs px-2 py-0.5 rounded-md border font-bold ${badgeColor}">${pct}%</span>
+              ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>' : ''}
+            </div>
+          </button>`;
+      }).join('');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function switchSession(idx) {
+      activeSessionIndex = idx;
+      renderTabs();
+      loadSession(idx);
+    }
+
+    function loadSession(idx) {
+      const session = sessionsList[idx];
+      if (!session) return;
+      document.getElementById('session-title').innerText = session.title;
+      const container = document.getElementById('exercise-list');
+      
+      let html = '';
+      session.exercises.forEach((ex) => {
+        const savedData = getSavedLogs(ex.id);
+        const safeName = sanitizeHTML(ex.name);
+        const safeExJson = JSON.stringify(ex).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+        
+        const exType = (ex.type || "Poids").trim().toLowerCase();
+        let head1 = "Poids", head2 = "Reps", ph1 = "kg", ph2 = "reps", isCardio = false;
+
+        if (exType === "durée" || exType === "duree") {
+          head1 = "Temps"; ph1 = "ex: 30s"; head2 = "Dist."; ph2 = "km/m"; isCardio = true;
+        } else if (exType === "km") {
+          head1 = "Dist."; ph1 = "ex: 5km"; head2 = "Temps"; ph2 = "ex: 20m"; isCardio = true;
+        } else if (exType === "pdc") {
+          head1 = "Lest"; ph1 = "+kg"; head2 = "Reps"; ph2 = "reps";
+        }
+
+        const totalSets = isCardio ? 1 : ex.sets;
+        let setsHtml = '';
+        for (let setIdx = 0; setIdx < totalSets; setIdx++) {
+          const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
+          const isDone = (setLog.done === true);
+          const disabledAttr = isDone ? 'disabled' : '';
+          const disClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700 focus:border-blue-500';
+          
+          const val1 = sanitizeHTML(setLog.weight || '');
+          const val2 = sanitizeHTML(setLog.reps || ex.reps || '');
+          const commentVal = sanitizeHTML(setLog.comment || '');
+
+          const actionButtons = isDone ? `
+            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>` : `
+            <button onclick="validateSet('${ex.id}', '${safeName.replace(/'/g, "\\'")}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition mx-auto hover:bg-slate-700">✓</button>`;
+
+          setsHtml += `<div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-2 rounded-xl border border-slate-800 text-center">
+              <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
+              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-xs rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2 flex items-center justify-center space-x-1">${actionButtons}</div>
+            </div>`;
+        }
+
+        html += `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md relative">
+            <div class="flex justify-between items-start">
+              <h3 class="font-black text-lg text-white pr-16 leading-tight">${safeName}</h3>
+              <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
+                <button onclick='openAddExModal(${safeExJson})' class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 transition" title="Modifier"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button onclick="archiveExercise('${ex.id}', '${safeName.replace(/'/g, "\\'")}')" class="p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 transition" title="Supprimer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              </div>
+            </div>
+            <p class="text-xs text-blue-400 font-medium">${isCardio ? 'Objectif: ' + sanitizeHTML(ex.reps) : ex.sets + ' séries'}${ex.restSec > 0 ? ' • Pause: ' + ex.restSec + 's' : ''}</p>
+            <div class="space-y-2 pt-1">
+              <div class="grid grid-cols-12 gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
+                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Act.</span>
+              </div>
+              ${setsHtml}
+            </div>
+          </div>`;
+      });
+      container.innerHTML = html;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function unlockSet(exId, setIdx) {
+      const saved = getSavedLogs(exId);
+      if (saved.sets && saved.sets[setIdx]) {
+        saved.sets[setIdx].done = false;
+        saved.sets[setIdx].isEditing = true;
+        safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+        loadSession(activeSessionIndex);
+        renderTabs();
+        showToast("Série déverrouillée.");
+      }
+    }
+
+    function getSavedLogs(exId) {
+      const data = safeGetItem(`fitapp_log_${currentUserId}_${exId}`);
+      return data ? JSON.parse(data) : {};
+    }
+
+    function checkCongratsModal(isEdit = false) {
+      if (isEdit) return;
+      const currentSession = sessionsList[activeSessionIndex];
+      if (calculateSessionProgress(currentSession) === 100) {
+        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+        document.getElementById('congrats-modal').classList.remove('hidden');
+      }
+    }
+
+    function closeCongratsModal() {
+      document.getElementById('congrats-modal').classList.add('hidden');
+    }
+
+    function validateSet(exId, exName, setIdx, restSec) {
+      const saved = getSavedLogs(exId);
+      if (!saved.sets) saved.sets = {};
+      
+      const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
+      const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
+      const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
+      
+      const isEditMode = saved.sets[setIdx]?.isEditing === true;
+      const today = new Date();
+      const dateStr = parseDateToJJMMAAAA(today);
+      const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+
+      let firestoreId = saved.sets[setIdx]?.firestoreId;
+      let docRef = firestoreId ? db.collection("journal").doc(firestoreId) : db.collection("journal").doc();
+      firestoreId = docRef.id;
+
+      saved.sets[setIdx] = { 
+        weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : "", 
+        done: true, isEditing: false, firestoreId: firestoreId
+      };
+      
+      safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+      showToast("Enregistré !", "success");
+      
+      docRef.set({
+        userId: currentUserId, date: dateStr, time: timeStr, user: currentUser,
+        session: sessionsList[activeSessionIndex].title, exercise: exName, exerciseId: exId,
+        set: setIdx + 1, weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : "",
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).catch(() => showToast("Série sauvegardée en local", "error"));
+      
+      if (restSec > 0 && !isEditMode) { setTimerPreset(restSec); startRestTimer(); }
+
+      renderTabs();
+      loadSession(activeSessionIndex);
+      checkCongratsModal(isEditMode);
+    }
+
+    function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
+    
+    function updateTimerDisplay() {
+      const mins = Math.floor(restTimeRemaining / 60);
+      const secs = restTimeRemaining % 60;
+      document.getElementById('timer-display').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    
+    function toggleRestTimer() { isRestTimerRunning ? pauseRestTimer() : startRestTimer(); }
+    
+    function startRestTimer() {
+      if (isRestTimerRunning) clearInterval(restTimerInterval);
+      isRestTimerRunning = true;
+      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>'; 
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      
+      restTimerInterval = setInterval(() => {
+        if (restTimeRemaining > 0) { 
+          restTimeRemaining--; 
+          updateTimerDisplay(); 
+        } else { 
+          pauseRestTimer(); 
+          if(typeof navigator.vibrate === "function") navigator.vibrate([200, 100, 200]);
+        }
+      }, 1000);
+    }
+    
+    function pauseRestTimer() { 
+      isRestTimerRunning = false; 
+      clearInterval(restTimerInterval); 
+      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; 
+      if (typeof lucide !== 'undefined') lucide.createIcons(); 
+    }
+    
+    function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
+
+    // Gestes Swipe
+    let touchStartX = 0, touchEndX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+    document.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      const deltaX = touchEndX - touchStartX;
+      if (Math.abs(deltaX) > 60) {
+        const views = ['workout', 'calendar', 'stats'];
+        let idx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
+        if (deltaX < 0 && idx < views.length - 1) switchView(views[idx + 1]);
+        if (deltaX > 0 && idx > 0) switchView(views[idx - 1]);
+      }
+    }, { passive: true });
+  </script>
+</body>
+</html>
