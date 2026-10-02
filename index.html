@@ -2,13 +2,20 @@
 <html lang="fr" class="dark h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Viewport optimisé pour PWA, empêche le zoom intempestif et gère les encoches (Notch) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>FitApp Pro</title>
   <meta name="theme-color" content="#0f172a">
+
+  <!-- PWA iOS Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FitApp Pro">
 
   <!-- Manifest PWA -->
   <link rel="manifest" href="manifest.json">
 
+  <!-- Librairies externes (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -21,10 +28,24 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-    body { font-family: 'Inter', sans-serif; user-select: none; }
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+      user-select: none; 
+      -webkit-tap-highlight-color: transparent; /* Supprime le flash bleu sur mobile */
+    }
+    
+    /* Scrollbar personnalisée multi-navigateurs */
     ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; } /* Firefox */
+
+    /* Utilitaires CSS */
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
+    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); } /* Sécurité iPhone */
+    
+    /* Animations */
     @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -34,9 +55,9 @@
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
 
   <!-- ÉCRAN DE CHARGEMENT INITIAL -->
-  <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center">
+  <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
     <div class="w-12 h-12 rounded-xl border-2 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
-    <p class="text-xs text-slate-400 font-medium">Vérification de la session...</p>
+    <p class="text-xs text-slate-400 font-medium">Connexion sécurisée...</p>
   </div>
 
   <!-- ÉCRAN DE CONNEXION GOOGLE -->
@@ -55,35 +76,35 @@
 
   <!-- APPLICATION PRINCIPALE -->
   <div id="app-screen" class="h-full flex flex-col hidden">
-    <!-- Toasts -->
-    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
+    <!-- Toasts (Notifications) -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
     <!-- Modal Création / Modification d'Exercice -->
-    <div id="add-ex-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div id="add-ex-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 id="ex-modal-title" class="font-bold text-base text-white flex items-center gap-2">
             <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice
           </h3>
-          <button onclick="closeAddExModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+          <button onclick="closeAddExModal()" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
 
         <form id="add-ex-form" onsubmit="saveNewExercise(event)" class="space-y-3">
           <input type="hidden" id="edit-ex-id" value="">
           <div>
             <label class="text-[11px] font-bold text-slate-400 uppercase">Nom de l'exercice</label>
-            <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+            <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
           </div>
 
           <div>
             <label class="text-[11px] font-bold text-slate-400 uppercase">Séance</label>
-            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-[11px] font-bold text-slate-400 uppercase">Type</label>
-              <select id="new-ex-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+              <select id="new-ex-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
                 <option value="Poids">Poids</option>
                 <option value="PdC">PdC (Poids du corps)</option>
                 <option value="Durée">Durée</option>
@@ -92,24 +113,24 @@
             </div>
             <div>
               <label class="text-[11px] font-bold text-slate-400 uppercase">Séries</label>
-              <input type="number" id="new-ex-sets" value="4" min="1" max="10" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+              <input type="number" id="new-ex-sets" value="4" min="1" max="15" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[11px] font-bold text-slate-400 uppercase">Objectif (Reps / Dist)</label>
-              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5000m" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+              <label class="text-[11px] font-bold text-slate-400 uppercase">Objectif (Reps/Dist)</label>
+              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5000m" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
             <div>
               <label class="text-[11px] font-bold text-slate-400 uppercase">Repos (sec)</label>
-              <input type="number" id="new-ex-rest" value="60" min="0" step="5" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+              <input type="number" id="new-ex-rest" value="60" min="0" step="5" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
           </div>
 
           <div class="flex justify-end space-x-2 pt-3">
-            <button type="button" onclick="closeAddExModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Annuler</button>
-            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg">Enregistrer</button>
+            <button type="button" onclick="closeAddExModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
+            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Enregistrer</button>
           </div>
         </form>
       </div>
@@ -122,18 +143,18 @@
           <h3 class="font-bold text-base text-white flex items-center gap-2">
             <i data-lucide="edit-3" class="w-5 h-5 text-blue-400"></i> Renommer la séance
           </h3>
-          <button onclick="closeEditSessionModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+          <button onclick="closeEditSessionModal()" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
 
         <form onsubmit="saveSessionName(event)" class="space-y-3">
           <input type="hidden" id="old-session-name" value="">
           <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase">Nouveau nom de la séance</label>
-            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+            <label class="text-[11px] font-bold text-slate-400 uppercase">Nouveau nom</label>
+            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
           </div>
           <div class="flex justify-end space-x-2 pt-2">
-            <button type="button" onclick="closeEditSessionModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Annuler</button>
-            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg">Mettre à jour</button>
+            <button type="button" onclick="closeEditSessionModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
+            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Mettre à jour</button>
           </div>
         </form>
       </div>
@@ -149,19 +170,19 @@
           <h3 class="font-black text-2xl text-white uppercase tracking-wide" id="congrats-title">SÉANCE TERMINÉE ! 🎉</h3>
           <p class="text-sm text-slate-300 mt-2 font-medium leading-relaxed" id="congrats-subtitle">Bien joué ! Tu as validé 100% de tes exercices aujourd'hui.</p>
         </div>
-        <button id="congrats-main-btn" onclick="closeCongratsModal()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition">Continuer</button>
+        <button id="congrats-main-btn" onclick="closeCongratsModal()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition active:scale-95">Continuer</button>
       </div>
     </div>
 
     <!-- Header -->
-    <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
+    <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md pt-safe">
       <div class="flex items-center space-x-2.5">
         <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
           <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
         </div>
         <div>
-          <h1 class="font-extrabold text-sm text-white">FITAPP PRO</h1>
-          <span id="user-display-name" class="text-blue-400 text-[11px] font-bold block">Chargement...</span>
+          <h1 class="font-extrabold text-sm text-white leading-tight">FITAPP PRO</h1>
+          <span id="user-display-name" class="text-blue-400 text-[11px] font-bold block truncate max-w-[150px]">Chargement...</span>
         </div>
       </div>
       <button onclick="logout()" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Déconnexion">
@@ -169,20 +190,21 @@
       </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24 relative" id="main-content">
+    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-28 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
-      <div id="view-workout" class="space-y-5 block">
+      <div id="view-workout" class="space-y-5 block animate-pop">
         <section>
           <div class="flex items-center justify-between mb-2">
             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
-            <button onclick="openAddExModal()" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/30">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ajouter exercice
+            <button onclick="openAddExModal()" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/30 transition active:scale-95">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ajouter
             </button>
           </div>
           <div class="grid grid-cols-2 gap-2" id="session-tabs"></div>
         </section>
 
+        <!-- Minuteur -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center space-x-2">
@@ -190,28 +212,33 @@
               <h3 class="font-bold text-sm text-white">Minuteur</h3>
             </div>
             <div class="flex items-center space-x-1">
-              <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">45s</button>
-              <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">60s</button>
-              <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">90s</button>
+              <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">45s</button>
+              <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">60s</button>
+              <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">90s</button>
             </div>
           </div>
           <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
-            <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
+            <span id="timer-display" class="font-mono font-black text-xl text-white tracking-wider">01:30</span>
             <div class="flex items-center space-x-2">
-              <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition"><i data-lucide="play" class="w-5 h-5"></i></button>
-              <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+              <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition active:scale-90">
+                <i data-lucide="play" class="w-5 h-5"></i>
+              </button>
+              <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700 active:scale-90">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
             </div>
           </div>
         </section>
 
+        <!-- Liste des exercices -->
         <section class="space-y-3" id="exercise-container">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between sticky top-[60px] bg-slate-950/95 backdrop-blur z-20 py-2 border-b border-slate-800/50">
             <div class="flex items-center space-x-2">
               <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
               <h2 id="session-title" class="font-black text-lg text-white">Aucune séance</h2>
             </div>
-            <button id="rename-session-btn" onclick="openEditSessionModal()" class="text-xs font-bold text-slate-400 hover:text-blue-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg transition hidden">
-              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Renommer séance
+            <button id="rename-session-btn" onclick="openEditSessionModal()" class="text-xs font-bold text-slate-400 hover:text-blue-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-lg transition hidden active:scale-95">
+              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Renommer
             </button>
           </div>
           <div id="exercise-list" class="space-y-4"></div>
@@ -219,7 +246,7 @@
       </div>
 
       <!-- VUE 2 : CALENDRIER -->
-      <div id="view-calendar" class="space-y-5 hidden">
+      <div id="view-calendar" class="space-y-5 hidden animate-pop">
         <section>
           <div class="flex items-center space-x-2 mb-4">
             <i data-lucide="calendar-check" class="w-5 h-5 text-indigo-400"></i>
@@ -228,9 +255,9 @@
           
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
             <div class="flex justify-between items-center mb-4">
-              <button onclick="changeMonth(-1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+              <button onclick="changeMonth(-1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
               <h3 id="cal-month-year" class="font-bold text-sm text-white uppercase tracking-wider">Mois</h3>
-              <button onclick="changeMonth(1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+              <button onclick="changeMonth(1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
             </div>
             
             <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 mb-2">
@@ -247,7 +274,7 @@
       </div>
 
       <!-- VUE 3 : PROGRESSION -->
-      <div id="view-stats" class="space-y-5 hidden">
+      <div id="view-stats" class="space-y-5 hidden animate-pop">
         <section>
           <div class="flex items-center space-x-2 mb-4">
             <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
@@ -260,7 +287,7 @@
               <option value="">Sélectionnez...</option>
             </select>
             
-            <div class="relative h-64 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-2 flex items-center justify-center">
+            <div class="relative h-72 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-2 flex items-center justify-center">
               <canvas id="progressionChart"></canvas>
               <p id="no-data-msg" class="absolute text-slate-500 text-xs font-semibold hidden">Pas de données validées</p>
             </div>
@@ -269,7 +296,7 @@
       </div>
     </main>
 
-    <!-- NAVIGATION BAS -->
+    <!-- NAVIGATION BAS (Fixé et compatible Safe Area iOS) -->
     <nav class="fixed bottom-0 w-full bg-slate-900 border-t border-slate-800 pb-safe z-40">
       <div class="flex justify-around items-center p-2">
         <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center p-2 text-blue-500 w-1/3 transition">
@@ -289,14 +316,15 @@
   </div>
 
   <script>
+    // Enregistrement PWA Service Worker (Sécurisé)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker enregistré !', reg))
-          .catch(err => console.error('Erreur Service Worker:', err));
+          .catch(err => console.warn('PWA non active (fichier sw.js introuvable ou erreur) :', err));
       });
     }
 
+    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDmyDdWOiucYk6rdyO_E3v631401z6bdJw",
       authDomain: "fitapp-pro-5bd6b.firebaseapp.com",
@@ -307,25 +335,38 @@
       measurementId: "G-LHVP0Q81FS"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    // Initialisation Firebase (évite le crash en hot-reload)
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
     const auth = firebase.auth();
-    db.enablePersistence().catch(() => {});
+    
+    // Activer la persistance hors-ligne (robuste)
+    db.enablePersistence().catch((err) => {
+      console.warn("Persistance Firestore non activée:", err.code);
+    });
 
+    // Variables globales
     let currentUser = "";
     let currentUserId = "";
     let rawExercises = [];
     let journalLogs = [];
-
     let sessionsList = [];
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
-
     let currentCalDate = new Date();
+    
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
+    // Utilitaires de nettoyage et parsing
     function cleanString(str) { return String(str || '').trim().toLowerCase(); }
+    
+    function sanitizeHTML(str) {
+      if(!str) return "";
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
 
     function parseDateToJJMMAAAA(val) {
       if (!val) return "";
@@ -346,9 +387,13 @@
       return s.split(' ')[0].substring(0, 10);
     }
 
+    // Gestion Authentification
     auth.onAuthStateChanged((user) => {
       const loader = document.getElementById('loading-screen');
-      if (loader) loader.classList.add('hidden');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.classList.add('hidden'), 300);
+      }
 
       if (user) {
         currentUser = user.displayName || user.email.split('@')[0];
@@ -368,13 +413,19 @@
 
     function loginWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(() => {
+      auth.signInWithPopup(provider).catch((error) => {
         showToast("Erreur de connexion Google", "error");
+        console.error(error);
       });
     }
 
-    function logout() { auth.signOut(); }
+    function logout() { 
+      // Stop timers to prevent memory leaks
+      clearInterval(restTimerInterval); 
+      auth.signOut(); 
+    }
 
+    // Écouteurs Firestore
     function initFirebaseListeners() {
       db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         rawExercises = snapshot.docs
@@ -383,7 +434,7 @@
           
         syncSmartState();
         buildProgramForCurrentUser();
-      });
+      }, (error) => console.error("Erreur Exercises Listener:", error));
 
       db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         journalLogs = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
@@ -392,9 +443,10 @@
         
         if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
         if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
-      });
+      }, (error) => console.error("Erreur Journal Listener:", error));
     }
 
+    // Logique Exercices & Modals
     function openAddExModal(ex = null) {
       const titleEl = document.getElementById('ex-modal-title');
       const editIdEl = document.getElementById('edit-ex-id');
@@ -453,19 +505,23 @@
       }, { merge: true }).then(() => {
         showToast(editId ? "Exercice mis à jour !" : "Exercice créé avec succès !", "success");
         closeAddExModal();
-      }).catch(() => {
+      }).catch((err) => {
         showToast("Erreur lors de la sauvegarde", "error");
+        console.error(err);
       });
     }
 
     function archiveExercise(exId, exName) {
+      if(!confirm(`Es-tu sûr de vouloir retirer "${exName}" de ton programme ? L'historique sera conservé.`)) return;
+      
       db.collection("exercises").doc(exId).update({
         archived: true,
         archivedAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
-        showToast(`"${exName}" a été archivé.`, "success");
-      }).catch(() => {
+        showToast(`"${exName}" a été retiré.`, "success");
+      }).catch((err) => {
         showToast("Erreur lors de l'archivage", "error");
+        console.error(err);
       });
     }
 
@@ -503,14 +559,13 @@
         rawExercises.forEach(ex => {
           if (ex.seance === oldTitle) ex.seance = newTitle;
         });
-
         showToast(`Séance renommée en "${newTitle}"`, "success");
         closeEditSessionModal();
-        
         syncSmartState();
         buildProgramForCurrentUser();
-      }).catch(() => {
-        showToast("Erreur lors du changement de nom de la séance", "error");
+      }).catch((err) => {
+        showToast("Erreur lors du changement de nom", "error");
+        console.error(err);
       });
     }
 
@@ -518,41 +573,41 @@
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       const color = type === "error" ? "bg-red-600 border-red-500" : type === "success" ? "bg-emerald-600 border-emerald-500" : "bg-slate-800 border-slate-700";
-      toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast`;
-      toast.innerHTML = `<span>${msg}</span>`;
+      toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast pointer-events-auto`;
+      toast.innerHTML = `<span>${sanitizeHTML(msg)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 2500);
     }
 
+    // Gestion des Vues (Onglets de navigation bas)
     function switchView(view) {
-      const vWork = document.getElementById('view-workout');
-      const vCal = document.getElementById('view-calendar');
-      const vStats = document.getElementById('view-stats');
-      const nWork = document.getElementById('nav-workout');
-      const nCal = document.getElementById('nav-calendar');
-      const nStats = document.getElementById('nav-stats');
+      const views = ['workout', 'calendar', 'stats'];
+      
+      views.forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        document.getElementById(`nav-${v}`).className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
+      });
 
-      vWork.classList.add('hidden'); vCal.classList.add('hidden'); vStats.classList.add('hidden');
-      nWork.className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
-      nCal.className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
-      nStats.className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/3 transition";
+      document.getElementById(`view-${view}`).classList.remove('hidden');
+      
+      const activeNavClasses = "flex flex-col items-center p-2 w-1/3 transition " + 
+        (view === 'workout' ? "text-blue-500" : view === 'calendar' ? "text-indigo-500" : "text-emerald-500");
+      
+      document.getElementById(`nav-${view}`).className = activeNavClasses;
 
-      if (view === 'workout') {
-        vWork.classList.remove('hidden'); nWork.className = "flex flex-col items-center p-2 text-blue-500 w-1/3 transition";
-      } else if (view === 'calendar') {
-        vCal.classList.remove('hidden'); nCal.className = "flex flex-col items-center p-2 text-indigo-500 w-1/3 transition"; 
+      if (view === 'calendar') {
         currentCalDate = new Date();
         renderCalendar();
-        
-        const today = new Date();
-        const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-        showDayDetails(dateStr);
+        const todayStr = parseDateToJJMMAAAA(new Date());
+        showDayDetails(todayStr);
       } else if (view === 'stats') {
-        vStats.classList.remove('hidden'); nStats.className = "flex flex-col items-center p-2 text-emerald-500 w-1/3 transition"; populateChartDropdown();
+        populateChartDropdown();
       }
-      window.scrollTo(0, 0);
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Calendrier
     function changeMonth(dir) {
       currentCalDate.setMonth(currentCalDate.getMonth() + dir);
       renderCalendar();
@@ -567,10 +622,8 @@
       const startDay = firstDay === 0 ? 6 : firstDay - 1;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      const userLogs = journalLogs;
       const workoutDates = {};
-      
-      userLogs.forEach(log => {
+      journalLogs.forEach(log => {
         const dPart = parseDateToJJMMAAAA(log.date);
         if(dPart) {
           if(!workoutDates[dPart]) workoutDates[dPart] = [];
@@ -581,15 +634,14 @@
       let html = '';
       for(let i=0; i<startDay; i++) { html += `<div class="aspect-square"></div>`; }
 
-      const today = new Date();
-      const todayStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + year;
+      const todayStr = parseDateToJJMMAAAA(new Date());
 
       for(let d=1; d<=daysInMonth; d++) {
         const dateStr = String(d).padStart(2, '0') + '/' + String(month + 1).padStart(2, '0') + '/' + year;
         const hasWorkout = !!workoutDates[dateStr];
         const isToday = (dateStr === todayStr);
 
-        const baseClass = "aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer";
+        const baseClass = "aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer active:scale-90";
         let colorClass = "text-slate-400 hover:bg-slate-800 bg-slate-950/50 border border-transparent";
         
         if(hasWorkout) colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
@@ -615,23 +667,23 @@
         exGroups[log.exercise].push(log);
       });
 
-      let html = `<h4 class="font-bold text-sm text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${dateStr}</h4>`;
+      let html = `<h4 class="font-bold text-sm text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
 
       for(const [exName, logs] of Object.entries(exGroups)) {
         html += `
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md">
-            <h5 class="text-xs font-black text-indigo-400 mb-2">${exName}</h5>
+            <h5 class="text-xs font-black text-indigo-400 mb-2">${sanitizeHTML(exName)}</h5>
             <div class="space-y-1">
         `;
         
         logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0));
         
         logs.forEach((log) => {
-          const v1 = log.weight ? log.weight : '-';
-          const v2 = log.reps ? log.reps : '-';
-          let rawTime = log.time || "";
-          const timeLabel = rawTime ? `Validé à ${rawTime}` : `Série ${log.set || '?'}`;
-          const note = log.comment ? `<span class="text-slate-500 text-[9px] ml-2 italic">"${log.comment}"</span>` : '';
+          const v1 = log.weight ? sanitizeHTML(log.weight) : '-';
+          const v2 = log.reps ? sanitizeHTML(log.reps) : '-';
+          const rawTime = log.time || "";
+          const timeLabel = rawTime ? `Validé à ${sanitizeHTML(rawTime)}` : `Série ${log.set || '?'}`;
+          const note = log.comment ? `<span class="text-slate-500 text-[9px] ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
           
           html += `
             <div class="text-[10px] text-slate-300 flex items-center justify-between bg-slate-950 px-2 py-1.5 rounded border border-slate-800/80">
@@ -642,9 +694,21 @@
         html += `</div></div>`;
       }
       container.innerHTML = html;
-      container.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    // Gestion du LocalStorage (Protection Navigation Privée)
+    function safeSetItem(key, value) {
+      try { localStorage.setItem(key, value); } 
+      catch (e) { console.warn("Erreur LocalStorage (Navigation Privée ?):", e); }
+    }
+    
+    function safeGetItem(key) {
+      try { return localStorage.getItem(key); } 
+      catch (e) { return null; }
+    }
+
+    // Synchronisation Intelligente (Reset Hebdo)
     function syncSmartState() {
       const now = new Date();
       const day = now.getDay() || 7; 
@@ -699,23 +763,24 @@
           saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId };
         }
         
-        localStorage.setItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
+        safeSetItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
       });
     }
 
+    // Statistiques et Graphique (Double Axe)
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
       const historyEx = journalLogs.map(log => log.exercise);
       const programEx = rawExercises.map(e => e.name);
       
       const uniqueEx = [...new Set([...historyEx, ...programEx])].sort();
-      select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + uniqueEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
+      select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + 
+        uniqueEx.map(ex => `<option value="${sanitizeHTML(ex)}">${sanitizeHTML(ex)}</option>`).join('');
       
       if(chartInstance) chartInstance.destroy();
       document.getElementById('no-data-msg').classList.add('hidden');
     }
 
-    // FONCTION CHART INTELLIGENTE (VOLUME + MAX/MIN AVEC LÉGENDES AMÉLIORÉES)
     function renderChart() {
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
@@ -725,14 +790,12 @@
 
       const userLogs = journalLogs.filter(log => cleanString(log.exercise) === cleanString(selectedEx));
       const dailyPerf = {};
-      
       let usedLest = false;
 
       userLogs.forEach(log => {
         const date = parseDateToJJMMAAAA(log.date);
-        
-        let w = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
-        let r = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0; 
+        let w = parseFloat(String(log.weight).replace(/[^0-9.,-]/g, '').replace(',', '.')) || 0;
+        let r = parseFloat(String(log.reps).replace(/[^0-9.,-]/g, '').replace(',', '.')) || 0; 
 
         if (!dailyPerf[date]) {
           dailyPerf[date] = { sum: 0, max_w: -Infinity, max_r: -Infinity, min_w: Infinity };
@@ -781,50 +844,51 @@
 
       let datasets = [];
 
+      // CONFIGURATION DU DOUBLE AXE (yAxisID: 'y' et 'y1')
       if (exType === 'poids') {
         datasets.push({
-          label: 'Volume (Poids × Reps)', data: dataSum,
+          label: 'Volume (Poids × Reps)', data: dataSum, yAxisID: 'y',
           borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', 
           borderWidth: 3, pointBackgroundColor: '#2563eb', fill: true, tension: 0.3
         });
         datasets.push({
-          label: 'Poids Max (kg)', data: dataMaxW,
+          label: 'Poids Max (kg)', data: dataMaxW, yAxisID: 'y1',
           borderColor: '#f59e0b', backgroundColor: 'transparent', 
           borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
         });
       } 
       else if (exType === 'pdc') {
         datasets.push({
-          label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions (Somme)', data: dataSum,
+          label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions (Total)', data: dataSum, yAxisID: 'y',
           borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', 
           borderWidth: 3, pointBackgroundColor: '#059669', fill: true, tension: 0.3
         });
         datasets.push({
-          label: usedLest ? 'Lest Max (kg)' : 'Série Max (Reps)', data: usedLest ? dataMaxW : dataMaxR,
+          label: usedLest ? 'Lest Max (kg)' : 'Série Max (Reps)', data: usedLest ? dataMaxW : dataMaxR, yAxisID: 'y1',
           borderColor: '#f59e0b', backgroundColor: 'transparent', 
           borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
         });
       } 
       else if (exType === 'km') {
         datasets.push({
-          label: 'Distance (Somme)', data: dataSum,
+          label: 'Distance (Total)', data: dataSum, yAxisID: 'y',
           borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', 
           borderWidth: 3, pointBackgroundColor: '#7c3aed', fill: true, tension: 0.3
         });
         datasets.push({
-          label: 'Plus longue série (Max)', data: dataMaxW,
+          label: 'Plus longue série (Max)', data: dataMaxW, yAxisID: 'y1',
           borderColor: '#f59e0b', backgroundColor: 'transparent', 
           borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#d97706', fill: false, tension: 0.3
         });
       } 
       else if (exType === 'durée' || exType === 'duree') {
         datasets.push({
-          label: 'Temps (Somme)', data: dataSum,
+          label: 'Temps (Total)', data: dataSum, yAxisID: 'y',
           borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.1)', 
           borderWidth: 3, pointBackgroundColor: '#e11d48', fill: true, tension: 0.3
         });
         datasets.push({
-          label: 'Série la + rapide (Min)', data: dataMinW,
+          label: 'Série la + rapide (Min)', data: dataMinW, yAxisID: 'y1',
           borderColor: '#0ea5e9', backgroundColor: 'transparent', 
           borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#0284c7', fill: false, tension: 0.3
         });
@@ -837,40 +901,38 @@
         options: {
           responsive: true, 
           maintainAspectRatio: false, 
-          layout: {
-            padding: { top: 10 }
-          },
+          layout: { padding: { top: 10 } },
           plugins: { 
             legend: { 
-              display: true,
-              position: 'top',
-              labels: { 
-                color: '#cbd5e1', 
-                font: { size: 11, family: "'Inter', sans-serif" }, 
-                padding: 15,
-                usePointStyle: true,
-                pointStyle: 'circle'
-              } 
+              display: true, position: 'top',
+              labels: { color: '#cbd5e1', font: { size: 11, family: "'Inter', sans-serif" }, padding: 10, usePointStyle: true, pointStyle: 'circle' } 
             },
             tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.95)',
-              titleColor: '#f8fafc',
-              bodyColor: '#cbd5e1',
-              borderColor: '#334155',
-              borderWidth: 1,
-              padding: 12,
-              usePointStyle: true,
-              boxPadding: 4
+              backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155',
+              borderWidth: 1, padding: 12, usePointStyle: true, boxPadding: 4
             }
           },
           scales: {
-            y: { grid: { color: '#1e293b', drawBorder: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 5 } }
+            x: { 
+              grid: { display: false }, 
+              ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 6 } 
+            },
+            y: { 
+              type: 'linear', display: true, position: 'left',
+              grid: { color: '#1e293b', drawBorder: false }, 
+              ticks: { color: '#94a3b8', font: { size: 10 } } 
+            },
+            y1: {
+              type: 'linear', display: true, position: 'right',
+              grid: { drawOnChartArea: false }, // Indispensable pour ne pas superposer les lignes de fond
+              ticks: { color: '#f59e0b', font: { size: 10 } }
+            }
           }
         }
       });
     }
 
+    // Gestion de l'Entraînement
     function buildProgramForCurrentUser() {
       const grouped = {};
       rawExercises.forEach(ex => {
@@ -897,7 +959,7 @@
         document.getElementById('rename-session-btn').classList.remove('hidden');
       } else {
         document.getElementById('session-title').innerText = "Aucun exercice";
-        document.getElementById('exercise-list').innerHTML = '<p class="text-xs text-slate-500 text-center py-8">Clique sur "+ Ajouter exercice" pour créer tes premiers exercices !</p>';
+        document.getElementById('exercise-list').innerHTML = '<p class="text-xs text-slate-500 text-center py-8">Clique sur "+ Ajouter" pour créer tes premiers exercices !</p>';
         document.getElementById('rename-session-btn').classList.add('hidden');
       }
     }
@@ -934,9 +996,9 @@
         else if (pct > 0) badgeColor = "bg-blue-500/20 text-blue-400 border-blue-500/40 font-bold";
 
         return `
-          <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'}">
-            <div class="font-bold text-xs text-white truncate mb-2">${s.title.replace(currentUser + " - ", "")}</div>
-            <div class="flex items-center justify-between">
+          <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'} active:scale-95">
+            <div class="font-bold text-xs text-white truncate mb-2 w-full">${sanitizeHTML(s.title.replace(currentUser + " - ", ""))}</div>
+            <div class="flex items-center justify-between w-full">
               <span class="text-[10px] px-2 py-0.5 rounded-md border ${badgeColor}">${pct}%</span>
               ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>' : ''}
             </div>
@@ -961,7 +1023,8 @@
       let html = '';
       session.exercises.forEach((ex) => {
         const savedData = getSavedLogs(ex.id);
-        const safeName = ex.name.replace(/'/g, "\\'"); 
+        const safeName = sanitizeHTML(ex.name);
+        // Sécurisation stricte de l'objet pour l'injection dans onlick
         const safeExJson = JSON.stringify(ex).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
         
         const exType = (ex.type || "Poids").trim().toLowerCase();
@@ -984,52 +1047,52 @@
           const disabledAttr = isDone ? 'disabled' : '';
           const disClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700 focus:border-blue-500';
           
-          const val1 = setLog.weight || '';
-          const val2 = setLog.reps || ex.reps || '';
-          const commentVal = setLog.comment || '';
+          const val1 = sanitizeHTML(setLog.weight || '');
+          const val2 = sanitizeHTML(setLog.reps || ex.reps || '');
+          const commentVal = sanitizeHTML(setLog.comment || '');
 
           const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             </button>
           ` : `
-            <button onclick="validateSet('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-6 h-6 rounded bg-slate-800 text-slate-500 hover:text-slate-200 flex items-center justify-center font-bold text-xs transition mx-auto">✓</button>
+            <button onclick="validateSet('${ex.id}', '${safeName.replace(/'/g, "\\'")}', ${setIdx}, ${ex.restSec})" class="w-6 h-6 rounded bg-slate-800 text-slate-500 hover:text-slate-200 flex items-center justify-center font-bold text-xs transition mx-auto hover:bg-slate-700">✓</button>
           `;
 
           setsHtml += `
             <div class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800 text-center">
               <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
-              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded px-1 py-1.5 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2 flex items-center justify-center space-x-1">
                 ${actionButtons}
               </div>
             </div>`;
         }
 
-        const seriesText = isCardio ? `<span class="text-amber-400">Objectif: ${ex.reps}</span>` : `${ex.sets} séries`;
+        const seriesText = isCardio ? `<span class="text-amber-400">Objectif: ${sanitizeHTML(ex.reps)}</span>` : `${ex.sets} séries`;
         const pauseText = ex.restSec > 0 ? ` • Pause: ${ex.restSec}s` : '';
         
         html += `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md relative">
             <div>
               <div class="flex justify-between items-start">
-                <h3 class="font-black text-base text-white pr-16">${ex.name}</h3>
+                <h3 class="font-black text-base text-white pr-16 leading-tight">${safeName}</h3>
                 <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
                   <button onclick='openAddExModal(${safeExJson})' class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition" title="Modifier l'exercice">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                   </button>
-                  <button onclick="archiveExercise('${ex.id}', '${safeName}')" class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Retirer l'exercice (conserve l'historique)">
+                  <button onclick="archiveExercise('${ex.id}', '${safeName.replace(/'/g, "\\'")}')" class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Retirer l'exercice">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
               </div>
-              <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText}${pauseText}</p>
+              <p class="text-[11px] text-blue-400 font-medium mt-1">${seriesText}${pauseText}</p>
             </div>
             <div class="space-y-2 pt-1">
-              <div class="grid grid-cols-12 gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
-                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Action</span>
+              <div class="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
+                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Act.</span>
               </div>
               ${setsHtml}
             </div>
@@ -1044,15 +1107,15 @@
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
         saved.sets[setIdx].isEditing = true;
-        localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+        safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
         loadSession(activeSessionIndex);
         renderTabs();
-        showToast("Série déverrouillée pour modification.");
+        showToast("Série déverrouillée.");
       }
     }
 
     function getSavedLogs(exId) {
-      const data = localStorage.getItem(`fitapp_log_${currentUserId}_${exId}`);
+      const data = safeGetItem(`fitapp_log_${currentUserId}_${exId}`);
       return data ? JSON.parse(data) : {};
     }
 
@@ -1078,10 +1141,10 @@
         if (allSessionsDone) {
           document.getElementById('congrats-title').innerText = "SEMAINE COMPLÈTE ! 🔥";
           document.getElementById('congrats-title').className = "font-black text-2xl text-amber-400 uppercase tracking-wide";
-          document.getElementById('congrats-subtitle').innerHTML = "Tu as terminé <strong>100%</strong> de tes séances de la semaine ! Tes données vont être réinitialisées dans ton programme pour te préparer à la semaine prochaine.<br><br><span class='text-xs text-slate-400'>(Tes performances restent sauvegardées dans Firebase)</span>";
+          document.getElementById('congrats-subtitle').innerHTML = "Tu as terminé <strong>100%</strong> de tes séances de la semaine ! Tes données vont être réinitialisées dans ton programme pour te préparer à la semaine prochaine.<br><br><span class='text-xs text-slate-400'>(Tes performances restent sauvegardées)</span>";
           
           mainBtn.innerText = "Clôturer la semaine & Réinitialiser";
-          mainBtn.className = "w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-sm rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.4)] transition";
+          mainBtn.className = "w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-sm rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.4)] transition active:scale-95";
           
           mainBtn.onclick = () => {
             resetWeekData();
@@ -1093,7 +1156,7 @@
           document.getElementById('congrats-subtitle').innerText = `Ta séance "${currentSession.title.replace(currentUser + " - ", "")}" est validée à 100%. Excellent travail !`;
           
           mainBtn.innerText = "Continuer";
-          mainBtn.className = "w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition";
+          mainBtn.className = "w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition active:scale-95";
           
           mainBtn.onclick = () => closeCongratsModal();
         }
@@ -1114,15 +1177,14 @@
               saved.sets[setIdx].done = false;
               saved.sets[setIdx].isEditing = false;
             });
-            localStorage.setItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
+            safeSetItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
           }
         });
       });
       
       activeSessionIndex = null;
       buildProgramForCurrentUser(); 
-      
-      showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
+      showToast("Nouvelle semaine ! Tes perfs sont affichées comme repère.", "success");
     }
 
     function validateSet(exId, exName, setIdx, restSec) {
@@ -1157,7 +1219,7 @@
         firestoreId: firestoreId
       };
       
-      localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+      safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
 
       showToast("Enregistré !", "success");
       
@@ -1174,7 +1236,10 @@
         reps: rEl ? rEl.value : "",
         comment: cEl ? cEl.value : "",
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+      }, { merge: true }).catch(err => {
+         showToast("Série non sauvegardée sur le cloud", "error");
+         console.error(err);
+      });
       
       if (restSec > 0 && !isEditMode) { setTimerPreset(restSec); startRestTimer(); }
 
@@ -1183,23 +1248,53 @@
       checkCongratsModal(isEditMode);
     }
 
-    function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
+    // Minuteur
+    function setTimerPreset(sec) { 
+      restTimeTotal = sec; 
+      restTimeRemaining = sec; 
+      updateTimerDisplay(); 
+    }
+    
     function updateTimerDisplay() {
-      const mins = Math.floor(restTimeRemaining / 60), secs = restTimeRemaining % 60;
+      const mins = Math.floor(restTimeRemaining / 60);
+      const secs = restTimeRemaining % 60;
       document.getElementById('timer-display').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
-    function toggleRestTimer() { if (isRestTimerRunning) pauseRestTimer(); else startRestTimer(); }
+    
+    function toggleRestTimer() { 
+      if (isRestTimerRunning) pauseRestTimer(); 
+      else startRestTimer(); 
+    }
+    
     function startRestTimer() {
       if (isRestTimerRunning) clearInterval(restTimerInterval);
       isRestTimerRunning = true;
       document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>'; 
       if (typeof lucide !== 'undefined') lucide.createIcons();
+      
       restTimerInterval = setInterval(() => {
-        if (restTimeRemaining > 0) { restTimeRemaining--; updateTimerDisplay(); } else { pauseRestTimer(); }
+        if (restTimeRemaining > 0) { 
+          restTimeRemaining--; 
+          updateTimerDisplay(); 
+        } else { 
+          pauseRestTimer(); 
+          if(typeof navigator.vibrate === "function") navigator.vibrate([200, 100, 200]); // Vibre à la fin
+        }
       }, 1000);
     }
-    function pauseRestTimer() { isRestTimerRunning = false; clearInterval(restTimerInterval); document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
-    function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
+    
+    function pauseRestTimer() { 
+      isRestTimerRunning = false; 
+      clearInterval(restTimerInterval); 
+      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; 
+      if (typeof lucide !== 'undefined') lucide.createIcons(); 
+    }
+    
+    function resetRestTimer() { 
+      pauseRestTimer(); 
+      restTimeRemaining = restTimeTotal; 
+      updateTimerDisplay(); 
+    }
   </script>
 </body>
 </html>
