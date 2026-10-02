@@ -311,7 +311,7 @@
             </div>
           </div>
           
-          <div class="relative h-80 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-2 flex items-center justify-center">
+          <div class="relative h-80 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-1 flex items-center justify-center">
             <canvas id="progressionChart"></canvas>
             <p id="no-data-msg" class="absolute text-slate-500 text-sm font-semibold hidden">Pas de données validées</p>
           </div>
@@ -951,7 +951,7 @@
                 usePointStyle: false,
                 boxWidth: 16,
                 boxHeight: 2,
-                padding: 20
+                padding: 8
               } 
             },
             tooltip: {
@@ -981,7 +981,7 @@
               display: datasets.length > 1, 
               position: 'right', 
               ticks: { color: '#f59e0b', font: { size: 10, weight: '600' } }, 
-              grid: { drawOnChartArea: false } 
+              grid: { drawOnChartArea: false, display: false } 
             }
           }
         }
