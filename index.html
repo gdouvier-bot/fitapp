@@ -779,19 +779,43 @@
       });
     }
 
-    // Statistiques et Graphique (Double Axe + Podium Top 3)
+    // Statistiques et Graphique (Double Axe + Auto-sélection + Top 3)
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
+      
+      // 1. Récupérer uniquement les exercices FAITS (présents dans l'historique)
       const historyEx = journalLogs.map(log => log.exercise);
-      const programEx = rawExercises.map(e => e.name);
+      const uniqueDoneEx = [...new Set(historyEx)].sort();
       
-      const uniqueEx = [...new Set([...historyEx, ...programEx])].sort();
-      select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + 
-        uniqueEx.map(ex => `<option value="${sanitizeHTML(ex)}">${sanitizeHTML(ex)}</option>`).join('');
+      // S'il n'y a encore aucun historique global
+      if (uniqueDoneEx.length === 0) {
+        select.innerHTML = '<option value="">Aucun exercice validé...</option>';
+        if(chartInstance) chartInstance.destroy();
+        document.getElementById('no-data-msg').innerText = "Aucun historique disponible";
+        document.getElementById('no-data-msg').classList.remove('hidden');
+        document.getElementById('stats-details').classList.add('hidden');
+        return;
+      }
+
+      // 2. Remplir le menu déroulant avec la liste des exos faits
+      select.innerHTML = uniqueDoneEx.map(ex => `<option value="${sanitizeHTML(ex)}">${sanitizeHTML(ex)}</option>`).join('');
       
-      if(chartInstance) chartInstance.destroy();
-      document.getElementById('no-data-msg').classList.add('hidden');
-      document.getElementById('stats-details').classList.add('hidden');
+      // 3. Trouver le dernier exercice pratiqué chronologiquement
+      const lastLog = journalLogs.reduce((latest, current) => {
+         const dLatest = parseDateToJJMMAAAA(latest.date).split('/').reverse().join('');
+         const dCurrent = parseDateToJJMMAAAA(current.date).split('/').reverse().join('');
+         return dCurrent >= dLatest ? current : latest;
+      }, journalLogs[0]);
+      
+      // 4. Assigner l'exercice récent par défaut
+      if (lastLog && lastLog.exercise) {
+        select.value = sanitizeHTML(lastLog.exercise);
+      } else {
+        select.value = sanitizeHTML(uniqueDoneEx[0]);
+      }
+      
+      // 5. Afficher immédiatement le graphique et le Top 3 pour cet exercice
+      renderChart();
     }
 
     function renderChart() {
