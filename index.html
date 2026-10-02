@@ -220,7 +220,7 @@
       </button>
     </header>
 
-    <!-- Content -->
+    <!-- Main Content -->
     <main class="flex-1 overflow-y-auto px-4 pt-6 pb-20 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
@@ -856,16 +856,71 @@
 
       if (exType === 'poids') {
         datasets.push(
-          { label: 'Volume (Poids × Reps)', data: dataSum, yAxisID: 'y', borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.3 },
-          { label: 'Poids Max (kg)', data: dataMaxW, yAxisID: 'y1', borderColor: '#f59e0b', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.3 }
+          { 
+            label: 'Volume (Poids × Reps)', 
+            data: dataSum, 
+            yAxisID: 'y', 
+            borderColor: '#3b82f6', 
+            backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+            borderWidth: 3, 
+            pointBackgroundColor: '#2563eb',
+            pointRadius: 4,
+            fill: true, 
+            tension: 0.3 
+          },
+          { 
+            label: 'Poids Max (kg)', 
+            data: dataMaxW, 
+            yAxisID: 'y1', 
+            borderColor: '#f59e0b', 
+            pointBackgroundColor: '#d97706',
+            pointRadius: 4,
+            borderWidth: 2, 
+            borderDash: [5, 5], 
+            fill: false, 
+            tension: 0.3 
+          }
         );
       } else if (exType === 'pdc') {
         datasets.push(
-          { label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions', data: dataSum, yAxisID: 'y', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, fill: true, tension: 0.3 },
-          { label: usedLest ? 'Lest Max (kg)' : 'Série Max', data: usedLest ? dataMaxW : dataMaxR, yAxisID: 'y1', borderColor: '#f59e0b', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.3 }
+          { 
+            label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions', 
+            data: dataSum, 
+            yAxisID: 'y', 
+            borderColor: '#10b981', 
+            backgroundColor: 'rgba(16, 185, 129, 0.1)', 
+            borderWidth: 3, 
+            pointBackgroundColor: '#059669',
+            pointRadius: 4,
+            fill: true, 
+            tension: 0.3 
+          },
+          { 
+            label: usedLest ? 'Lest Max (kg)' : 'Série Max', 
+            data: usedLest ? dataMaxW : dataMaxR, 
+            yAxisID: 'y1', 
+            borderColor: '#f59e0b', 
+            pointBackgroundColor: '#d97706',
+            pointRadius: 4,
+            borderWidth: 2, 
+            borderDash: [5, 5], 
+            fill: false, 
+            tension: 0.3 
+          }
         );
       } else {
-        datasets.push({ label: 'Performance Max', data: dataMaxW, yAxisID: 'y', borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.3 });
+        datasets.push({ 
+          label: 'Performance Max', 
+          data: dataMaxW, 
+          yAxisID: 'y', 
+          borderColor: '#8b5cf6', 
+          backgroundColor: 'rgba(139, 92, 246, 0.1)', 
+          borderWidth: 3, 
+          pointBackgroundColor: '#7c3aed',
+          pointRadius: 4,
+          fill: true, 
+          tension: 0.3 
+        });
       }
 
       const ctx = document.getElementById('progressionChart').getContext('2d');
@@ -873,12 +928,42 @@
         type: 'line',
         data: { labels: dates, datasets: datasets },
         options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+          responsive: true, 
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { 
+              display: true, 
+              position: 'top',
+              labels: { 
+                color: '#cbd5e1',
+                font: { size: 11, family: "'Inter', sans-serif" },
+                usePointStyle: true,
+                pointStyleWidth: 10,
+                boxWidth: 8,
+                boxHeight: 8,
+                padding: 12
+              } 
+            } 
+          },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-            y: { type: 'linear', display: true, position: 'left', ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-            y1: { type: 'linear', display: datasets.length > 1, position: 'right', ticks: { color: '#f59e0b' }, grid: { drawOnChartArea: false } }
+            x: { 
+              ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 5 }, 
+              grid: { display: false } 
+            },
+            y: { 
+              type: 'linear', 
+              display: true, 
+              position: 'left', 
+              ticks: { color: '#94a3b8', font: { size: 10 } }, 
+              grid: { color: '#1e293b' } 
+            },
+            y1: { 
+              type: 'linear', 
+              display: datasets.length > 1, 
+              position: 'right', 
+              ticks: { color: '#f59e0b', font: { size: 10 } }, 
+              grid: { drawOnChartArea: false } 
+            }
           }
         }
       });
