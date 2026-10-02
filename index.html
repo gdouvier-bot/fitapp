@@ -879,7 +879,7 @@
           const val2 = setLog.reps || ex.reps || '';
           const commentVal = setLog.comment || '';
 
-          // DEUX CHOIX EN MODE VALIDÉ : BOUTON MODIFIER ET BOUTON POUBELLE
+          // CHOIX DISJOINTS EN MODE VALIDÉ (CRAYON + POUBELLE)
           const actionButtons = isDone ? `
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -1070,22 +1070,42 @@
       checkCongratsModal(isEditMode);
     }
 
-    // BOUTON POUBELLE : SUPPRESSION NETTE DE LA SÉRIE
+    // BOUTON POUBELLE : SUPPRESSION CIBLÉE ET GARANTIE
     function deleteSet(exId, exName, setIdx) {
+      // 1. Réinitialisation locale immédiate
       const saved = getSavedLogs(exId);
-      if (!saved.sets || !saved.sets[setIdx]) return;
-
-      saved.sets[setIdx].done = false;
-      saved.sets[setIdx].isEditing = false;
-      localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+      if (saved.sets && saved.sets[setIdx]) {
+        saved.sets[setIdx].done = false;
+        saved.sets[setIdx].isEditing = false;
+        saved.sets[setIdx].weight = "";
+        saved.sets[setIdx].reps = "";
+        saved.sets[setIdx].comment = "";
+        localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+      }
 
       const today = new Date();
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-      const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exName}_${setIdx + 1}`;
 
-      showToast("Série supprimée !");
-      db.collection("journal").doc(docId).delete().catch(() => {});
+      // 2. Suppression Firestore ciblée
+      db.collection("journal")
+        .where("userId", "==", currentUserId)
+        .where("date", "==", dateStr)
+        .where("set", "==", setIdx + 1)
+        .get()
+        .then((snapshot) => {
+          snapshot.docs.forEach((doc) => {
+            const data = doc.data();
+            if (cleanString(data.exercise) === cleanString(exName)) {
+              db.collection("journal").doc(doc.id).delete();
+            }
+          });
+          showToast("Série supprimée !");
+        })
+        .catch((err) => {
+          console.error("Erreur de suppression Firestore:", err);
+        });
 
+      // 3. Rafraîchissement de l'affichage
       renderTabs();
       loadSession(activeSessionIndex);
     }
