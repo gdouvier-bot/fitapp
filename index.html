@@ -190,8 +190,7 @@
   </nav>
 
   <script>
-    // URL EXACTE DE TON SCRIPT GOOGLE APPS SCRIPT
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaojRJ0Wn1izHyjAilv6VIF90oGSR5Cs289mvtz3BSDu5d9mJ239uF9xVxRvOB1x2U/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGcQdRgnQltX9OFVpSNg6VLkVh53NVqLznPfOklHwRO9IXRNuhx4EB_itLyLmhoBQi/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -574,18 +573,18 @@
           const commentVal = setLog.comment || '';
 
           const editBtn = isDone ? `
-            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mr-1" title="Modifier">
+            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             </button>
           ` : '';
 
           setsHtml += `
-            <div class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
+            <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
               <span class="col-span-2 text-center text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
               <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-2"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}"></div>
-              <div class="col-span-3 flex items-center justify-end">
+              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}"></div>
+              <div class="col-span-2 flex items-center justify-center space-x-1">
                 ${editBtn}
                 <button onclick="handleSetClick('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button>
               </div>
@@ -603,8 +602,8 @@
               <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText} • Pause: ${ex.restSec}s</p>
             </div>
             <div class="space-y-2 pt-1">
-              <div class="grid grid-cols-12 gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
-                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-2">Note</span><span class="col-span-3 text-right pr-2">Action</span>
+              <div class="grid grid-cols-12 gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
+                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Valid</span>
               </div>
               ${setsHtml}
             </div>
