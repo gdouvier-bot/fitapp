@@ -4,38 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>FitApp Pro</title>
-  <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
-    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    body { font-family: 'Inter', sans-serif; user-select: none; }
   </style>
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
 
-  <!-- Toasts -->
-  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
-
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
     <div class="flex items-center space-x-2.5">
-      <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
+      <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg">
         <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
       </div>
       <div>
-        <h1 class="font-extrabold text-sm tracking-tight text-white flex items-center gap-1">FITAPP <span class="text-[9px] font-bold px-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRO</span></h1>
-        <select id="user-select" onchange="changeUser(this.value)" class="bg-slate-950 border border-slate-700 text-blue-400 text-[11px] font-bold rounded px-2 py-0.5 outline-none mt-0.5 shadow-sm">
-          <option value="">Chargement...</option>
+        <h1 class="font-extrabold text-sm text-white">FITAPP PRO</h1>
+        <select id="user-select" onchange="changeUser(this.value)" class="bg-slate-950 border border-slate-700 text-blue-400 text-[11px] font-bold rounded px-2 py-0.5 mt-0.5">
+          <option value="">Lancement...</option>
         </select>
       </div>
     </div>
-    <button onclick="fetchSheetData()" id="sync-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 border border-slate-700 transition">
+    <button onclick="fetchSheetData()" id="sync-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 border border-slate-700">
       <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>
     </button>
   </header>
@@ -59,35 +50,36 @@
         <div class="flex items-center space-x-1">
           <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">45s</button>
           <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">60s</button>
-          <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-blue-600/30 text-blue-300 border border-blue-500/30">90s</button>
+          <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">90s</button>
         </div>
       </div>
       <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
         <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
         <div class="flex items-center space-x-2">
-          <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><i data-lucide="play" class="w-5 h-5"></i></button>
+          <button onclick="toggleRestTimer()" id="timer-toggle-btn" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><i data-lucide="play" class="w-5 h-5"></i></button>
           <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
         </div>
       </div>
     </section>
 
-    <!-- Liste d'exercices -->
+    <!-- Liste d'exercices ET AFFICHAGE ERREURS -->
     <section class="space-y-3" id="exercise-container">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-          <h2 id="session-title" class="font-black text-lg text-white">Aucune séance</h2>
-        </div>
+      <div class="flex items-center space-x-2 mb-2">
+        <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+        <h2 id="session-title" class="font-black text-lg text-white">En attente de connexion...</h2>
       </div>
-      <div id="exercise-list" class="space-y-4"></div>
+      <div id="exercise-list" class="space-y-4">
+        <!-- Zone où s'affichera l'erreur s'il y en a une -->
+      </div>
     </section>
   </main>
 
   <script>
     // ==========================================
-    // 🚨 COLLE TA NOUVELLE URL EXACTE ICI :
+    // 🚨 1. COLLE TA NOUVELLE URL EXACTE ICI :
     // ==========================================
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaojRJ0Wn1izHyjAilv6VIF90oGSR5Cs289mvtz3BSDu5d9mJ239uF9xVxRvOB1x2U/exec";
+    // ==========================================
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -97,7 +89,7 @@
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
 
     window.addEventListener('DOMContentLoaded', () => {
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+      lucide.createIcons();
       if (allUsers.length > 0 && rawExercises.length > 0) {
         populateUserSelect(allUsers);
         buildProgramForCurrentUser();
@@ -105,60 +97,76 @@
       fetchSheetData();
     });
 
-    function showToast(msg, type="info") {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      const color = type === "error" ? "bg-red-600 border-red-500" : type === "success" ? "bg-emerald-600 border-emerald-500" : "bg-slate-800 border-slate-700";
-      toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast`;
-      toast.innerHTML = `<span>${msg}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 2500);
-    }
-
-    // LA NOUVELLE METHODE QUI NE PEUT PAS ETRE BLOQUEE
     function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
-      if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
+      lucide.createIcons();
+      document.getElementById('user-select').innerHTML = '<option value="">Recherche...</option>';
 
-      const script = document.createElement('script');
-      script.src = GOOGLE_SCRIPT_URL + "?callback=onGoogleDataLoaded&t=" + Date.now();
-      document.body.appendChild(script);
-      
-      script.onload = () => script.remove();
-      script.onerror = () => {
-         if (btn) btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
-         alert("Impossible de joindre Google. As-tu bien mis 'N'importe qui' (Anyone) dans les accès ?");
-      };
-    }
+      // Utilisation de fetch standard pour pouvoir LIRE l'erreur renvoyée par Google
+      fetch(GOOGLE_SCRIPT_URL + "?t=" + Date.now())
+        .then(async response => {
+          const text = await response.text();
+          
+          // Si Google renvoie une page web HTML (demande de mot de passe) au lieu de nos données JSON
+          if (text.includes("<html") || text.includes("<HTML")) {
+            throw new Error("ERREUR DE DROITS GOOGLE : Ton script n'est pas 100% public. Google demande une connexion.");
+          }
+          
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            throw new Error("L'URL Apps Script ne renvoie pas les bonnes données. As-tu bien déployé la 'Nouvelle version' ?");
+          }
+        })
+        .then(data => {
+          if (data.status === "error" || data.error) {
+            throw new Error("Erreur dans le code Apps Script : " + (data.message || data.error));
+          }
 
-    // La fonction déclenchée automatiquement dès que Google répond
-    function onGoogleDataLoaded(data) {
-      const btn = document.getElementById('sync-btn');
-      if (btn) btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>`;
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+          allUsers = data.users || [];
+          rawExercises = data.exercises || [];
+          localStorage.setItem('fitapp_all_users', JSON.stringify(allUsers));
+          localStorage.setItem('fitapp_raw_exercises', JSON.stringify(rawExercises));
 
-      if (data.error) {
-        alert("Erreur de ton tableau Google : " + data.error);
-        return;
-      }
-
-      allUsers = data.users || [];
-      rawExercises = data.exercises || [];
-      localStorage.setItem('fitapp_all_users', JSON.stringify(allUsers));
-      localStorage.setItem('fitapp_raw_exercises', JSON.stringify(rawExercises));
-
-      populateUserSelect(allUsers);
-      buildProgramForCurrentUser();
-      showToast("Synchronisation Google réussie !", "success");
+          populateUserSelect(allUsers);
+          buildProgramForCurrentUser();
+          
+          btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>`;
+          lucide.createIcons();
+          setTimeout(() => { btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>`; lucide.createIcons(); }, 2000);
+        })
+        .catch(err => {
+          console.error(err);
+          btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
+          lucide.createIcons();
+          document.getElementById('user-select').innerHTML = '<option value="">Bloqué</option>';
+          
+          // AFFICHER LE MESSAGE D'ERREUR DIRECTEMENT A L'ECRAN POUR COMPRENDRE LE PROBLEME
+          document.getElementById('session-title').innerText = "Connexion échouée";
+          document.getElementById('exercise-list').innerHTML = `
+            <div class="bg-red-500/10 border border-red-500/50 p-5 rounded-2xl shadow-lg">
+              <h3 class="font-black text-red-400 mb-2 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> POURQUOI ÇA BLOQUE :</h3>
+              <p class="text-xs text-white font-mono bg-red-950 p-2 rounded mb-4">${err.message}</p>
+              <h4 class="font-bold text-slate-300 text-xs mb-1">LA SOLUTION :</h4>
+              <ol class="text-[11px] text-slate-400 list-decimal list-inside space-y-1">
+                <li>Va sur ton Google Apps Script</li>
+                <li>Clique sur <b>Déployer</b> > <b>Gérer les déploiements</b></li>
+                <li>Clique sur le Crayon ✏️</li>
+                <li>Version : Choisis <b>Nouvelle version</b> (OBLIGATOIRE)</li>
+                <li>Qui a accès : Choisis <b>N'importe qui</b> (OBLIGATOIRE)</li>
+                <li>Clique sur Déployer et mets la nouvelle URL dans index.html</li>
+              </ol>
+            </div>
+          `;
+          lucide.createIcons();
+        });
     }
 
     function populateUserSelect(users) {
       const select = document.getElementById('user-select');
       if (users.length === 0) users = ["Doudou"];
-      
       select.innerHTML = users.map(u => `<option value="${u}" ${u === currentUser ? 'selected' : ''}>${u}</option>`).join('');
-      
       if (!currentUser || !users.includes(currentUser)) {
         currentUser = users[0];
         localStorage.setItem('fitapp_user', currentUser);
@@ -169,24 +177,16 @@
       currentUser = user;
       localStorage.setItem('fitapp_user', currentUser);
       buildProgramForCurrentUser();
-      showToast(`Profil chargé : ${currentUser}`);
     }
 
     function buildProgramForCurrentUser() {
       const userEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase());
-      
       const grouped = {};
       userEx.forEach(ex => {
         if (!grouped[ex.seance]) grouped[ex.seance] = [];
         grouped[ex.seance].push(ex);
       });
-
-      sessionsList = Object.keys(grouped).map((seanceName, idx) => ({
-        id: "s" + idx,
-        title: seanceName,
-        exercises: grouped[seanceName]
-      }));
-
+      sessionsList = Object.keys(grouped).map((seanceName, idx) => ({ id: "s" + idx, title: seanceName, exercises: grouped[seanceName] }));
       renderTabs();
       
       if (sessionsList.length > 0) {
@@ -194,9 +194,9 @@
       } else {
         document.getElementById('session-title').innerText = "Aucun programme";
         document.getElementById('exercise-list').innerHTML = `
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-md">
-            <p class="text-xs text-slate-400 font-bold mb-2">Aucun exercice trouvé !</p>
-            <p class="text-[10px] text-slate-500">Ajoute des lignes dans ton Google Sheet pour <b>${currentUser}</b> puis clique sur Sync.</p>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+            <p class="text-xs text-slate-400 font-bold mb-2">Aucun exercice !</p>
+            <p class="text-[10px] text-slate-500">Ajoute des lignes dans ton Google Sheet pour <b>${currentUser}</b>.</p>
           </div>`;
       }
     }
@@ -204,8 +204,8 @@
     function renderTabs() {
       const container = document.getElementById('session-tabs');
       container.innerHTML = sessionsList.map((s, idx) => `
-        <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'}">
-          <div class="font-bold text-xs text-white truncate">${s.title.replace(currentUser + " - ", "")}</div>
+        <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80' : 'bg-slate-900/60 border-slate-800'}">
+          <div class="font-bold text-xs text-white truncate">${s.title}</div>
         </button>
       `).join('');
     }
@@ -220,47 +220,31 @@
       const session = sessionsList[idx];
       if (!session) return;
       document.getElementById('session-title').innerText = session.title;
-
       const container = document.getElementById('exercise-list');
       container.innerHTML = session.exercises.map((ex) => {
         const savedData = getSavedLogs(ex.id);
-
         return `
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md">
-            <div class="flex items-start justify-between">
-              <div>
-                <h3 class="font-black text-base text-white">${ex.name}</h3>
-                <p class="text-xs text-blue-400 font-medium">${ex.sets} x ${ex.reps} reps • Pause: ${ex.restSec}s</p>
-              </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+            <div>
+              <h3 class="font-black text-base text-white">${ex.name}</h3>
+              <p class="text-xs text-blue-400 font-medium">${ex.sets} x ${ex.reps} reps • Pause: ${ex.restSec}s</p>
             </div>
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
-                <span class="col-span-2">Série</span>
-                <span class="col-span-3">Poids</span>
-                <span class="col-span-2">Reps</span>
-                <span class="col-span-3">Note</span>
-                <span class="col-span-2">Valid</span>
+                <span class="col-span-2">Série</span><span class="col-span-3">Poids</span><span class="col-span-2">Reps</span><span class="col-span-3">Note</span><span class="col-span-2">Valid</span>
               </div>
               ${Array.from({ length: ex.sets }).map((_, setIdx) => {
                 const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
                 const isDone = (setLog.done === true);
-                const disabledAttr = isDone ? 'disabled' : '';
-                const disabledClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700';
-
+                const disClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700';
                 return `
                   <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
                     <span class="col-span-2 text-center text-xs font-bold text-slate-400">#${setIdx + 1}</span>
-                    <div class="col-span-3">
-                      <input type="number" id="weight-${ex.id}-${setIdx}" value="${setLog.weight \vert{}\vert{} ''}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disabledClass}">
-                    </div>
-                    <div class="col-span-2">
-                      <input type="number" id="reps-${ex.id}-${setIdx}" value="${setLog.reps \vert{}\vert{} ex.reps}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disabledClass}">
-                    </div>
-                    <div class="col-span-3">
-                      <input type="text" id="comment-${ex.id}-${setIdx}" value="${setLog.comment \vert{}\vert{} ''}" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disabledClass}">
-                    </div>
+                    <div class="col-span-3"><input type="number" id="weight-${ex.id}-${setIdx}" value="${setLog.weight \vert{}\vert{} ''}" ${isDone?'disabled':''} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border ${disClass}"></div>
+                    <div class="col-span-2"><input type="number" id="reps-${ex.id}-${setIdx}" value="${setLog.reps \vert{}\vert{} ex.reps}" ${isDone?'disabled':''} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border ${disClass}"></div>
+                    <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${setLog.comment \vert{}\vert{} ''}" ${isDone?'disabled':''} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border ${disClass}"></div>
                     <div class="col-span-2 flex justify-center">
-                      <button onclick="toggleSetDone('${ex.id}', '${ex.name}', ${setIdx},${ex.restSec})" id="btn-check-${ex.id}-${setIdx}" class="w-7 h-7 rounded-lg flex items-center justify-center transition font-bold ${isDone ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}">✓</button>
+                      <button onclick="toggleSetDone('${ex.id}', '${ex.name}', ${setIdx},${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold ${isDone ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}">✓</button>
                     </div>
                   </div>`;
               }).join('')}
@@ -275,32 +259,25 @@
     }
 
     function sendToGoogleSheets(payload) {
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      }).catch(err => console.error("Erreur Sync:", err));
+      fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
+        .catch(err => console.error(err));
     }
 
     function toggleSetDone(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
-
-      const weightEl = document.getElementById(`weight-${exId}-${setIdx}`);
-      const repsEl = document.getElementById(`reps-${exId}-${setIdx}`);
-      const commentEl = document.getElementById(`comment-${exId}-${setIdx}`);
-
+      const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
+      const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
+      const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
       const nextDone = (saved.sets[setIdx]?.done !== true);
-      saved.sets[setIdx] = { weight: weightEl.value, reps: repsEl.value, comment: commentEl.value, done: nextDone };
+
+      saved.sets[setIdx] = { weight: wEl.value, reps: rEl.value, comment: cEl.value, done: nextDone };
       localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
 
       if (nextDone) {
-        showToast("Série enregistrée !", "success");
-        sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: weightEl.value, reps: repsEl.value, comments: commentEl.value });
+        sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: wEl.value, reps: rEl.value, comments: cEl.value });
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
-        showToast("Série annulée !");
         sendToGoogleSheets({ action: "UNCHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1 });
       }
       loadSession(activeSessionIndex);
@@ -315,17 +292,12 @@
     function startRestTimer() {
       if (isRestTimerRunning) clearInterval(restTimerInterval);
       isRestTimerRunning = true;
-      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>';
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>'; lucide.createIcons();
       restTimerInterval = setInterval(() => {
         if (restTimeRemaining > 0) { restTimeRemaining--; updateTimerDisplay(); } else { pauseRestTimer(); }
       }, 1000);
     }
-    function pauseRestTimer() { 
-      isRestTimerRunning = false; clearInterval(restTimerInterval); 
-      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>';
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
+    function pauseRestTimer() { isRestTimerRunning = false; clearInterval(restTimerInterval); document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; lucide.createIcons(); }
     function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
   </script>
 </body>
