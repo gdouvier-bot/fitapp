@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -23,6 +24,40 @@
 
   <!-- Toasts -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
+
+  <!-- Modal Confirmation Suppression -->
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+      <div class="flex items-center space-x-3 text-amber-400">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        <h3 class="font-bold text-base text-white">Confirmation</h3>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed" id="confirm-modal-msg">Es-tu sûr de vouloir annuler cette série ?</p>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeConfirmModal(false)" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Annuler</button>
+        <button id="confirm-modal-action-btn" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-500 shadow-lg">Oui, supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Félicitations Séance/Semaine -->
+  <div id="congrats-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl relative overflow-hidden">
+      <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+        <i data-lucide="trophy" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <h3 class="font-black text-xl text-white uppercase tracking-wide" id="congrats-title">SÉANCE TERMINÉE ! 🎉</h3>
+        <p class="text-xs text-slate-400 mt-1" id="congrats-subtitle">Bien joué ! Tu as validé 100% de tes exercices aujourd'hui.</p>
+      </div>
+      <div id="congrats-extra" class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-2 hidden">
+        <p class="text-xs font-bold text-amber-400 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-4 h-4"></i> Semaine 100% Complétée !</p>
+        <p class="text-[11px] text-slate-300">Toutes les séances de ton programme sont validées. Veux-tu réinitialiser les cases de saisie pour la semaine prochaine ?</p>
+        <button onclick="resetWeekData()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition shadow-md">Réinitialiser pour la semaine suivante</button>
+      </div>
+      <button onclick="closeCongratsModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg transition">Continuer</button>
+    </div>
+  </div>
 
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
@@ -166,6 +201,7 @@
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
+    let pendingDeleteCallback = null;
 
     let currentCalDate = new Date();
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -291,11 +327,8 @@
         logs.forEach((log, idx) => {
           const v1 = log.weight ? log.weight : '-';
           const v2 = log.reps ? log.reps : '-';
-          
-          // Extrait ou affiche l'heure complète avec secondes
           let rawTime = log.time || (String(log.date).length > 10 ? String(log.date).substring(11) : "");
           const timeLabel = rawTime ? `Validé à ${rawTime}` : `Série ${idx + 1}`;
-          
           const note = log.comment ? `<span class="text-slate-500 text-[9px] ml-2 italic">"${log.comment}"</span>` : '';
           
           html += `
@@ -453,13 +486,48 @@
       if (sessionsList.length > 0) switchSession(activeSessionIndex !== null && activeSessionIndex < sessionsList.length ? activeSessionIndex : 0);
     }
 
+    function calculateSessionProgress(session) {
+      let totalSets = 0;
+      let doneSets = 0;
+      session.exercises.forEach(ex => {
+        const exType = (ex.type || "Poids").trim().toLowerCase();
+        const isCardio = (exType === "durée" || exType === "duree" || exType === "km");
+        const setsCount = isCardio ? 1 : ex.sets;
+        totalSets += setsCount;
+        
+        const saved = getSavedLogs(ex.id);
+        if (saved.sets) {
+          for (let s = 0; s < setsCount; s++) {
+            if (saved.sets[s]?.done) doneSets++;
+          }
+        }
+      });
+      return totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+    }
+
     function renderTabs() {
       const container = document.getElementById('session-tabs');
-      container.innerHTML = sessionsList.map((s, idx) => `
-        <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'}">
-          <div class="font-bold text-xs text-white truncate">${s.title.replace(currentUser + " - ", "")}</div>
-        </button>
-      `).join('');
+      let all100 = sessionsList.length > 0;
+
+      container.innerHTML = sessionsList.map((s, idx) => {
+        const pct = calculateSessionProgress(s);
+        if (pct < 100) all100 = false;
+        
+        let badgeColor = "bg-slate-800 text-slate-400 border-slate-700";
+        if (pct === 100) badgeColor = "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-bold";
+        else if (pct > 0) badgeColor = "bg-blue-500/20 text-blue-400 border-blue-500/40 font-bold";
+
+        return `
+          <button onclick="switchSession(${idx})" class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'}">
+            <div class="font-bold text-xs text-white truncate mb-2">${s.title.replace(currentUser + " - ", "")}</div>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] px-2 py-0.5 rounded-md border ${badgeColor}">${pct}%</span>
+              ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>' : ''}
+            </div>
+          </button>
+        `;
+      }).join('');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function switchSession(idx) {
@@ -504,13 +572,23 @@
           const val2 = setLog.reps || (!isCardio ? ex.reps : ''); 
           const commentVal = setLog.comment || '';
 
+          // Bouton Modifier si validé
+          const editBtn = isDone ? `
+            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mr-1" title="Modifier">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            </button>
+          ` : '';
+
           setsHtml += `
-            <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
+            <div class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
               <span class="col-span-2 text-center text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
               <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}"></div>
-              <div class="col-span-2 flex justify-center"><button onclick="toggleSetDone('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button></div>
+              <div class="col-span-2"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}"></div>
+              <div class="col-span-3 flex items-center justify-end">
+                ${editBtn}
+                <button onclick="handleSetClick('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button>
+              </div>
             </div>`;
         }
 
@@ -525,8 +603,8 @@
               <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText} • Pause: ${ex.restSec}s</p>
             </div>
             <div class="space-y-2 pt-1">
-              <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
-                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Valid</span>
+              <div class="grid grid-cols-12 gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
+                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-2">Note</span><span class="col-span-3 text-right pr-2">Action</span>
               </div>
               ${setsHtml}
             </div>
@@ -536,18 +614,108 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    function unlockSet(exId, setIdx) {
+      const saved = getSavedLogs(exId);
+      if (saved.sets && saved.sets[setIdx]) {
+        saved.sets[setIdx].done = false;
+        localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
+        loadSession(activeSessionIndex);
+        renderTabs();
+        showToast("Champs déverrouillés pour modification.");
+      }
+    }
+
     function getSavedLogs(exId) {
       const data = localStorage.getItem(`fitapp_log_${currentUser}_${exId}`);
       return data ? JSON.parse(data) : {};
     }
 
-    // --- ENVOI & MISE A JOUR INSTANTANEE ---
+    // --- POP-UPS DE CONFIRMATION ET CONGRATS ---
+    function openConfirmModal(msg, onConfirm) {
+      document.getElementById('confirm-modal-msg').innerText = msg;
+      pendingDeleteCallback = onConfirm;
+      document.getElementById('confirm-modal').classList.remove('hidden');
+      document.getElementById('confirm-modal-action-btn').onclick = () => {
+        closeConfirmModal(true);
+      };
+    }
+
+    function closeConfirmModal(confirmed) {
+      document.getElementById('confirm-modal').classList.add('hidden');
+      if (confirmed && pendingDeleteCallback) {
+        pendingDeleteCallback();
+      }
+      pendingDeleteCallback = null;
+    }
+
+    function checkCongratsModal() {
+      const currentSession = sessionsList[activeSessionIndex];
+      const currentPct = calculateSessionProgress(currentSession);
+      
+      if (currentPct === 100) {
+        // Déclencher confettis
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+        
+        let allSessionsDone = true;
+        sessionsList.forEach(s => {
+          if (calculateSessionProgress(s) < 100) allSessionsDone = false;
+        });
+
+        const modal = document.getElementById('congrats-modal');
+        const extra = document.getElementById('congrats-extra');
+        
+        if (allSessionsDone) {
+          document.getElementById('congrats-title').innerText = "SEMAINE COMPLÈTE ! 🔥";
+          document.getElementById('congrats-subtitle').innerText = "Tu as terminé 100% de toutes les séances de ton programme !";
+          extra.classList.remove('hidden');
+        } else {
+          document.getElementById('congrats-title').innerText = "SÉANCE TERMINÉE ! 🎉";
+          document.getElementById('congrats-subtitle').innerText = `Séance "${currentSession.title.replace(currentUser + " - ", "")}" validée à 100%. Excellent travail !`;
+          extra.classList.add('hidden');
+        }
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeCongratsModal() {
+      document.getElementById('congrats-modal').classList.add('hidden');
+    }
+
+    function resetWeekData() {
+      openConfirmModal("Veux-tu vraiment réinitialiser les cases pour recommencer la semaine ? Ton historique dans le calendrier restera conservé.", () => {
+        sessionsList.forEach(s => {
+          s.exercises.forEach(ex => {
+            localStorage.removeItem(`fitapp_log_${currentUser}_${ex.id}`);
+          });
+        });
+        closeCongratsModal();
+        renderTabs();
+        loadSession(activeSessionIndex);
+        showToast("Semaine réinitialisée pour la suivante !", "success");
+      });
+    }
+
+    function handleSetClick(exId, exName, setIdx, restSec) {
+      const saved = getSavedLogs(exId);
+      const isDone = saved.sets && saved.sets[setIdx]?.done === true;
+
+      if (isDone) {
+        openConfirmModal("Es-tu sûr de vouloir annuler cette série ?", () => {
+          executeToggleSetDone(exId, exName, setIdx, restSec);
+        });
+      } else {
+        executeToggleSetDone(exId, exName, setIdx, restSec);
+      }
+    }
+
     function sendToGoogleSheets(payload) {
       fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
         .catch(err => console.error("Erreur Sync:", err));
     }
 
-    function toggleSetDone(exId, exName, setIdx, restSec) {
+    function executeToggleSetDone(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
       const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
@@ -594,10 +762,13 @@
 
       localStorage.setItem('fitapp_journal_logs', JSON.stringify(journalLogs));
       
+      renderTabs();
       loadSession(activeSessionIndex);
       renderCalendar();
       if (!document.getElementById('view-stats').classList.contains('hidden')) renderChart();
       if (!document.getElementById('view-calendar').classList.contains('hidden')) showDayDetails(dateStr);
+
+      if (nextDone) checkCongratsModal();
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
