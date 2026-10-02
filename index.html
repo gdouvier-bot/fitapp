@@ -7,6 +7,9 @@
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Ajout de Chart.js pour les graphiques -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; user-select: none; }
@@ -40,59 +43,100 @@
     </button>
   </header>
 
-  <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24">
-    <!-- Onglets Séances -->
-    <section>
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
-      </div>
-      <div class="grid grid-cols-2 gap-2" id="session-tabs"></div>
-    </section>
+  <!-- CONTENU PRINCIPAL -->
+  <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24 relative" id="main-content">
+    
+    <!-- VUE : ENTRAINEMENT -->
+    <div id="view-workout" class="space-y-5 block">
+      <section>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
+        </div>
+        <div class="grid grid-cols-2 gap-2" id="session-tabs"></div>
+      </section>
 
-    <!-- Minuteur -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center space-x-2">
-          <i data-lucide="timer" class="w-4 h-4 text-blue-400"></i>
-          <h3 class="font-bold text-sm text-white">Minuteur</h3>
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="timer" class="w-4 h-4 text-blue-400"></i>
+            <h3 class="font-bold text-sm text-white">Minuteur</h3>
+          </div>
+          <div class="flex items-center space-x-1">
+            <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">45s</button>
+            <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">60s</button>
+            <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700">90s</button>
+          </div>
         </div>
-        <div class="flex items-center space-x-1">
-          <button onclick="setTimerPreset(45)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">45s</button>
-          <button onclick="setTimerPreset(60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">60s</button>
-          <button onclick="setTimerPreset(90)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-800 text-slate-300">90s</button>
+        <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
+          <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
+          <div class="flex items-center space-x-2">
+            <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition"><i data-lucide="play" class="w-5 h-5"></i></button>
+            <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+          </div>
         </div>
-      </div>
-      <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
-        <span id="timer-display" class="font-mono font-black text-xl text-white">01:30</span>
-        <div class="flex items-center space-x-2">
-          <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><i data-lucide="play" class="w-5 h-5"></i></button>
-          <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Liste d'exercices -->
-    <section class="space-y-3" id="exercise-container">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-          <h2 id="session-title" class="font-black text-lg text-white">Aucune séance</h2>
+      <section class="space-y-3" id="exercise-container">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+            <h2 id="session-title" class="font-black text-lg text-white">Aucune séance</h2>
+          </div>
         </div>
-      </div>
-      <div id="exercise-list" class="space-y-4"></div>
-    </section>
+        <div id="exercise-list" class="space-y-4"></div>
+      </section>
+    </div>
+
+    <!-- VUE : PROGRESSION -->
+    <div id="view-stats" class="space-y-5 hidden">
+      <section>
+        <div class="flex items-center space-x-2 mb-4">
+          <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
+          <h2 class="font-black text-lg text-white">Progression</h2>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Choisir un exercice</label>
+          <select id="chart-exercise-select" onchange="renderChart()" class="w-full bg-slate-950 border border-slate-700 text-white text-sm font-semibold rounded-xl px-3 py-2.5 outline-none mb-4 focus:border-blue-500 transition">
+            <option value="">Sélectionnez...</option>
+          </select>
+          
+          <div class="relative h-64 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-2 flex items-center justify-center">
+            <canvas id="progressionChart"></canvas>
+            <p id="no-data-msg" class="absolute text-slate-500 text-xs font-semibold hidden">Pas assez de données</p>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 
+  <!-- NAVIGATION BAS -->
+  <nav class="fixed bottom-0 w-full bg-slate-900 border-t border-slate-800 pb-safe z-40">
+    <div class="flex justify-around items-center p-2">
+      <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center p-2 text-blue-500 w-1/2">
+        <i data-lucide="dumbbell" class="w-5 h-5 mb-1"></i>
+        <span class="text-[10px] font-bold">Séance</span>
+      </button>
+      <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/2">
+        <i data-lucide="bar-chart-3" class="w-5 h-5 mb-1"></i>
+        <span class="text-[10px] font-bold">Stats</span>
+      </button>
+    </div>
+  </nav>
+
   <script>
-    // URL EXACTE DE TON SCRIPT APPS SCRIPT
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmdJ8iTLQtszZw0dMNNGRfKXG18LqQPnXzbq9xhSyWy9_FcpFKSphucNT97v-WOLkh/exec";
+    // URL DE TON SCRIPT APPS SCRIPT
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGcQdRgnQltX9OFVpSNg6VLkVh53NVqLznPfOklHwRO9IXRNuhx4EB_itLyLmhoBQi/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
     let allUsers = JSON.parse(localStorage.getItem('fitapp_all_users')) || [];
+    let journalLogs = JSON.parse(localStorage.getItem('fitapp_journal_logs')) || [];
+    
     let sessionsList = [];
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
+    let chartInstance = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -113,6 +157,22 @@
       setTimeout(() => toast.remove(), 2500);
     }
 
+    // --- SYSTEME DE VUES (Onglets du bas) ---
+    function switchView(view) {
+      if (view === 'workout') {
+        document.getElementById('view-workout').classList.remove('hidden');
+        document.getElementById('view-stats').classList.add('hidden');
+        document.getElementById('nav-workout').className = "flex flex-col items-center p-2 text-blue-500 w-1/2";
+        document.getElementById('nav-stats').className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/2 transition";
+      } else {
+        document.getElementById('view-workout').classList.add('hidden');
+        document.getElementById('view-stats').classList.remove('hidden');
+        document.getElementById('nav-stats').className = "flex flex-col items-center p-2 text-emerald-500 w-1/2";
+        document.getElementById('nav-workout').className = "flex flex-col items-center p-2 text-slate-500 hover:text-slate-300 w-1/2 transition";
+        populateChartDropdown();
+      }
+    }
+
     // CHARGEMENT VIA JSONP
     function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
@@ -126,7 +186,7 @@
       script.onload = () => script.remove();
       script.onerror = () => {
          if (btn) btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
-         alert("Impossible de joindre Google Sheets. Assure-toi que la web app est publiée en 'N'importe qui'.");
+         alert("Impossible de joindre Google Sheets.");
       };
     }
 
@@ -136,17 +196,21 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
 
       if (data.error) {
-        alert("Erreur retournée par Google : " + data.error);
+        alert("Erreur Google : " + data.error);
         return;
       }
 
       allUsers = data.users || [];
       rawExercises = data.exercises || [];
+      journalLogs = data.logs || []; // Les logs pour les graphiques !
+      
       localStorage.setItem('fitapp_all_users', JSON.stringify(allUsers));
       localStorage.setItem('fitapp_raw_exercises', JSON.stringify(rawExercises));
+      localStorage.setItem('fitapp_journal_logs', JSON.stringify(journalLogs));
 
       populateUserSelect(allUsers);
       buildProgramForCurrentUser();
+      populateChartDropdown();
       showToast("Synchronisation réussie !", "success");
     }
 
@@ -164,9 +228,98 @@
       currentUser = user;
       localStorage.setItem('fitapp_user', currentUser);
       buildProgramForCurrentUser();
+      populateChartDropdown();
       showToast(`Profil chargé : ${currentUser}`);
     }
 
+    // --- GRAPHIQUES (CHART.JS) ---
+    function populateChartDropdown() {
+      const select = document.getElementById('chart-exercise-select');
+      // Obtenir la liste des exercices uniques faits par cet utilisateur dans l'historique
+      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase());
+      const uniqueEx = [...new Set(userLogs.map(log => log.exercise))].sort();
+      
+      select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + 
+                         uniqueEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
+      
+      if(chartInstance) chartInstance.destroy();
+      document.getElementById('no-data-msg').classList.add('hidden');
+    }
+
+    function renderChart() {
+      const selectedEx = document.getElementById('chart-exercise-select').value;
+      if (!selectedEx) return;
+
+      // Récupère l'historique de l'utilisateur pour cet exercice précis
+      const userLogs = journalLogs.filter(log => log.user.toLowerCase() === currentUser.toLowerCase() && log.exercise === selectedEx);
+      
+      // On va grouper par date et trouver le max (Performance du jour)
+      const dailyPerf = {};
+      userLogs.forEach(log => {
+        const date = log.date.substring(0, 10); // Extrait jj/mm/yyyy
+        // On nettoie la valeur (ex: retire les 'kg', 'km' pour n'avoir que des chiffres)
+        let val = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.'));
+        if (isNaN(val)) val = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')); // Si pas de poids, on prend l'autre case
+        
+        if (!isNaN(val)) {
+          if (!dailyPerf[date] || val > dailyPerf[date]) {
+            dailyPerf[date] = val; // On garde le max du jour
+          }
+        }
+      });
+
+      const dates = Object.keys(dailyPerf);
+      const dataPoints = Object.values(dailyPerf);
+
+      if (dates.length === 0) {
+        if(chartInstance) chartInstance.destroy();
+        document.getElementById('no-data-msg').classList.remove('hidden');
+        return;
+      }
+      
+      document.getElementById('no-data-msg').classList.add('hidden');
+
+      if (chartInstance) chartInstance.destroy();
+
+      const ctx = document.getElementById('progressionChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Performance Max',
+            data: dataPoints,
+            borderColor: '#34d399', // Emerald 400
+            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+            borderWidth: 3,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointRadius: 4,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              grid: { color: '#334155' },
+              ticks: { color: '#94a3b8' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8', maxTicksLimit: 5 }
+            }
+          }
+        }
+      });
+    }
+
+    // --- LE RESTE (WORKOUT) ---
     function buildProgramForCurrentUser() {
       const userEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase());
       const grouped = {};
@@ -175,24 +328,9 @@
         grouped[ex.seance].push(ex);
       });
 
-      sessionsList = Object.keys(grouped).map((seanceName, idx) => ({
-        id: "s" + idx,
-        title: seanceName,
-        exercises: grouped[seanceName]
-      }));
-
+      sessionsList = Object.keys(grouped).map((seanceName, idx) => ({ id: "s" + idx, title: seanceName, exercises: grouped[seanceName] }));
       renderTabs();
-      
-      if (sessionsList.length > 0) {
-        switchSession(activeSessionIndex !== null && activeSessionIndex < sessionsList.length ? activeSessionIndex : 0);
-      } else {
-        document.getElementById('session-title').innerText = "Aucun programme";
-        document.getElementById('exercise-list').innerHTML = `
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-md">
-            <p class="text-xs text-slate-400 font-bold mb-2">Aucun exercice trouvé !</p>
-            <p class="text-[10px] text-slate-500">Ajoute des lignes dans ton Google Sheet pour <b>${currentUser}</b> puis clique sur Sync.</p>
-          </div>`;
-      }
+      if (sessionsList.length > 0) switchSession(activeSessionIndex !== null && activeSessionIndex < sessionsList.length ? activeSessionIndex : 0);
     }
 
     function renderTabs() {
@@ -221,23 +359,20 @@
         const savedData = getSavedLogs(ex.id);
         const safeName = ex.name.replace(/'/g, "\\'"); 
         
-        // LA LOGIQUE STRICTE BASÉE SUR LA COLONNE "TYPE"
-        let head1 = "Poids", head2 = "Reps", ph1 = "kg", ph2 = "reps";
-        const exType = (ex.type || "Poids").toLowerCase();
+        const exType = (ex.type || "Poids").trim().toLowerCase();
+        let head1 = "Poids", head2 = "Reps", ph1 = "kg", ph2 = "reps", isCardio = false;
 
-        if (exType === "durée") {
-          head1 = "Temps"; ph1 = "ex: 30s";
-          head2 = "Dist."; ph2 = "km/m";
+        if (exType === "durée" || exType === "duree") {
+          head1 = "Temps"; ph1 = "ex: 30s"; head2 = "Dist."; ph2 = "km/m"; isCardio = true;
         } else if (exType === "km") {
-          head1 = "Dist."; ph1 = "ex: 5km";
-          head2 = "Temps"; ph2 = "ex: 20m";
+          head1 = "Dist."; ph1 = "ex: 5km"; head2 = "Temps"; ph2 = "ex: 20m"; isCardio = true;
         } else if (exType === "pdc") {
-          head1 = "Lest";  ph1 = "+kg";
-          head2 = "Reps";  ph2 = "reps";
+          head1 = "Lest"; ph1 = "+kg"; head2 = "Reps"; ph2 = "reps";
         }
 
+        const totalSets = isCardio ? 1 : ex.sets;
         let setsHtml = '';
-        for (let setIdx = 0; setIdx < ex.sets; setIdx++) {
+        for (let setIdx = 0; setIdx < totalSets; setIdx++) {
           const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
           const isDone = (setLog.done === true);
           
@@ -246,27 +381,20 @@
           const btnClass = isDone ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-800 text-slate-500 hover:text-slate-200';
           
           const val1 = setLog.weight || '';
-          const val2 = setLog.reps || (head1 === "Poids" || head1 === "Lest" ? ex.reps : ''); 
+          const val2 = setLog.reps || (!isCardio ? ex.reps : ''); 
           const commentVal = setLog.comment || '';
 
           setsHtml += `
             <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
-              <span class="col-span-2 text-center text-xs font-bold text-slate-400">#${setIdx + 1}</span>
-              <div class="col-span-3">
-                <input type="text" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
-              </div>
-              <div class="col-span-2">
-                <input type="text" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
-              </div>
-              <div class="col-span-3">
-                <input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}">
-              </div>
-              <div class="col-span-2 flex justify-center">
-                <button onclick="toggleSetDone('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button>
-              </div>
+              <span class="col-span-2 text-center text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
+              <div class="col-span-3"><input type="text" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2"><input type="text" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}"></div>
+              <div class="col-span-2 flex justify-center"><button onclick="toggleSetDone('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button></div>
             </div>`;
         }
 
+        const seriesText = isCardio ? `<span class="text-amber-400">Objectif: ${ex.reps}</span>` : `${ex.sets} séries`;
         html += `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md">
             <div>
@@ -274,7 +402,7 @@
                 <h3 class="font-black text-base text-white">${ex.name}</h3>
                 <span class="text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 px-2 py-0.5 rounded">${ex.type || 'Poids'}</span>
               </div>
-              <p class="text-xs text-blue-400 font-medium mt-0.5">${ex.sets} séries • Pause: ${ex.restSec}s</p>
+              <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText} • Pause: ${ex.restSec}s</p>
             </div>
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
@@ -284,7 +412,6 @@
             </div>
           </div>`;
       });
-      
       container.innerHTML = html;
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -295,18 +422,13 @@
     }
 
     function sendToGoogleSheets(payload) {
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      }).catch(err => console.error("Erreur Sync:", err));
+      fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
+        .catch(err => console.error("Erreur Sync:", err));
     }
 
     function toggleSetDone(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
-      
       const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
       const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
@@ -316,7 +438,7 @@
       localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
 
       if (nextDone) {
-        showToast("Série enregistrée !", "success");
+        showToast("Enregistré !", "success");
         sendToGoogleSheets({ action: "CHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1, weight: wEl.value, reps: rEl.value, comments: cEl.value });
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
@@ -341,11 +463,7 @@
         if (restTimeRemaining > 0) { restTimeRemaining--; updateTimerDisplay(); } else { pauseRestTimer(); }
       }, 1000);
     }
-    function pauseRestTimer() { 
-      isRestTimerRunning = false; clearInterval(restTimerInterval); 
-      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; 
-      if (typeof lucide !== 'undefined') lucide.createIcons(); 
-    }
+    function pauseRestTimer() { isRestTimerRunning = false; clearInterval(restTimerInterval); document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
     function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
   </script>
 </body>
