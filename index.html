@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
 
+  <!-- Configuration PWA -->
   <link rel="manifest" href="./manifest.json">
   <script>
     if ('serviceWorker' in navigator) {
@@ -40,8 +41,10 @@
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
 
+  <!-- Toast Notification Custom -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
+  <!-- Modal de confirmation Custom -->
   <div id="confirm-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4 text-center">
       <div class="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center mx-auto">
@@ -64,7 +67,7 @@
 
   <!-- Header Bar -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
-    <div class="flex items-center space-x-2">
+    <div class="flex items-center space-x-2.5">
       <div class="w-10 h-10 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
         <svg viewBox="0 0 100 100" class="w-full h-full">
           <path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/>
@@ -75,21 +78,16 @@
         <h1 class="font-extrabold text-base tracking-tight leading-tight text-white flex items-center gap-1.5">
           FITAPP <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRO</span>
         </h1>
-        <p class="text-[10px] text-slate-400">4 Séances • Sheets Sync</p>
+        <p class="text-[10px] text-slate-400">4 Séances • Google Sheets Sync</p>
       </div>
     </div>
 
-    <!-- Champ Surnom / User -->
     <div class="flex items-center space-x-1.5">
-      <div class="flex flex-col items-end">
-        <span class="text-[9px] font-bold text-slate-400 uppercase">Surnom</span>
-        <input type="text" id="user-nickname" placeholder="Ton pseudo" onchange="saveNickname()" class="w-20 bg-slate-950 border border-slate-700 text-white text-[11px] font-bold rounded-lg px-2 py-1 outline-none focus:border-blue-500 text-center">
-      </div>
-      <button onclick="switchView('workout')" id="nav-btn-workout" class="p-2 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center shadow">
-        <i data-lucide="calendar" class="w-4 h-4"></i>
+      <button onclick="switchView('workout')" id="nav-btn-workout" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1 shadow">
+        <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Séances
       </button>
-      <button onclick="switchView('chart')" id="nav-btn-chart" class="p-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center">
-        <i data-lucide="line-chart" class="w-4 h-4"></i>
+      <button onclick="switchView('chart')" id="nav-btn-chart" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1">
+        <i data-lucide="line-chart" class="w-3.5 h-3.5"></i> Progrès
       </button>
     </div>
   </header>
@@ -103,6 +101,7 @@
       </span>
       <span class="font-medium text-slate-200">Chrono Séance:</span>
       <span id="active-workout-clock" class="font-mono font-bold text-emerald-400 text-sm">00:00</span>
+      <span class="text-[10px] text-slate-400">(Max 50 min)</span>
     </div>
     <button onclick="stopGlobalSession()" class="bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 text-[11px] font-semibold px-2 py-1 rounded transition">
       Terminer
@@ -156,7 +155,7 @@
 
           <div class="flex items-center space-x-2">
             <button id="timer-toggle-btn" onclick="toggleRestTimer()" class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg transition">
-              <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+              <i data-lucide="play" class="w-5 h-5"></i>
             </button>
             <button onclick="resetRestTimer()" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
               <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
@@ -262,10 +261,34 @@
 
     const WORKOUT_PROGRAM = [
       { id: "s1", day: "Lundi", title: "Séance 1 - Squat, Pecs & Biceps", badgeColor: "bg-blue-500", exercises: [
-        { id: "s1_ex1", name: "Squat à la Barre", sets: 4, reps: "12", restSec: 90, muscles: ["Quadriceps", "Fessiers", "Ischios", "Core"], setup: "Barre posée sur les trapèzes. Pieds écartés largeur d'épaules.", execution: "Descendre cuisses parallèles au sol en poussant les fesses vers l'arrière.", mistakes: "Genoux qui rentrent vers l'intérieur, talons qui décollent." },
-        { id: "s1_ex2", name: "Développé Couché", sets: 4, reps: "10", restSec: 90, muscles: ["Pectoraux", "Triceps", "Deltoïdes"], setup: "Allongé sur le banc, pieds à plat, omoplates resserrées.", execution: "Descendre la barre jusqu'au bas des pecs puis pousser verticalement.", mistakes: "Rebondir sur la poitrine, décoller les fesses du banc." },
-        { id: "s1_ex3", name: "Curl Barre Biceps", sets: 4, reps: "10", restSec: 60, muscles: ["Biceps"], setup: "Debout, coudes collés au corps, paumes vers le haut.", execution: "Monter la barre vers la poitrine sans bouger les coudes.", mistakes: "Utiliser le bas du dos pour donner de l'élan." },
-        { id: "s1_ex4", name: "Rameur Cardio", sets: 1, reps: "5000m", restSec: 0, isCardio: true, placeholder: "ex: 21m 45s", label: "Temps pour 5000m :", muscles: ["Cardio", "Dos"], setup: "Pieds attachés, dos droit, bras tendus.", execution: "Pousser avec les jambes puis tirer la poignée au nombril.", mistakes: "Tirer avec les bras avant les jambes, dos rond." }
+        { 
+          id: "s1_ex1", name: "Squat à la Barre", sets: 4, reps: "12", restSec: 90, 
+          muscles: ["Quadriceps", "Fessiers", "Ischios", "Core"],
+          setup: "Barre posée sur les trapèzes. Pieds écartés largeur d'épaules.",
+          execution: "Descendre cuisses parallèles au sol en poussant les fesses vers l'arrière.",
+          mistakes: "Genoux qui rentrent vers l'intérieur, talons qui décollent."
+        },
+        { 
+          id: "s1_ex2", name: "Développé Couché", sets: 4, reps: "10", restSec: 90, 
+          muscles: ["Pectoraux", "Triceps", "Deltoïdes"],
+          setup: "Allongé sur le banc, pieds à plat, omoplates resserrées.",
+          execution: "Descendre la barre jusqu'au bas des pecs puis pousser verticalement.",
+          mistakes: "Rebondir sur la poitrine, décoller les fesses du banc."
+        },
+        { 
+          id: "s1_ex3", name: "Curl Barre Biceps", sets: 4, reps: "10", restSec: 60, 
+          muscles: ["Biceps"],
+          setup: "Debout, coudes collés au corps, paumes vers le haut.",
+          execution: "Monter la barre vers la poitrine sans bouger les coudes.",
+          mistakes: "Utiliser le bas du dos pour donner de l'élan."
+        },
+        { 
+          id: "s1_ex4", name: "Rameur Cardio", sets: 1, reps: "5000m", restSec: 0, isCardio: true, placeholder: "ex: 21m 45s", label: "Temps pour 5000m :", 
+          muscles: ["Cardio", "Dos"],
+          setup: "Pieds attachés, dos droit, bras tendus.",
+          execution: "Pousser avec les jambes puis tirer la poignée au nombril.",
+          mistakes: "Tirer avec les bras avant les jambes, dos rond."
+        }
       ]},
       { id: "s2", day: "Mardi", title: "Séance 2 - Dos, Dips & Poigne", badgeColor: "bg-emerald-500", exercises: [
         { id: "s2_ex1", name: "Rowing Barre", sets: 4, reps: "10", restSec: 90, muscles: ["Grand Dorsal", "Trapèzes"], setup: "Buste penché à 45°, dos plat.", execution: "Tirer la barre au nombril en resserrant les omoplates.", mistakes: "Arrondir le bas du dos." },
@@ -293,26 +316,11 @@
     let myChart = null;
 
     window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      loadNickname();
       renderTabs();
       populateChartDropdown();
       showUnselectedState();
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
     });
-
-    function saveNickname() {
-      const val = document.getElementById('user-nickname').value;
-      localStorage.setItem('fitapp_nickname', val);
-    }
-
-    function loadNickname() {
-      const saved = localStorage.getItem('fitapp_nickname');
-      if (saved) document.getElementById('user-nickname').value = saved;
-    }
-
-    function getUserNickname() {
-      return document.getElementById('user-nickname').value.trim() || 'Alex';
-    }
 
     function showToast(message, type = "info") {
       const container = document.getElementById('toast-container');
@@ -323,7 +331,7 @@
       toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4"></i><span>${message}</span>`;
       
       container.appendChild(toast);
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
       
       setTimeout(() => {
         toast.style.opacity = '0';
@@ -336,7 +344,6 @@
       document.getElementById('confirm-modal').classList.remove('hidden');
       document.getElementById('confirm-yes-btn').onclick = () => {
         localStorage.clear();
-        loadNickname();
         showUnselectedState();
         closeConfirmModal();
         showToast("Toutes les données ont été réinitialisées !", "success");
@@ -361,7 +368,7 @@
           <p class="text-xs text-slate-500 max-w-xs mx-auto">Choisis une séance ci-dessus pour démarrer.</p>
         </div>
       `;
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
     }
 
     function populateChartDropdown() {
@@ -377,9 +384,13 @@
       if (view === 'workout') {
         document.getElementById('view-workout').classList.remove('hidden');
         document.getElementById('view-chart').classList.add('hidden');
+        document.getElementById('nav-btn-workout').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1 shadow";
+        document.getElementById('nav-btn-chart').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1";
       } else {
         document.getElementById('view-workout').classList.add('hidden');
         document.getElementById('view-chart').classList.remove('hidden');
+        document.getElementById('nav-btn-chart').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1 shadow";
+        document.getElementById('nav-btn-workout').className = "px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1";
         updateProgressionChart();
       }
     }
@@ -486,7 +497,7 @@
             </div>
           </div>`;
       }).join('');
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
     }
 
     function getSavedLogs(exId) {
@@ -534,7 +545,6 @@
 
         sendToGoogleSheets({
           action: "CHECK",
-          user: getUserNickname(),
           session: WORKOUT_PROGRAM[activeSessionIndex].title,
           exercise: getExerciseName(exId),
           set: setIdx + 1,
@@ -556,7 +566,6 @@
 
         sendToGoogleSheets({
           action: "UNCHECK",
-          user: getUserNickname(),
           session: WORKOUT_PROGRAM[activeSessionIndex].title,
           exercise: getExerciseName(exId),
           set: setIdx + 1
@@ -580,7 +589,6 @@
 
       sendToGoogleSheets({
         action: "CHECK",
-        user: getUserNickname(),
         session: WORKOUT_PROGRAM[activeSessionIndex].title,
         exercise: getExerciseName(exId),
         set: "Cardio", 
@@ -589,7 +597,7 @@
         comments: commentVal
       });
 
-      showToast("Cardio enregistré !", "success");
+      showToast("Cardio enregistré avec succès !", "success");
     }
 
     function updateProgressionChart() {
@@ -637,8 +645,8 @@
       if (isRestTimerRunning) clearInterval(restTimerInterval);
       isRestTimerRunning = true;
       document.getElementById('timer-status-text').innerText = "Repos en cours...";
-      document.getElementById('timer-toggle-btn').innerHTML = `<i data-lucide="pause" class="w-5 h-5 fill-current"></i>`;
-      lucide.createIcons();
+      document.getElementById('timer-toggle-btn').innerHTML = `<i data-lucide="pause" class="w-5 h-5"></i>`;
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
       restTimerInterval = setInterval(() => {
         if (restTimeRemaining > 0) { restTimeRemaining--; updateTimerDisplay(); } 
         else { pauseRestTimer(); document.getElementById('timer-status-text').innerText = "Temps écoulé !"; }
@@ -646,8 +654,8 @@
     }
     function pauseRestTimer() {
       isRestTimerRunning = false; clearInterval(restTimerInterval);
-      document.getElementById('timer-toggle-btn').innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-current"></i>`;
-      lucide.createIcons();
+      document.getElementById('timer-toggle-btn').innerHTML = `<i data-lucide="play" class="w-5 h-5"></i>`;
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
     }
     function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
 
@@ -682,7 +690,7 @@
       ).join('');
 
       document.getElementById('exercise-modal').classList.remove('hidden');
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
     }
 
     function closeExerciseModal() {
