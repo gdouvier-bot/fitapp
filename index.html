@@ -52,17 +52,18 @@
     <!-- Toasts -->
     <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
-    <!-- Modal Création d'Exercice -->
+    <!-- Modal Création / Modification d'Exercice -->
     <div id="add-ex-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 class="font-bold text-base text-white flex items-center gap-2">
+          <h3 id="ex-modal-title" class="font-bold text-base text-white flex items-center gap-2">
             <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice
           </h3>
           <button onclick="closeAddExModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
 
         <form id="add-ex-form" onsubmit="saveNewExercise(event)" class="space-y-3">
+          <input type="hidden" id="edit-ex-id" value="">
           <div>
             <label class="text-[11px] font-bold text-slate-400 uppercase">Nom de l'exercice</label>
             <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
@@ -108,6 +109,30 @@
       </div>
     </div>
 
+    <!-- Modal Modification du Nom de Séance -->
+    <div id="edit-session-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="font-bold text-base text-white flex items-center gap-2">
+            <i data-lucide="edit-3" class="w-5 h-5 text-blue-400"></i> Renommer la séance
+          </h3>
+          <button onclick="closeEditSessionModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <form onsubmit="saveSessionName(event)" class="space-y-3">
+          <input type="hidden" id="old-session-name" value="">
+          <div>
+            <label class="text-[11px] font-bold text-slate-400 uppercase">Nouveau nom de la séance</label>
+            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white mt-1 outline-none focus:border-blue-500">
+          </div>
+          <div class="flex justify-end space-x-2 pt-2">
+            <button type="button" onclick="closeEditSessionModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Annuler</button>
+            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg">Mettre à jour</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal Confirmation -->
     <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
@@ -115,10 +140,10 @@
           <i data-lucide="alert-triangle" class="w-6 h-6"></i>
           <h3 class="font-bold text-base text-white">Confirmation</h3>
         </div>
-        <p class="text-xs text-slate-300 leading-relaxed" id="confirm-modal-msg">Es-tu sûr de vouloir annuler cette série ?</p>
+        <p class="text-xs text-slate-300 leading-relaxed" id="confirm-modal-msg">Es-tu sûr de vouloir effectuer cette action ?</p>
         <div class="flex justify-end space-x-2 pt-2">
           <button onclick="closeConfirmModal(false)" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Annuler</button>
-          <button id="confirm-modal-action-btn" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-500 shadow-lg">Oui, supprimer</button>
+          <button id="confirm-modal-action-btn" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-500 shadow-lg">Oui, valider</button>
         </div>
       </div>
     </div>
@@ -194,6 +219,9 @@
               <span id="session-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
               <h2 id="session-title" class="font-black text-lg text-white">Aucune séance</h2>
             </div>
+            <button id="rename-session-btn" onclick="openEditSessionModal()" class="text-xs font-bold text-slate-400 hover:text-blue-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg transition hidden">
+              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Renommer séance
+            </button>
           </div>
           <div id="exercise-list" class="space-y-4"></div>
         </section>
@@ -357,14 +385,17 @@
     }
 
     function initFirebaseListeners() {
-      // 1. Écouter uniquement les exercices de l'utilisateur connecté
+      // 1. Écouter uniquement les exercices non archivés de l'utilisateur connecté
       db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
-        rawExercises = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        rawExercises = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(ex => ex.archived !== true); // Filtre les exercices archivés du programme actif
+          
         syncSmartState();
         buildProgramForCurrentUser();
       });
 
-      // 2. Écouter uniquement le journal de l'utilisateur connecté
+      // 2. Écouter le journal de bord (garde TOUT l'historique y compris les exos archivés)
       db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         journalLogs = snapshot.docs.map(doc => doc.data());
         syncSmartState();
@@ -375,11 +406,42 @@
       });
     }
 
-    function openAddExModal() { document.getElementById('add-ex-modal').classList.remove('hidden'); }
-    function closeAddExModal() { document.getElementById('add-ex-modal').classList.add('hidden'); }
+    // --- MODAL DE CRÉATION ET D'ÉDITION D'EXERCICE ---
+    function openAddExModal(ex = null) {
+      const titleEl = document.getElementById('ex-modal-title');
+      const editIdEl = document.getElementById('edit-ex-id');
+      
+      if (ex) {
+        titleEl.innerHTML = `<i data-lucide="edit" class="w-5 h-5 text-blue-400"></i> Modifier l'exercice`;
+        editIdEl.value = ex.id;
+        document.getElementById('new-ex-name').value = ex.name || '';
+        document.getElementById('new-ex-session').value = ex.seance || '';
+        document.getElementById('new-ex-type').value = ex.type || 'Poids';
+        document.getElementById('new-ex-sets').value = ex.sets || 4;
+        document.getElementById('new-ex-reps').value = ex.reps || '';
+        document.getElementById('new-ex-rest').value = ex.restSec || 60;
+      } else {
+        titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice`;
+        editIdEl.value = "";
+        document.getElementById('add-ex-form').reset();
+        
+        // Si une séance est actuellement sélectionnée, la pré-remplir
+        if (activeSessionIndex !== null && sessionsList[activeSessionIndex]) {
+          document.getElementById('new-ex-session').value = sessionsList[activeSessionIndex].title;
+        }
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      document.getElementById('add-ex-modal').classList.remove('hidden');
+    }
+
+    function closeAddExModal() { 
+      document.getElementById('add-ex-modal').classList.add('hidden'); 
+      document.getElementById('add-ex-form').reset();
+    }
 
     function saveNewExercise(e) {
       e.preventDefault();
+      const editId = document.getElementById('edit-ex-id').value;
       const name = document.getElementById('new-ex-name').value.trim();
       const seance = document.getElementById('new-ex-session').value.trim();
       const type = document.getElementById('new-ex-type').value;
@@ -387,7 +449,7 @@
       const reps = document.getElementById('new-ex-reps').value.trim();
       const restSec = parseInt(document.getElementById('new-ex-rest').value) || 0;
 
-      const docId = `EX_${Date.now()}`;
+      const docId = editId ? editId : `EX_${Date.now()}`;
 
       db.collection("exercises").doc(docId).set({
         userId: currentUserId,
@@ -398,13 +460,67 @@
         sets: sets,
         reps: reps,
         restSec: restSec,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        showToast("Exercice créé avec succès !", "success");
+        archived: false,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).then(() => {
+        showToast(editId ? "Exercice mis à jour !" : "Exercice créé avec succès !", "success");
         closeAddExModal();
-        document.getElementById('add-ex-form').reset();
       }).catch(err => {
-        showToast("Erreur lors de la création", "error");
+        showToast("Erreur lors de la sauvegarde", "error");
+      });
+    }
+
+    // --- ARCHIVAGE D'UN EXERCICE (Conserve l'historique) ---
+    function archiveExercise(exId, exName) {
+      openConfirmModal(`Souhaites-tu retirer "${exName}" de ton programme actif ? Son historique dans le calendrier et les stats sera conservé.`, () => {
+        db.collection("exercises").doc(exId).update({
+          archived: true,
+          archivedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          showToast(`"${exName}" a été archivé.`, "success");
+        }).catch(err => {
+          showToast("Erreur lors de l'archivage", "error");
+        });
+      });
+    }
+
+    // --- MODIFICATION DU NOM D'UNE SÉANCE ---
+    function openEditSessionModal() {
+      if (activeSessionIndex === null || !sessionsList[activeSessionIndex]) return;
+      const currentTitle = sessionsList[activeSessionIndex].title;
+      document.getElementById('old-session-name').value = currentTitle;
+      document.getElementById('new-session-title').value = currentTitle;
+      document.getElementById('edit-session-modal').classList.remove('hidden');
+    }
+
+    function closeEditSessionModal() {
+      document.getElementById('edit-session-modal').classList.add('hidden');
+    }
+
+    function saveSessionName(e) {
+      e.preventDefault();
+      const oldTitle = document.getElementById('old-session-name').value;
+      const newTitle = document.getElementById('new-session-title').value.trim();
+
+      if (!newTitle || oldTitle === newTitle) {
+        closeEditSessionModal();
+        return;
+      }
+
+      // Mettre à jour la propriété 'seance' de tous les exercices appartement à cette séance
+      const batch = db.batch();
+      const sessionExercises = rawExercises.filter(ex => ex.seance === oldTitle);
+
+      sessionExercises.forEach(ex => {
+        const ref = db.collection("exercises").doc(ex.id);
+        batch.update(ref, { seance: newTitle });
+      });
+
+      batch.commit().then(() => {
+        showToast(`Séance renommée en "${newTitle}"`, "success");
+        closeEditSessionModal();
+      }).catch(err => {
+        showToast("Erreur lors du changement de nom de la séance", "error");
       });
     }
 
@@ -476,7 +592,7 @@
       for(let i=0; i<startDay; i++) { html += `<div class="aspect-square"></div>`; }
 
       const today = new Date();
-      const todayStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+      const todayStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + year;
 
       for(let d=1; d<=daysInMonth; d++) {
         const dateStr = String(d).padStart(2, '0') + '/' + String(month + 1).padStart(2, '0') + '/' + year;
@@ -685,9 +801,11 @@
                         ? activeSessionIndex 
                         : nextSessionIdx;
         switchSession(targetIdx);
+        document.getElementById('rename-session-btn').classList.remove('hidden');
       } else {
         document.getElementById('session-title').innerText = "Aucun exercice";
         document.getElementById('exercise-list').innerHTML = '<p class="text-xs text-slate-500 text-center py-8">Clique sur "+ Ajouter exercice" pour créer tes premiers exercices !</p>';
+        document.getElementById('rename-session-btn').classList.add('hidden');
       }
     }
 
@@ -751,6 +869,7 @@
       session.exercises.forEach((ex) => {
         const savedData = getSavedLogs(ex.id);
         const safeName = ex.name.replace(/'/g, "\\'"); 
+        const safeExJson = JSON.stringify(ex).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
         
         const exType = (ex.type || "Poids").trim().toLowerCase();
         let head1 = "Poids", head2 = "Reps", ph1 = "kg", ph2 = "reps", isCardio = false;
@@ -800,11 +919,20 @@
         const pauseText = ex.restSec > 0 ? ` • Pause: ${ex.restSec}s` : '';
         
         html += `
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md relative">
             <div>
               <div class="flex justify-between items-start">
-                <h3 class="font-black text-base text-white">${ex.name}</h3>
-                <span class="text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 px-2 py-0.5 rounded">${ex.type || 'Poids'}</span>
+                <h3 class="font-black text-base text-white pr-16">${ex.name}</h3>
+                
+                <!-- BOUTONS D'ACTION SUR L'EXERCICE (ÉDITION & ARCHIVAGE) -->
+                <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
+                  <button onclick='openAddExModal(${safeExJson})' class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition" title="Modifier l'exercice">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button onclick="archiveExercise('${ex.id}', '${safeName}')" class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition" title="Retirer l'exercice (conserve l'historique)">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
               </div>
               <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText}${pauseText}</p>
             </div>
