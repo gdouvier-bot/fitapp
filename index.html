@@ -385,6 +385,7 @@
         buildProgramForCurrentUser();
       });
 
+      // ON CONSERVE LE VRAI ID DU DOCUMENT FIRESTORE
       db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         journalLogs = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
         syncSmartState();
@@ -676,6 +677,7 @@
           let weight = "";
           let reps = "";
           let comment = "";
+          let firestoreId = null;
 
           const logForSet = logsThisWeek.find(l => Number(l.set) === (i + 1));
 
@@ -684,6 +686,7 @@
             weight = logForSet.weight;
             reps = logForSet.reps;
             comment = logForSet.comment;
+            firestoreId = logForSet.firestoreId; // CONSERVATION DE L'ID FIRESTORE DE LA SÉRIE
           } else {
             const lastLogForSet = logsEx.find(l => Number(l.set) === (i + 1));
             if (lastLogForSet) {
@@ -694,7 +697,7 @@
               reps = logsEx[0].reps || "";
             }
           }
-          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false };
+          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId };
         }
         
         localStorage.setItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
@@ -888,7 +891,7 @@
             <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30" title="Modifier">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             </button>
-            <button onclick="deleteSet('${ex.id}', '${safeName}', ${setIdx})" class="w-6 h-6 rounded bg-red-500/20 text-red-400 border border-red-500/40 flex items-center justify-center transition hover:bg-red-500/30" title="Supprimer">
+            <button onclick="deleteSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-red-500/20 text-red-400 border border-red-500/40 flex items-center justify-center transition hover:bg-red-500/30" title="Supprimer">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           ` : `
@@ -1024,7 +1027,7 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
-    // VALIDATION DE LA SÉRIE AVEC DOC ID UNIQUE SUR FIRESTORE
+    // 1. CRÉATION DE SÉRIE ET RÉCUPÉRATION DE SON ID FIRESTORE UNIQUE
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
@@ -1034,26 +1037,28 @@
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
       
       const isEditMode = saved.sets[setIdx]?.isEditing === true;
+      const today = new Date();
+      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+      const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
+
+      // Création d'un document Firebase avec ID unique natif
+      const docRef = db.collection("journal").doc();
+      const firestoreId = docRef.id;
 
       saved.sets[setIdx] = { 
         weight: wEl ? wEl.value : "", 
         reps: rEl ? rEl.value : "", 
         comment: cEl ? cEl.value : "", 
         done: true,
-        isEditing: false 
+        isEditing: false,
+        firestoreId: firestoreId // ID unique rattaché localement
       };
       
       localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
 
-      const today = new Date();
-      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-      const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
-
-      const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
-
       showToast("Enregistré !", "success");
       
-      db.collection("journal").doc(docId).set({
+      docRef.set({
         userId: currentUserId,
         date: dateStr,
         time: timeStr,
@@ -1075,56 +1080,46 @@
       checkCongratsModal(isEditMode);
     }
 
-    // SUPPRESSION SYNCHRONE : LOCAL + BACKEND SANS REBOND
-    function deleteSet(exId, exName, setIdx) {
-      const today = new Date();
-      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-      const targetDocId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
-
-      // 1. SUPPRESSION LOCALE IMMÉDIATE DU TABLEAU MÉMOIRE
-      journalLogs = journalLogs.filter(log => {
-        if (log.firestoreId === targetDocId) return false;
-        const matchUser = log.userId === currentUserId;
-        const matchDate = parseDateToJJMMAAAA(log.date) === dateStr;
-        const matchSet = Number(log.set) === (setIdx + 1);
-        const matchEx = log.exerciseId ? (log.exerciseId === exId) : (cleanString(log.exercise) === cleanString(exName));
-        return !(matchUser && matchDate && matchSet && matchEx);
-      });
-
-      // 2. RÉINITIALISATION DU LOCALSTORAGE
+    // 2. SUPPRESSION UNIVERSELLE PAR L'ID FIRESTORE EXACT
+    function deleteSet(exId, setIdx) {
       const saved = getSavedLogs(exId);
+      const firestoreId = saved.sets && saved.sets[setIdx] ? saved.sets[setIdx].firestoreId : null;
+
+      // A. Nettoyage immédiat en mémoire locale
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
         saved.sets[setIdx].isEditing = false;
         saved.sets[setIdx].weight = "";
         saved.sets[setIdx].reps = "";
         saved.sets[setIdx].comment = "";
+        saved.sets[setIdx].firestoreId = null;
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
       }
 
-      // 3. MISE À JOUR DE L'ÉCRAN SANS ATTENDRE FIRESTORE
+      // B. Suppression directe par l'ID unique Firestore
+      if (firestoreId) {
+        db.collection("journal").doc(firestoreId).delete().catch(() => {});
+      } else {
+        // En secours si créé avec l'ancienne version
+        const today = new Date();
+        const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+        db.collection("journal")
+          .where("userId", "==", currentUserId)
+          .where("exerciseId", "==", exId)
+          .where("set", "==", setIdx + 1)
+          .get()
+          .then((snapshot) => {
+            snapshot.docs.forEach((doc) => {
+              if (parseDateToJJMMAAAA(doc.data().date) === dateStr) {
+                db.collection("journal").doc(doc.id).delete();
+              }
+            });
+          });
+      }
+
+      showToast("Série supprimée !");
       loadSession(activeSessionIndex);
       renderTabs();
-      showToast("Série supprimée !");
-
-      // 4. SUPPRESSION NETTE DANS FIRESTORE (BACKEND)
-      db.collection("journal").doc(targetDocId).delete().catch(() => {});
-      
-      db.collection("journal")
-        .where("userId", "==", currentUserId)
-        .where("set", "==", setIdx + 1)
-        .get()
-        .then((snapshot) => {
-          snapshot.docs.forEach((doc) => {
-            const data = doc.data();
-            const sameDate = parseDateToJJMMAAAA(data.date) === dateStr;
-            const sameEx = data.exerciseId ? (data.exerciseId === exId) : (cleanString(data.exercise) === cleanString(exName));
-            if (sameDate && sameEx) {
-              db.collection("journal").doc(doc.id).delete();
-            }
-          });
-        })
-        .catch((err) => console.error("Erreur suppression Firestore:", err));
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
