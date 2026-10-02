@@ -46,6 +46,14 @@
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
     .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); } /* Sécurité iPhone */
     
+    /* Animation du footer masquable */
+    nav {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    nav.nav-hidden {
+      transform: translateY(100%);
+    }
+
     /* Animations */
     @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -947,7 +955,7 @@
               position: 'top',
               labels: { 
                 color: '#cbd5e1', 
-                font: { size: 11, family: "'Inter', sans-serif" }, 
+                font: { size: 12, family: "'Inter', sans-serif" }, 
                 padding: 15, 
                 usePointStyle: true, 
                 pointStyle: 'circle',
@@ -1447,6 +1455,27 @@
         }
       }
     }
+
+    // === MASQUER LE FOOTER AU SCROLL VERS LE BAS / AFFICHER AU SCROLL VERS LE HAUT ===
+    let lastScrollTop = 0;
+    const scrollThreshold = 10;
+    const navEl = document.querySelector('nav');
+
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+      if (Math.abs(lastScrollTop - currentScroll) <= scrollThreshold) return;
+
+      if (currentScroll > lastScrollTop && currentScroll > 80) {
+        // Scroll vers le bas -> Masquer la navigation
+        navEl.classList.add('nav-hidden');
+      } else {
+        // Scroll vers le haut -> Réafficher la navigation
+        navEl.classList.remove('nav-hidden');
+      }
+
+      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+    }, { passive: true });
   </script>
 </body>
 </html>
