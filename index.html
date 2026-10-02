@@ -18,6 +18,8 @@
     .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
     @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .animate-pop { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
@@ -40,22 +42,17 @@
     </div>
   </div>
 
-  <!-- Modal Félicitations -->
+  <!-- Modal Félicitations (Séance / Semaine) -->
   <div id="congrats-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl relative overflow-hidden">
-      <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-        <i data-lucide="trophy" class="w-8 h-8"></i>
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-sm w-full text-center space-y-5 shadow-2xl relative overflow-hidden animate-pop">
+      <div class="w-20 h-20 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
+        <i data-lucide="trophy" class="w-10 h-10"></i>
       </div>
       <div>
-        <h3 class="font-black text-xl text-white uppercase tracking-wide" id="congrats-title">SÉANCE TERMINÉE ! 🎉</h3>
-        <p class="text-xs text-slate-400 mt-1" id="congrats-subtitle">Bien joué ! Tu as validé 100% de tes exercices aujourd'hui.</p>
+        <h3 class="font-black text-2xl text-white uppercase tracking-wide" id="congrats-title">SÉANCE TERMINÉE ! 🎉</h3>
+        <p class="text-sm text-slate-300 mt-2 font-medium leading-relaxed" id="congrats-subtitle">Bien joué ! Tu as validé 100% de tes exercices aujourd'hui.</p>
       </div>
-      <div id="congrats-extra" class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left space-y-2 hidden">
-        <p class="text-xs font-bold text-amber-400 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-4 h-4"></i> Semaine 100% Complétée !</p>
-        <p class="text-[11px] text-slate-300">Toutes les séances de ton programme sont validées. Veux-tu réinitialiser les cases de saisie pour la semaine prochaine ?</p>
-        <button onclick="resetWeekData()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition shadow-md">Réinitialiser pour la semaine suivante</button>
-      </div>
-      <button onclick="closeCongratsModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg transition">Continuer</button>
+      <button id="congrats-main-btn" onclick="closeCongratsModal()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition">Continuer</button>
     </div>
   </div>
 
@@ -210,21 +207,26 @@
       return String(str || '').trim().toLowerCase();
     }
 
+    // CORRECTION : Parse de manière robuste les dates issues de Google Sheets pour affichage dans le calendrier
     function parseDateToJJMMAAAA(val) {
       if (!val) return "";
       let s = String(val).trim();
       
-      // Format JJ/MM/AAAA
-      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.substring(0, 10);
+      // Si la date contient un 'T' (format ISO Google Sheets du type 2023-10-02T22:00:00.000Z)
+      if (s.includes('T')) s = s.split('T')[0];
       
       // Format ISO AAAA-MM-JJ
       if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
         let p = s.substring(0, 10).split('-');
         return `${p[2]}/${p[1]}/${p[0]}`;
       }
+      // Format JJ/MM/AAAA
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
+        return s.substring(0, 10);
+      }
       
-      // Tenter de parser avec Date
-      let d = new Date(s);
+      // Essai via un objet Date classique
+      let d = new Date(val);
       if (!isNaN(d.getTime())) {
         let day = String(d.getDate()).padStart(2, '0');
         let month = String(d.getMonth() + 1).padStart(2, '0');
@@ -679,13 +681,15 @@
       pendingDeleteCallback = null;
     }
 
+    // GESTION DU MODAL DE FELICITATION & DE LA SEMAINE TERMINÉE
     function checkCongratsModal() {
       const currentSession = sessionsList[activeSessionIndex];
       const currentPct = calculateSessionProgress(currentSession);
       
+      // Si la séance en cours vient d'atteindre 100%
       if (currentPct === 100) {
         if (typeof confetti === 'function') {
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+          confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
         }
         
         let allSessionsDone = true;
@@ -694,16 +698,31 @@
         });
 
         const modal = document.getElementById('congrats-modal');
-        const extra = document.getElementById('congrats-extra');
+        const mainBtn = document.getElementById('congrats-main-btn');
         
         if (allSessionsDone) {
+          // LA SEMAINE EST FINIE : On propose de clôturer et nettoyer
           document.getElementById('congrats-title').innerText = "SEMAINE COMPLÈTE ! 🔥";
-          document.getElementById('congrats-subtitle').innerText = "Tu as terminé 100% de toutes les séances de ton programme !";
-          extra.classList.remove('hidden');
+          document.getElementById('congrats-title').className = "font-black text-2xl text-amber-400 uppercase tracking-wide"; // Changer la couleur
+          document.getElementById('congrats-subtitle').innerHTML = "Tu as terminé <strong>100%</strong> de tes séances de la semaine ! Tes données vont être réinitialisées dans ton programme pour te préparer à la semaine prochaine.<br><br><span class='text-xs text-slate-400'>(Tes performances restent sauvegardées dans le Calendrier et le Sheet)</span>";
+          
+          mainBtn.innerText = "Clôturer la semaine & Réinitialiser";
+          mainBtn.className = "w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-sm rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.4)] transition";
+          
+          mainBtn.onclick = () => {
+            resetWeekData();
+            closeCongratsModal();
+          };
         } else {
+          // SEULE LA SÉANCE EST FINIE
           document.getElementById('congrats-title').innerText = "SÉANCE TERMINÉE ! 🎉";
-          document.getElementById('congrats-subtitle').innerText = `Séance "${currentSession.title.replace(currentUser + " - ", "")}" validée à 100%. Excellent travail !`;
-          extra.classList.add('hidden');
+          document.getElementById('congrats-title').className = "font-black text-2xl text-white uppercase tracking-wide";
+          document.getElementById('congrats-subtitle').innerText = `Ta séance "${currentSession.title.replace(currentUser + " - ", "")}" est validée à 100%. Excellent travail !`;
+          
+          mainBtn.innerText = "Continuer";
+          mainBtn.className = "w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition";
+          
+          mainBtn.onclick = () => closeCongratsModal();
         }
         modal.classList.remove('hidden');
       }
@@ -713,18 +732,17 @@
       document.getElementById('congrats-modal').classList.add('hidden');
     }
 
+    // RÉINITIALISE LE PROGRAMME LOCALEMENT SEULEMENT
     function resetWeekData() {
-      openConfirmModal("Veux-tu vraiment réinitialiser les cases pour recommencer la semaine ? Ton historique dans le calendrier restera conservé.", () => {
-        sessionsList.forEach(s => {
-          s.exercises.forEach(ex => {
-            localStorage.removeItem(`fitapp_log_${currentUser}_${ex.id}`);
-          });
+      sessionsList.forEach(s => {
+        s.exercises.forEach(ex => {
+          // On supprime juste les données locales (les cases cochées)
+          localStorage.removeItem(`fitapp_log_${currentUser}_${ex.id}`);
         });
-        closeCongratsModal();
-        renderTabs();
-        loadSession(activeSessionIndex);
-        showToast("Semaine réinitialisée !", "success");
       });
+      renderTabs();
+      loadSession(activeSessionIndex);
+      showToast("Programme réinitialisé pour la prochaine fois !", "success");
     }
 
     function handleSetClick(exId, exName, setIdx, restSec) {
@@ -798,6 +816,7 @@
       if (!document.getElementById('view-stats').classList.contains('hidden')) renderChart();
       if (!document.getElementById('view-calendar').classList.contains('hidden')) showDayDetails(dateStr);
 
+      // Si on vient de cocher une série, on vérifie si la séance ou la semaine est terminée
       if (nextDone) checkCongratsModal();
     }
 
