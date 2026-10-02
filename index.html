@@ -584,8 +584,8 @@
       const restSec = parseInt(document.getElementById('new-ex-rest').value) || 0;
 
       const docId = editId ? editId : `EX_${Date.now()}`;
-      
-      const newExData = {
+
+      db.collection("exercises").doc(docId).set({
         id: docId,
         userId: currentUserId,
         user: currentUser,
@@ -595,30 +595,22 @@
         sets: sets,
         reps: reps,
         restSec: restSec,
-        archived: false
-      };
-
-      // Mettre à jour immédiatement le tableau local
-      const existingIdx = rawExercises.findIndex(ex => ex.id === docId);
-      if (existingIdx !== -1) {
-        rawExercises[existingIdx] = { ...rawExercises[existingIdx], ...newExData };
-      } else {
-        rawExercises.push(newExData);
-      }
-
-      db.collection("exercises").doc(docId).set({
-        ...newExData,
+        archived: false,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).then(() => {
         showToast(editId ? "Exercice mis à jour !" : "Exercice créé !", "success");
         closeAddExModal();
-        syncSmartState();
-        buildProgramForCurrentUser(); // RAFRAÎCHISSEMENT DOM INSTANTANÉ (ONLINE)
+        // Le listener onSnapshot gère la mise à jour réactive de rawExercises
       }).catch(() => {
         showToast("Sauvegardé en cache hors-ligne", "info");
         closeAddExModal();
+        // Fallback local uniquement si la requête échoue en offline
+        const exData = { id: docId, userId: currentUserId, user: currentUser, name, seance, type, sets, reps, restSec, archived: false };
+        const idx = rawExercises.findIndex(ex => ex.id === docId);
+        if (idx !== -1) rawExercises[idx] = exData;
+        else rawExercises.push(exData);
         syncSmartState();
-        buildProgramForCurrentUser(); // RAFRAÎCHISSEMENT DOM INSTANTANÉ (OFFLINE)
+        buildProgramForCurrentUser();
       });
     }
 
