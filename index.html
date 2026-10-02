@@ -191,10 +191,15 @@
       </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-20 relative" id="main-content">
+    <main class="flex-1 overflow-y-auto px-4 pt-2 py-4 space-y-5 pb-20 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
       <div id="view-workout" class="space-y-5 block animate-pop">
+        <div class="flex items-center space-x-2 mb-2">
+          <i data-lucide="dumbbell" class="w-5 h-5 text-blue-400"></i>
+          <h2 class="font-black text-xl text-white">Mon Entraînement</h2>
+        </div>
+
         <section>
           <div class="flex items-center justify-between mb-2.5">
             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
@@ -940,7 +945,7 @@
         options: {
           responsive: true, 
           maintainAspectRatio: false, 
-          layout: { padding: { top: 15, bottom: 5 } },
+          layout: { padding: { top: 0, bottom: 5, left: 0, right: 0 } },
           plugins: { 
             legend: { 
               display: true, 
@@ -948,12 +953,11 @@
               labels: { 
                 color: '#cbd5e1', 
                 font: { size: 12, family: "'Inter', sans-serif" }, 
-                padding: 15, 
+                padding: 20, 
                 usePointStyle: true, 
-                pointStyle: 'circle',
+                pointStyle: 'circle', 
                 boxWidth: 8,
-                boxHeight: 8,
-                pointStyleWidth: 8
+                boxHeight: 8
               } 
             },
             tooltip: {
