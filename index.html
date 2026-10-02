@@ -220,7 +220,7 @@
       </button>
     </header>
 
-    <!-- Main Content -->
+    <!-- Content -->
     <main class="flex-1 overflow-y-auto px-4 pt-6 pb-20 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
@@ -347,7 +347,6 @@
   </div>
 
   <script>
-    // Service Worker PWA avec fallback Blob
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {
@@ -362,7 +361,6 @@
       });
     }
 
-    // Config Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDmyDdWOiucYk6rdyO_E3v631401z6bdJw",
       authDomain: "fitapp-pro-5bd6b.firebaseapp.com",
@@ -444,7 +442,7 @@
     }
 
     function logout() { 
-      clearInterval(restTimerInterval); 
+      pauseRestTimer();
       auth.signOut(); 
     }
 
@@ -783,7 +781,19 @@
       }
 
       select.innerHTML = uniqueDoneEx.map(ex => `<option value="${sanitizeHTML(ex)}">${sanitizeHTML(ex)}</option>`).join('');
-      select.value = sanitizeHTML(uniqueDoneEx[0]);
+      
+      const lastLog = journalLogs.reduce((latest, current) => {
+         const dLatest = parseDateToJJMMAAAA(latest.date).split('/').reverse().join('');
+         const dCurrent = parseDateToJJMMAAAA(current.date).split('/').reverse().join('');
+         return dCurrent >= dLatest ? current : latest;
+      }, journalLogs[0]);
+
+      if (lastLog && lastLog.exercise) {
+        select.value = sanitizeHTML(lastLog.exercise);
+      } else {
+        select.value = sanitizeHTML(uniqueDoneEx[0]);
+      }
+
       renderChart();
     }
 
