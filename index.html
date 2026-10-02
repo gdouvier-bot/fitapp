@@ -42,7 +42,7 @@
     </div>
   </div>
 
-  <!-- Modal Félicitations (Séance / Semaine) -->
+  <!-- Modal Félicitations -->
   <div id="congrats-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-sm w-full text-center space-y-5 shadow-2xl relative overflow-hidden animate-pop">
       <div class="w-20 h-20 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
@@ -187,8 +187,7 @@
   </nav>
 
   <script>
-    // --- ICI EST RENSEIGNÉE TA NOUVELLE URL ---
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsZCD7uiTc5i68TmYMBNr5SeykPLO2CvK-1QpgbdCvmswej0dSwcTJDs7pg16EfbQ/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIs7AFBaURyKSkSvIR41cewCiYmuRo1NOynk2M25Blf0sNxowUh5saSnZpgroBU2TH/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -208,17 +207,25 @@
       return String(str || '').trim().toLowerCase();
     }
 
+    // Gestion robuste des dates (ajout des 0 manquants et tous formats)
     function parseDateToJJMMAAAA(val) {
       if (!val) return "";
       let s = String(val).trim();
       if (s.includes('T')) s = s.split('T')[0];
-      if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-        let p = s.substring(0, 10).split('-');
-        return `${p[2]}/${p[1]}/${p[0]}`;
+      
+      // Sécurité 1 : Format YYYY-MM-DD (ex: 2026-10-02)
+      if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
+        let p = s.split(' ')[0].split('-');
+        return `${String(p[2]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[0]}`;
       }
-      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
-        return s.substring(0, 10);
+      
+      // Sécurité 2 : Format JJ/MM/AAAA ou J/M/AAAA (ex: 2/10/2026)
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
+        let p = s.split(' ')[0].split('/');
+        return `${String(p[0]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[2]}`;
       }
+      
+      // Sécurité 3 : Objet Date natif
       let d = new Date(val);
       if (!isNaN(d.getTime())) {
         let day = String(d.getDate()).padStart(2, '0');
@@ -226,7 +233,7 @@
         let year = d.getFullYear();
         return `${day}/${month}/${year}`;
       }
-      return s.substring(0, 10);
+      return s.split(' ')[0].substring(0, 10);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -368,11 +375,9 @@
       container.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    // --- NOUVELLE FONCTION : Synchronisation Cloud Intelligente ---
     function syncSmartState() {
-      // 1. Déterminer la date du Lundi de cette semaine (minuit)
       const now = new Date();
-      const day = now.getDay() || 7; // Dimanche = 7
+      const day = now.getDay() || 7; 
       const monday = new Date(now);
       monday.setHours(0,0,0,0);
       monday.setDate(now.getDate() - day + 1);
@@ -381,16 +386,23 @@
       const userLogs = journalLogs.filter(log => cleanString(log.user) === cleanString(currentUser));
 
       userExs.forEach(ex => {
-        // Tous les logs pour cet exercice
-        const logsEx = userLogs.filter(l => cleanString(l.exercise) === cleanString(ex.name));
+        // Filtrage strict par nom d'exercice ET par séance 
+        const logsEx = userLogs.filter(l => {
+          const matchName = cleanString(l.exercise) === cleanString(ex.name);
+          const matchSession = l.session ? cleanString(l.session) === cleanString(ex.seance) : true;
+          return matchName && matchSession;
+        });
         
-        // Trier du plus récent au plus ancien
         logsEx.sort((a, b) => {
-          const dA = a.date.split('/'); const dB = b.date.split('/');
+          const safeA = parseDateToJJMMAAAA(a.date) || ""; 
+          const safeB = parseDateToJJMMAAAA(b.date) || "";
+          const dA = safeA.split('/'); 
+          const dB = safeB.split('/');
           const timeA = a.time ? a.time.split(':') : [0,0,0];
           const timeB = b.time ? b.time.split(':') : [0,0,0];
-          const dateA = new Date(dA[2], dA[1]-1, dA[0], timeA[0], timeA[1], timeA[2]);
-          const dateB = new Date(dB[2], dB[1]-1, dB[0], timeB[0], timeB[1], timeB[2]);
+          
+          const dateA = dA.length === 3 ? new Date(dA[2], dA[1]-1, dA[0], timeA[0], timeA[1], timeA[2]) : new Date(0);
+          const dateB = dB.length === 3 ? new Date(dB[2], dB[1]-1, dB[0], timeB[0], timeB[1], timeB[2]) : new Date(0);
           return dateB - dateA;
         });
 
@@ -398,15 +410,16 @@
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
         const totalSets = isCardio ? 1 : (ex.sets || 4);
 
-        // Garder uniquement les logs de CETTE SEMAINE (depuis lundi)
         const logsThisWeek = logsEx.filter(l => {
-          const p = l.date.split('/');
+          const safeDate = parseDateToJJMMAAAA(l.date);
+          if (!safeDate || !safeDate.includes('/')) return false;
+          const p = safeDate.split('/');
           const d = new Date(p[2], p[1]-1, p[0]);
           return d >= monday;
         });
 
-        // Inverser pour que le log le plus ancien de la semaine soit la série 1
-        logsThisWeek.reverse(); 
+        const recentLogs = logsThisWeek.slice(0, totalSets);
+        recentLogs.reverse(); 
 
         for(let i = 0; i < totalSets; i++) {
           let setDone = false;
@@ -414,15 +427,12 @@
           let reps = "";
           let comment = "";
 
-          // Si une ligne existe cette semaine pour cette série
-          if (i < logsThisWeek.length) {
+          if (i < recentLogs.length) {
             setDone = true;
-            weight = logsThisWeek[i].weight;
-            reps = logsThisWeek[i].reps;
-            comment = logsThisWeek[i].comment;
-          } 
-          // Sinon, on pré-remplit avec la toute dernière perf connue (la semaine d'avant)
-          else {
+            weight = recentLogs[i].weight;
+            reps = recentLogs[i].reps;
+            comment = recentLogs[i].comment;
+          } else {
             if (logsEx.length > 0) {
               weight = logsEx[0].weight || "";
               reps = logsEx[0].reps || "";
@@ -431,7 +441,6 @@
           saved.sets[i] = { weight, reps, comment, done: setDone };
         }
         
-        // On écrase la mémoire locale avec la VÉRITÉ absolue du Google Sheet
         localStorage.setItem(`fitapp_log_${currentUser}_${ex.id}`, JSON.stringify(saved));
       });
     }
@@ -469,7 +478,6 @@
 
       populateUserSelect(allUsers);
       
-      // Mise à jour magique de la semaine
       syncSmartState(); 
       buildProgramForCurrentUser();
       
@@ -495,7 +503,6 @@
       currentUser = user;
       localStorage.setItem('fitapp_user', currentUser);
       
-      // On recalcule tout intelligemment pour le nouvel utilisateur
       syncSmartState(); 
       buildProgramForCurrentUser();
       
@@ -581,7 +588,6 @@
       });
       sessionsList = Object.keys(grouped).map((seName, idx) => ({ id: "s" + idx, title: seName, exercises: grouped[seName] }));
       
-      // LOGIQUE INTELLIGENTE : Trouver la première séance qui n'est pas à 100%
       let nextSessionIdx = 0;
       for (let i = 0; i < sessionsList.length; i++) {
         if (calculateSessionProgress(sessionsList[i]) < 100) {
@@ -593,7 +599,6 @@
       renderTabs();
       
       if (sessionsList.length > 0) {
-        // Sélection intelligente de l'onglet actif au chargement
         let targetIdx = (activeSessionIndex !== null && activeSessionIndex < sessionsList.length) 
                         ? activeSessionIndex 
                         : nextSessionIdx;
@@ -813,7 +818,6 @@
         s.exercises.forEach(ex => {
           const saved = getSavedLogs(ex.id);
           if (saved.sets) {
-            // Au lieu de tout supprimer, on passe juste 'done' à false
             Object.keys(saved.sets).forEach(setIdx => {
               saved.sets[setIdx].done = false;
             });
@@ -869,6 +873,7 @@
           date: dateStr,
           time: timeStr,
           user: currentUser,
+          session: sessionsList[activeSessionIndex].title,
           exercise: exName,
           weight: wEl.value,
           reps: rEl.value,
