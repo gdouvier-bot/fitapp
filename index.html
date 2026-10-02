@@ -35,7 +35,7 @@
         </select>
       </div>
     </div>
-    <button onclick="fetchSheetData(true)" id="sync-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 border border-slate-700 transition">
+    <button onclick="fetchSheetData()" id="sync-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 border border-slate-700 transition">
       <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>
     </button>
   </header>
@@ -85,9 +85,9 @@
 
   <script>
     // ==========================================
-    // 🚨 COLLE TA NOUVELLE URL APPS SCRIPT ICI :
+    // 🚨 COLLE TA NOUVELLE URL EXACTE ICI :
     // ==========================================
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbweldAq-6U3omk7gOemUH5_pB_kTuL4YFbBhJGhLBYDEQDyJnxc43hM8XlhMOcwVmHT/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaojRJ0Wn1izHyjAilv6VIF90oGSR5Cs289mvtz3BSDu5d9mJ239uF9xVxRvOB1x2U/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -98,15 +98,11 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof lucide !== 'undefined') lucide.createIcons();
-      
-      // 1. Charger immédiatement l'interface avec les données en cache (Zéro attente)
       if (allUsers.length > 0 && rawExercises.length > 0) {
         populateUserSelect(allUsers);
         buildProgramForCurrentUser();
       }
-      
-      // 2. Lancer la synchronisation en arrière-plan
-      fetchSheetData(false);
+      fetchSheetData();
     });
 
     function showToast(msg, type="info") {
@@ -119,47 +115,42 @@
       setTimeout(() => toast.remove(), 2500);
     }
 
-    function fetchSheetData(manualSync = false) {
+    // LA NOUVELLE METHODE QUI NE PEUT PAS ETRE BLOQUEE
+    function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
+      if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
       if (typeof lucide !== 'undefined') lucide.createIcons();
 
-      fetch(GOOGLE_SCRIPT_URL + "?t=" + Date.now(), { method: "GET", redirect: "follow" })
-        .then(res => res.text())
-        .then(text => {
-          if (text.includes("<html")) throw new Error("Accès bloqué par Google. As-tu publié en 'N'importe qui' ?");
-          
-          const data = JSON.parse(text);
-          if (data.status === "error") throw new Error(data.message);
+      const script = document.createElement('script');
+      script.src = GOOGLE_SCRIPT_URL + "?callback=onGoogleDataLoaded&t=" + Date.now();
+      document.body.appendChild(script);
+      
+      script.onload = () => script.remove();
+      script.onerror = () => {
+         if (btn) btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
+         alert("Impossible de joindre Google. As-tu bien mis 'N'importe qui' (Anyone) dans les accès ?");
+      };
+    }
 
-          // Sauvegarde locale (Offline first)
-          allUsers = data.users || [];
-          rawExercises = data.exercises || [];
-          localStorage.setItem('fitapp_all_users', JSON.stringify(allUsers));
-          localStorage.setItem('fitapp_raw_exercises', JSON.stringify(rawExercises));
+    // La fonction déclenchée automatiquement dès que Google répond
+    function onGoogleDataLoaded(data) {
+      const btn = document.getElementById('sync-btn');
+      if (btn) btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>`;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
 
-          populateUserSelect(allUsers);
-          buildProgramForCurrentUser();
-          
-          if (manualSync) showToast("Synchronisation réussie !", "success");
-          btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sync</span>`;
-          if (typeof lucide !== 'undefined') lucide.createIcons();
-        })
-        .catch(err => {
-          console.error(err);
-          btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
-          if (typeof lucide !== 'undefined') lucide.createIcons();
-          
-          if (rawExercises.length === 0) {
-            document.getElementById('exercise-list').innerHTML = `
-              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-md">
-                <p class="text-xs text-red-400 font-bold mb-2">Erreur de connexion</p>
-                <p class="text-[10px] text-slate-500">${err.message}</p>
-              </div>`;
-          } else if (manualSync) {
-            showToast("Mode hors-ligne : Impossible de joindre Google", "error");
-          }
-        });
+      if (data.error) {
+        alert("Erreur de ton tableau Google : " + data.error);
+        return;
+      }
+
+      allUsers = data.users || [];
+      rawExercises = data.exercises || [];
+      localStorage.setItem('fitapp_all_users', JSON.stringify(allUsers));
+      localStorage.setItem('fitapp_raw_exercises', JSON.stringify(rawExercises));
+
+      populateUserSelect(allUsers);
+      buildProgramForCurrentUser();
+      showToast("Synchronisation Google réussie !", "success");
     }
 
     function populateUserSelect(users) {
@@ -312,7 +303,7 @@
         showToast("Série annulée !");
         sendToGoogleSheets({ action: "UNCHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1 });
       }
-      loadSession(activeSessionIndex); // Recharge pour verrouiller/déverrouiller
+      loadSession(activeSessionIndex);
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
