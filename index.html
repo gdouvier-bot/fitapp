@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
 
-  <!-- Configuration PWA (Manifeste & Service Worker) -->
+  <!-- Configuration PWA -->
   <link rel="manifest" href="./manifest.json">
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker enregistré avec succès:', reg.scope))
-          .catch(err => console.error('Échec enregistrement Service Worker:', err));
+          .then(reg => console.log('Service Worker enregistré:', reg.scope))
+          .catch(err => console.error('Échec Service Worker:', err));
       });
     }
   </script>
@@ -257,8 +257,7 @@
   </div>
 
   <script>
-    // URL Google Apps Script officielle
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIj2xJ-7icm9fhv-HyCGTs-9aDfkgKszIlSybPiSd7x8XWyJb0Pox270y5vZhOihvV/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydRqvNVAi0jLqD6fcNHQl1bPUnQxSYE-dgNNRsXi2-S4mAJrkMifXhP0DuJn3O263R/exec";
 
     const WORKOUT_PROGRAM = [
       { id: "s1", day: "Lundi", title: "Séance 1 - Squat, Pecs & Biceps", badgeColor: "bg-blue-500", exercises: [
@@ -469,21 +468,23 @@
               ${Array.from({ length: ex.sets }).map((_, setIdx) => {
                 const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
                 const isDone = (setLog.done === true);
+                const disabledAttr = isDone ? 'disabled' : '';
+                const disabledClass = isDone ? 'opacity-50 cursor-not-allowed bg-slate-950/80 border-slate-800' : 'bg-slate-900 border-slate-700 focus:border-blue-500';
 
                 return `
                   <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/80">
                     <span class="col-span-2 text-center text-xs font-bold text-slate-400">#${setIdx + 1}</span>
                     
                     <div class="col-span-3">
-                      <input type="number" id="weight-${ex.id}-${setIdx}" value="${setLog.weight || ''}" placeholder="kg" class="w-full bg-slate-900 border border-slate-700 text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none focus:border-blue-500">
+                      <input type="number" id="weight-${ex.id}-${setIdx}" value="${setLog.weight \vert{}\vert{} ''}" placeholder="kg" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none border transition ${disabledClass}">
                     </div>
                     
                     <div class="col-span-2">
-                      <input type="number" id="reps-${ex.id}-${setIdx}" value="${setLog.reps || ex.reps}" placeholder="reps" class="w-full bg-slate-900 border border-slate-700 text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none focus:border-blue-500">
+                      <input type="number" id="reps-${ex.id}-${setIdx}" value="${setLog.reps \vert{}\vert{} ex.reps}" placeholder="reps" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disabledClass}">
                     </div>
 
                     <div class="col-span-3">
-                      <input type="text" id="comment-${ex.id}-${setIdx}" value="${setLog.comment || ''}" placeholder="RPE, facile..." class="w-full bg-slate-900 border border-slate-700 text-slate-300 text-[10px] rounded-lg px-1.5 py-1 outline-none focus:border-blue-500">
+                      <input type="text" id="comment-${ex.id}-${setIdx}" value="${setLog.comment \vert{}\vert{} ''}" placeholder="RPE, facile..." ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1.5 py-1 outline-none border transition ${disabledClass}">
                     </div>
 
                     <div class="col-span-2 flex justify-center">
@@ -509,7 +510,7 @@
       fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       }).catch(err => console.error("Erreur d'envoi:", err));
     }
@@ -518,20 +519,33 @@
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
 
-      const weightVal = document.getElementById(`weight-${exId}-${setIdx}`).value;
-      const repsVal = document.getElementById(`reps-${exId}-${setIdx}`).value;
-      const commentVal = document.getElementById(`comment-${exId}-${setIdx}`).value;
+      const weightEl = document.getElementById(`weight-${exId}-${setIdx}`);
+      const repsEl = document.getElementById(`reps-${exId}-${setIdx}`);
+      const commentEl = document.getElementById(`comment-${exId}-${setIdx}`);
+
+      const weightVal = weightEl.value;
+      const repsVal = repsEl.value;
+      const commentVal = commentEl.value;
       const nextDone = (saved.sets[setIdx]?.done !== true);
 
       saved.sets[setIdx] = { weight: weightVal, reps: repsVal, comment: commentVal, done: nextDone };
       localStorage.setItem(`fitapp_log_${exId}`, JSON.stringify(saved));
 
       const btn = document.getElementById(`btn-check-${exId}-${setIdx}`);
+
       if (nextDone) {
+        // --- COCHÉ : Bloquer les inputs et envoyer CHECK ---
         btn.className = "w-7 h-7 rounded-lg flex items-center justify-center transition bg-emerald-500 text-white shadow";
+        
+        [weightEl, repsEl, commentEl].forEach(el => {
+          el.disabled = true;
+          el.className = "w-full text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none border transition opacity-50 cursor-not-allowed bg-slate-950/80 border-slate-800";
+        });
+
         showToast("Série enregistrée !", "success");
 
         sendToGoogleSheets({
+          action: "CHECK",
           session: WORKOUT_PROGRAM[activeSessionIndex].title,
           exercise: getExerciseName(exId),
           set: setIdx + 1,
@@ -542,7 +556,22 @@
 
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
+        // --- DÉCOCHÉ : Débloquer les inputs et envoyer UNCHECK ---
         btn.className = "w-7 h-7 rounded-lg flex items-center justify-center transition bg-slate-800 text-slate-500 hover:text-slate-200";
+
+        [weightEl, repsEl, commentEl].forEach(el => {
+          el.disabled = false;
+          el.className = "w-full text-white text-xs font-mono rounded-lg px-1.5 py-1 text-center outline-none border transition bg-slate-900 border-slate-700 focus:border-blue-500";
+        });
+
+        showToast("Série supprimée du Sheet !", "info");
+
+        sendToGoogleSheets({
+          action: "UNCHECK",
+          session: WORKOUT_PROGRAM[activeSessionIndex].title,
+          exercise: getExerciseName(exId),
+          set: setIdx + 1
+        });
       }
     }
 
@@ -561,6 +590,7 @@
       localStorage.setItem(`fitapp_log_${exId}`, JSON.stringify(saved));
 
       sendToGoogleSheets({
+        action: "CHECK",
         session: WORKOUT_PROGRAM[activeSessionIndex].title,
         exercise: getExerciseName(exId),
         set: "Cardio", 
