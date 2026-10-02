@@ -426,6 +426,7 @@
       document.getElementById('add-ex-form').reset();
     }
 
+    // CORRECTION MAJEURE : L'ID DE L'EXERCICE EST TOUJOURS DÉFINI ET SAUVEGARDÉ DANS L'OBJET EXERCICE
     function saveNewExercise(e) {
       e.preventDefault();
       const editId = document.getElementById('edit-ex-id').value;
@@ -439,6 +440,7 @@
       const docId = editId ? editId : `EX_${Date.now()}`;
 
       db.collection("exercises").doc(docId).set({
+        id: docId, // CHAMP CRUCIAL AJOUTÉ
         userId: currentUserId,
         user: currentUser,
         name: name,
@@ -644,7 +646,7 @@
       container.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    // SYNCHRONISATION PAR IDENTIFIANT UNIQUE (exerciseId ET NON PAR NOM DUPLIQUÉ)
+    // SYNCHRONISATION STRICTEMENT ISOLÉE PAR EXERCISE ID
     function syncSmartState() {
       const now = new Date();
       const day = now.getDay() || 7; 
@@ -653,7 +655,6 @@
       monday.setDate(now.getDate() - day + 1);
 
       rawExercises.forEach(ex => {
-        // Filtrage strict par exerciseId (ou nom + séance en secours)
         const logsEx = journalLogs.filter(l => {
           if (l.exerciseId) return l.exerciseId === ex.id;
           return cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance);
@@ -1025,7 +1026,7 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
-    // BOUTON VERT : VALIDATION AVEC ENREGISTREMENT DE exerciseId
+    // VALIDATION DE LA SÉRIE AVEC RATTACHEMENT STRICT DE L'EXERCISE ID
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
@@ -1050,7 +1051,6 @@
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
 
-      // Clé unique absolue basée sur l'ID de l'exercice
       const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
 
       showToast("Enregistré !", "success");
@@ -1062,7 +1062,7 @@
         user: currentUser,
         session: sessionsList[activeSessionIndex].title,
         exercise: exName,
-        exerciseId: exId, // Clé fondamentale pour l'unicité
+        exerciseId: exId,
         set: setIdx + 1,
         weight: wEl ? wEl.value : "",
         reps: rEl ? rEl.value : "",
@@ -1077,23 +1077,23 @@
       checkCongratsModal(isEditMode);
     }
 
-    // BOUTON POUBELLE : SUPPRESSION DIRECTE PAR ID UNIQUE
+    // SUPPRESSION CIBLÉE STRICTE ET DÉFINITIVE
     function deleteSet(exId, exName, setIdx) {
       const today = new Date();
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
       const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
 
-      // 1. Suppression du tableau mémoire
+      // 1. Mise à jour de la mémoire locale
       journalLogs = journalLogs.filter(log => {
         if (log.docId === docId) return false;
         const matchUser = log.userId === currentUserId;
         const matchDate = parseDateToJJMMAAAA(log.date) === dateStr;
         const matchSet = Number(log.set) === (setIdx + 1);
-        const matchExId = log.exerciseId ? (log.exerciseId === exId) : (cleanString(log.exercise) === cleanString(exName) && cleanString(log.session) === cleanString(sessionsList[activeSessionIndex]?.title));
+        const matchExId = log.exerciseId === exId;
         return !(matchUser && matchDate && matchSet && matchExId);
       });
 
-      // 2. Réinitialisation LocalStorage spécifique à cet exercice
+      // 2. Réinitialisation LocalStorage
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
@@ -1104,25 +1104,12 @@
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
       }
 
-      // 3. Suppression dans Firestore (directe par docId et par requête)
+      // 3. Suppression dans Firestore (ID exact)
       db.collection("journal").doc(docId).delete().catch(() => {});
-      db.collection("journal")
-        .where("userId", "==", currentUserId)
-        .where("date", "==", dateStr)
-        .where("set", "==", setIdx + 1)
-        .get()
-        .then((snapshot) => {
-          snapshot.docs.forEach((doc) => {
-            const data = doc.data();
-            if (data.exerciseId === exId || (cleanString(data.exercise) === cleanString(exName) && cleanString(data.session) === cleanString(sessionsList[activeSessionIndex]?.title))) {
-              db.collection("journal").doc(doc.id).delete();
-            }
-          });
-        });
-
+      
       showToast("Série supprimée !");
 
-      // 4. Actualisation immédiate
+      // 4. Actualisation visuelle
       renderTabs();
       loadSession(activeSessionIndex);
     }
