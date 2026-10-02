@@ -289,7 +289,6 @@
   </div>
 
   <script>
-    // Enregistrement du Service Worker PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -347,7 +346,6 @@
       return s.split(' ')[0].substring(0, 10);
     }
 
-    // --- GESTION CONNEXION GOOGLE & LOADER INITIAL ---
     auth.onAuthStateChanged((user) => {
       const loader = document.getElementById('loading-screen');
       if (loader) loader.classList.add('hidden');
@@ -370,14 +368,12 @@
 
     function loginWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch((error) => {
+      auth.signInWithPopup(provider).catch(() => {
         showToast("Erreur de connexion Google", "error");
       });
     }
 
-    function logout() {
-      auth.signOut();
-    }
+    function logout() { auth.signOut(); }
 
     function initFirebaseListeners() {
       db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
@@ -399,7 +395,6 @@
       });
     }
 
-    // --- MODAL DE CRÉATION ET D'ÉDITION D'EXERCICE ---
     function openAddExModal(ex = null) {
       const titleEl = document.getElementById('ex-modal-title');
       const editIdEl = document.getElementById('edit-ex-id');
@@ -457,26 +452,22 @@
       }, { merge: true }).then(() => {
         showToast(editId ? "Exercice mis à jour !" : "Exercice créé avec succès !", "success");
         closeAddExModal();
-      }).catch(err => {
+      }).catch(() => {
         showToast("Erreur lors de la sauvegarde", "error");
       });
     }
 
-    // --- ARCHIVAGE D'UN EXERCICE ---
     function archiveExercise(exId, exName) {
-      if (confirm(`Souhaites-tu retirer "${exName}" de ton programme actif ? Son historique dans le calendrier et les stats sera conservé.`)) {
-        db.collection("exercises").doc(exId).update({
-          archived: true,
-          archivedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-          showToast(`"${exName}" a été archivé.`, "success");
-        }).catch(err => {
-          showToast("Erreur lors de l'archivage", "error");
-        });
-      }
+      db.collection("exercises").doc(exId).update({
+        archived: true,
+        archivedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        showToast(`"${exName}" a été archivé.`, "success");
+      }).catch(() => {
+        showToast("Erreur lors de l'archivage", "error");
+      });
     }
 
-    // --- MODIFICATION DU NOM D'UNE SÉANCE ---
     function openEditSessionModal() {
       if (activeSessionIndex === null || !sessionsList[activeSessionIndex]) return;
       const currentTitle = sessionsList[activeSessionIndex].title;
@@ -517,7 +508,7 @@
         
         syncSmartState();
         buildProgramForCurrentUser();
-      }).catch(err => {
+      }).catch(() => {
         showToast("Erreur lors du changement de nom de la séance", "error");
       });
     }
@@ -661,11 +652,7 @@
       monday.setDate(now.getDate() - day + 1);
 
       rawExercises.forEach(ex => {
-        const logsEx = journalLogs.filter(l => {
-          const matchName = cleanString(l.exercise) === cleanString(ex.name);
-          return matchName;
-        });
-        
+        const logsEx = journalLogs.filter(l => cleanString(l.exercise) === cleanString(ex.name));
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
         const totalSets = isCardio ? 1 : (ex.sets || 4);
 
@@ -900,14 +887,14 @@
           ` : '';
 
           setsHtml += `
-            <div class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800 text-center">
+            <div ondblclick="deleteSet('${ex.id}', '${safeName}', ${setIdx})" class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800 text-center">
               <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
               <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2 flex items-center justify-center space-x-1">
                 ${editBtnHtml}
-                <button onclick="handleSetClick('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition ${btnClass}">✓</button>
+                <button onclick="validateSet('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" ondblclick="deleteSet('${ex.id}', '${safeName}', ${setIdx})" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition ${btnClass}">✓</button>
               </div>
             </div>`;
         }
@@ -1029,20 +1016,8 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
-    function handleSetClick(exId, exName, setIdx, restSec) {
-      const saved = getSavedLogs(exId);
-      const isDone = saved.sets && saved.sets[setIdx]?.done === true;
-
-      if (isDone) {
-        if (confirm(`Annuler la série #${setIdx + 1} de ${exName} ?`)) {
-          executeToggleSetDone(exId, exName, setIdx, restSec);
-        }
-      } else {
-        executeToggleSetDone(exId, exName, setIdx, restSec);
-      }
-    }
-
-    function executeToggleSetDone(exId, exName, setIdx, restSec) {
+    // ACTION 1 : VALIDER LA SÉRIE (CLIC SIMPLE)
+    function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
       
@@ -1050,15 +1025,13 @@
       const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
       
-      const isCurrentlyDone = (saved.sets[setIdx]?.done === true);
-      const nextDone = !isCurrentlyDone;
       const isEditMode = saved.sets[setIdx]?.isEditing === true;
 
       saved.sets[setIdx] = { 
         weight: wEl ? wEl.value : "", 
         reps: rEl ? rEl.value : "", 
         comment: cEl ? cEl.value : "", 
-        done: nextDone,
+        done: true,
         isEditing: false 
       };
       
@@ -1070,35 +1043,47 @@
 
       const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exName}_${setIdx + 1}`;
 
-      if (nextDone) {
-        showToast("Enregistré !", "success");
-        
-        db.collection("journal").doc(docId).set({
-          userId: currentUserId,
-          date: dateStr,
-          time: timeStr,
-          user: currentUser,
-          session: sessionsList[activeSessionIndex].title,
-          exercise: exName,
-          set: setIdx + 1,
-          weight: wEl ? wEl.value : "",
-          reps: rEl ? rEl.value : "",
-          comment: cEl ? cEl.value : "",
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
-      } else {
-        showToast("Série annulée !");
-        db.collection("journal").doc(docId).delete().catch(err => console.error(err));
-      }
+      showToast("Enregistré !", "success");
+      
+      db.collection("journal").doc(docId).set({
+        userId: currentUserId,
+        date: dateStr,
+        time: timeStr,
+        user: currentUser,
+        session: sessionsList[activeSessionIndex].title,
+        exercise: exName,
+        set: setIdx + 1,
+        weight: wEl ? wEl.value : "",
+        reps: rEl ? rEl.value : "",
+        comment: cEl ? cEl.value : "",
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
 
       renderTabs();
       loadSession(activeSessionIndex);
+      checkCongratsModal(isEditMode);
+    }
 
-      if (nextDone) {
-        checkCongratsModal(isEditMode);
-      }
+    // ACTION 2 : SUPPRIMER / ANNULER LA SÉRIE (DOUBLE CLIC)
+    function deleteSet(exId, exName, setIdx) {
+      const saved = getSavedLogs(exId);
+      if (!saved.sets || !saved.sets[setIdx]) return;
+
+      saved.sets[setIdx].done = false;
+      saved.sets[setIdx].isEditing = false;
+      localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+
+      const today = new Date();
+      const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+      const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exName}_${setIdx + 1}`;
+
+      showToast("Série supprimée !");
+      db.collection("journal").doc(docId).delete().catch(() => {});
+
+      renderTabs();
+      loadSession(activeSessionIndex);
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
