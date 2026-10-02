@@ -187,6 +187,7 @@
   </nav>
 
   <script>
+    // --- ICI EST RENSEIGNÉE TA NOUVELLE URL ---
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsZCD7uiTc5i68TmYMBNr5SeykPLO2CvK-1QpgbdCvmswej0dSwcTJDs7pg16EfbQ/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
@@ -207,25 +208,17 @@
       return String(str || '').trim().toLowerCase();
     }
 
-    // CORRECTION : Parse de manière robuste les dates issues de Google Sheets pour affichage dans le calendrier
     function parseDateToJJMMAAAA(val) {
       if (!val) return "";
       let s = String(val).trim();
-      
-      // Si la date contient un 'T' (format ISO Google Sheets du type 2023-10-02T22:00:00.000Z)
       if (s.includes('T')) s = s.split('T')[0];
-      
-      // Format ISO AAAA-MM-JJ
       if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
         let p = s.substring(0, 10).split('-');
         return `${p[2]}/${p[1]}/${p[0]}`;
       }
-      // Format JJ/MM/AAAA
       if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
         return s.substring(0, 10);
       }
-      
-      // Essai via un objet Date classique
       let d = new Date(val);
       if (!isNaN(d.getTime())) {
         let day = String(d.getDate()).padStart(2, '0');
@@ -284,7 +277,6 @@
       window.scrollTo(0, 0);
     }
 
-    // --- CALENDRIER ---
     function changeMonth(dir) {
       currentCalDate.setMonth(currentCalDate.getMonth() + dir);
       renderCalendar();
@@ -375,7 +367,6 @@
       container.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    // --- SYNCHRONISATION ---
     function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
       if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
@@ -388,7 +379,7 @@
       script.onload = () => script.remove();
       script.onerror = () => {
          if (btn) btn.innerHTML = `<i data-lucide="wifi-off" class="w-3.5 h-3.5 text-red-400"></i>`;
-         alert("Impossible de joindre Google Sheets.");
+         alert("Impossible de joindre Google Sheets. Vérifiez que l'URL est bien déployée en tant qu'application Web avec accès 'Tout le monde'.");
       };
     }
 
@@ -439,7 +430,6 @@
       showToast(`Profil chargé : ${currentUser}`);
     }
 
-    // --- GRAPHIQUES ---
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
       const userLogs = journalLogs.filter(log => cleanString(log.user) === cleanString(currentUser));
@@ -507,7 +497,6 @@
       });
     }
 
-    // --- WORKOUT ---
     function buildProgramForCurrentUser() {
       const userEx = rawExercises.filter(e => cleanString(e.user) === cleanString(currentUser));
       const grouped = {};
@@ -663,7 +652,6 @@
       return data ? JSON.parse(data) : {};
     }
 
-    // --- MODALS CONFIRMATION & CONGRATS ---
     function openConfirmModal(msg, onConfirm) {
       document.getElementById('confirm-modal-msg').innerText = msg;
       pendingDeleteCallback = onConfirm;
@@ -681,12 +669,10 @@
       pendingDeleteCallback = null;
     }
 
-    // GESTION DU MODAL DE FELICITATION & DE LA SEMAINE TERMINÉE
     function checkCongratsModal() {
       const currentSession = sessionsList[activeSessionIndex];
       const currentPct = calculateSessionProgress(currentSession);
       
-      // Si la séance en cours vient d'atteindre 100%
       if (currentPct === 100) {
         if (typeof confetti === 'function') {
           confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
@@ -701,9 +687,8 @@
         const mainBtn = document.getElementById('congrats-main-btn');
         
         if (allSessionsDone) {
-          // LA SEMAINE EST FINIE : On propose de clôturer et nettoyer
           document.getElementById('congrats-title').innerText = "SEMAINE COMPLÈTE ! 🔥";
-          document.getElementById('congrats-title').className = "font-black text-2xl text-amber-400 uppercase tracking-wide"; // Changer la couleur
+          document.getElementById('congrats-title').className = "font-black text-2xl text-amber-400 uppercase tracking-wide";
           document.getElementById('congrats-subtitle').innerHTML = "Tu as terminé <strong>100%</strong> de tes séances de la semaine ! Tes données vont être réinitialisées dans ton programme pour te préparer à la semaine prochaine.<br><br><span class='text-xs text-slate-400'>(Tes performances restent sauvegardées dans le Calendrier et le Sheet)</span>";
           
           mainBtn.innerText = "Clôturer la semaine & Réinitialiser";
@@ -714,7 +699,6 @@
             closeCongratsModal();
           };
         } else {
-          // SEULE LA SÉANCE EST FINIE
           document.getElementById('congrats-title').innerText = "SÉANCE TERMINÉE ! 🎉";
           document.getElementById('congrats-title').className = "font-black text-2xl text-white uppercase tracking-wide";
           document.getElementById('congrats-subtitle').innerText = `Ta séance "${currentSession.title.replace(currentUser + " - ", "")}" est validée à 100%. Excellent travail !`;
@@ -732,11 +716,9 @@
       document.getElementById('congrats-modal').classList.add('hidden');
     }
 
-    // RÉINITIALISE LE PROGRAMME LOCALEMENT SEULEMENT
     function resetWeekData() {
       sessionsList.forEach(s => {
         s.exercises.forEach(ex => {
-          // On supprime juste les données locales (les cases cochées)
           localStorage.removeItem(`fitapp_log_${currentUser}_${ex.id}`);
         });
       });
@@ -816,7 +798,6 @@
       if (!document.getElementById('view-stats').classList.contains('hidden')) renderChart();
       if (!document.getElementById('view-calendar').classList.contains('hidden')) showDayDetails(dateStr);
 
-      // Si on vient de cocher une série, on vérifie si la séance ou la semaine est terminée
       if (nextDone) checkCongratsModal();
     }
 
