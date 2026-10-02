@@ -49,7 +49,6 @@
         </select>
       </div>
     </div>
-
     <button onclick="fetchSheetData()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1 border border-slate-700">
       <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync
     </button>
@@ -100,8 +99,8 @@
   </main>
 
   <script>
-    // 🚨 INSÈRE LA NOUVELLE URL DE TON SCRIPT ICI :
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHRrRp3vUdxAWKL-G57Wo3FBti65wgn5ZWBoo5IU3AQjT1yFg2GFnGv6ojsuEuWRS0/exec";
+    // 🚨 REMPLACE PAR TA NOUVELLE URL EXACTE ICI :
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6tyTJyR5yQIFjWrult-5udSr65DiHnuF33sh9ctVCEu_DS9pehGvKZ0L5pYwfDsKX/exec";
 
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = [];
@@ -111,8 +110,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof lucide !== 'undefined') lucide.createIcons();
-      loadFromCache(); // Charge d'abord ce qu'il y a en mémoire pour éviter l'écran vide
-      fetchSheetData(); // Puis va chercher les données fraîches
+      fetchSheetData(); 
     });
 
     function showToast(msg) {
@@ -124,47 +122,25 @@
       setTimeout(() => toast.remove(), 2500);
     }
 
-    function loadFromCache() {
-      const cachedUsers = localStorage.getItem('fitapp_cached_users');
-      const cachedEx = localStorage.getItem('fitapp_cached_exercises');
-      if (cachedUsers && cachedEx) {
-        populateUserSelect(JSON.parse(cachedUsers));
-        rawExercises = JSON.parse(cachedEx);
-        buildProgramForCurrentUser();
-      }
-    }
-
     function fetchSheetData() {
-      const select = document.getElementById('user-select');
-      if (!select.options.length) select.innerHTML = '<option value="">Sync...</option>';
+      // Ajout du paramètre cache-buster pour forcer le téléchargement
+      const url = GOOGLE_SCRIPT_URL + "?t=" + new Date().getTime();
       
-      fetch(GOOGLE_SCRIPT_URL, { redirect: "follow" })
-        .then(res => res.text()) // On lit en texte brut d'abord pour attraper les erreurs HTTP
-        .then(text => {
-          try {
-            const data = JSON.parse(text);
-            
-            if (data.error) {
-              alert("Erreur dans Google Sheets :\n" + data.error); // Message d'alerte rouge
-              return;
-            }
-
-            // Sauvegarde en cache local
-            localStorage.setItem('fitapp_cached_users', JSON.stringify(data.users || []));
-            localStorage.setItem('fitapp_cached_exercises', JSON.stringify(data.exercises || []));
-            
-            populateUserSelect(data.users || []);
-            rawExercises = data.exercises || [];
-            buildProgramForCurrentUser();
-            showToast("Google Sheets synchronisé !");
-          } catch (e) {
-            console.error("Erreur de formatage JSON:", text);
-            alert("Erreur de connexion : L'URL de ton script n'est pas la bonne, ou tu as oublié de publier une 'Nouvelle Version'.");
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            alert("Erreur Google Sheet : " + data.error);
+            return;
           }
+          populateUserSelect(data.users || []);
+          rawExercises = data.exercises || [];
+          buildProgramForCurrentUser();
+          showToast("Synchronisation réussie !");
         })
         .catch(err => {
           console.error(err);
-          showToast("Mode hors-ligne : Impossible de joindre Google.");
+          alert("Impossible de joindre Google Sheets.\nAs-tu bien déployé avec 'Nouvelle Version' et accès 'N'importe qui' ?");
         });
     }
 
@@ -208,8 +184,8 @@
       } else {
         document.getElementById('exercise-list').innerHTML = `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-md">
-            <p class="text-xs text-slate-400 font-bold mb-2">Oups, aucun exercice !</p>
-            <p class="text-[10px] text-slate-500">Ajoute des lignes dans l'onglet 'Exercices' de ton Google Sheet pour l'utilisateur <b>${currentUser}</b>.</p>
+            <p class="text-xs text-slate-400 font-bold mb-2">Aucun exercice trouvé !</p>
+            <p class="text-[10px] text-slate-500">Ajoute des lignes dans ton onglet 'Exercices' pour le profil <b>${currentUser}</b>.</p>
           </div>`;
       }
     }
@@ -295,7 +271,7 @@
       if (!GOOGLE_SCRIPT_URL) return;
       fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
-        mode: "no-cors", // Requis pour envoyer les données sans se faire bloquer par le navigateur
+        mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       }).catch(err => console.error("Erreur d'envoi:", err));
