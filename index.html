@@ -36,10 +36,10 @@
   <!-- ÉCRAN DE CHARGEMENT INITIAL (Anti-clignotement) -->
   <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center">
     <div class="w-12 h-12 rounded-xl border-2 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
-    <p class="text-xs text-slate-400 font-medium">Verification de la session...</p>
+    <p class="text-xs text-slate-400 font-medium">Vérification de la session...</p>
   </div>
 
-  <!-- ÉCRAN DE CONNEXION GOOGLE (Caché par défaut) -->
+  <!-- ÉCRAN DE CONNEXION GOOGLE -->
   <div id="login-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center hidden">
     <div class="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center mb-6 shadow-2xl active-glow">
       <svg viewBox="0 0 100 100" class="w-10 h-10"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
@@ -366,7 +366,7 @@
     // --- GESTION CONNEXION GOOGLE & LOADER INITIAL ---
     auth.onAuthStateChanged((user) => {
       const loader = document.getElementById('loading-screen');
-      if (loader) loader.classList.add('hidden'); // Caches le loader de demarrage
+      if (loader) loader.classList.add('hidden');
 
       if (user) {
         currentUser = user.displayName || user.email.split('@')[0];
@@ -396,17 +396,15 @@
     }
 
     function initFirebaseListeners() {
-      // 1. Écouter uniquement les exercices non archivés de l'utilisateur connecté
       db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         rawExercises = snapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(ex => ex.archived !== true); // Filtre les exercices archivés du programme actif
+          .filter(ex => ex.archived !== true);
           
         syncSmartState();
         buildProgramForCurrentUser();
       });
 
-      // 2. Écouter le journal de bord (garde TOUT l'historique y compris les exos archivés)
       db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         journalLogs = snapshot.docs.map(doc => doc.data());
         syncSmartState();
@@ -480,7 +478,7 @@
       });
     }
 
-    // --- ARCHIVAGE D'UN EXERCICE (Conserve l'historique) ---
+    // --- ARCHIVAGE D'UN EXERCICE ---
     function archiveExercise(exId, exName) {
       openConfirmModal(`Souhaites-tu retirer "${exName}" de ton programme actif ? Son historique dans le calendrier et les stats sera conservé.`, () => {
         db.collection("exercises").doc(exId).update({
@@ -526,8 +524,15 @@
       });
 
       batch.commit().then(() => {
+        rawExercises.forEach(ex => {
+          if (ex.seance === oldTitle) ex.seance = newTitle;
+        });
+
         showToast(`Séance renommée en "${newTitle}"`, "success");
         closeEditSessionModal();
+        
+        syncSmartState();
+        buildProgramForCurrentUser();
       }).catch(err => {
         showToast("Erreur lors du changement de nom de la séance", "error");
       });
@@ -674,8 +679,7 @@
       rawExercises.forEach(ex => {
         const logsEx = journalLogs.filter(l => {
           const matchName = cleanString(l.exercise) === cleanString(ex.name);
-          const matchSession = l.session ? cleanString(l.session) === cleanString(ex.seance) : true;
-          return matchName && matchSession;
+          return matchName;
         });
         
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
@@ -932,8 +936,6 @@
             <div>
               <div class="flex justify-between items-start">
                 <h3 class="font-black text-base text-white pr-16">${ex.name}</h3>
-                
-                <!-- BOUTONS D'ACTION SUR L'EXERCICE (ÉDITION & ARCHIVAGE) -->
                 <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
                   <button onclick='openAddExModal(${safeExJson})' class="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition" title="Modifier l'exercice">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
@@ -990,7 +992,10 @@
       pendingDeleteCallback = null;
     }
 
-    function checkCongratsModal() {
+    function checkCongratsModal(was100Before = false) {
+      // Si la séance était déjà terminée à 100 % avant la modification, on n'affiche pas la pop-up
+      if (was100Before) return;
+
       const currentSession = sessionsList[activeSessionIndex];
       const currentPct = calculateSessionProgress(currentSession);
       
@@ -1077,6 +1082,10 @@
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
       const nextDone = (saved.sets[setIdx]?.done !== true);
 
+      // Vérification de l'état avant enregistrement
+      const currentSession = sessionsList[activeSessionIndex];
+      const was100Before = currentSession ? (calculateSessionProgress(currentSession) === 100) : false;
+
       saved.sets[setIdx] = { weight: wEl.value, reps: rEl.value, comment: cEl.value, done: nextDone };
       localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
 
@@ -1111,7 +1120,11 @@
 
       renderTabs();
       loadSession(activeSessionIndex);
-      if (nextDone) checkCongratsModal();
+
+      // Ne déclencher les félicitations que si la séance n'était pas déjà validée
+      if (nextDone) {
+        checkCongratsModal(was100Before);
+      }
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
