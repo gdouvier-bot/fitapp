@@ -206,10 +206,9 @@
         vWork.classList.remove('hidden'); nWork.className = "flex flex-col items-center p-2 text-blue-500 w-1/3 transition";
       } else if (view === 'calendar') {
         vCal.classList.remove('hidden'); nCal.className = "flex flex-col items-center p-2 text-indigo-500 w-1/3 transition"; 
-        currentCalDate = new Date(); // Remet sur le mois en cours
+        currentCalDate = new Date();
         renderCalendar();
         
-        // Sélectionne le jour actuel par défaut
         const today = new Date();
         const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
         showDayDetails(dateStr);
@@ -292,7 +291,11 @@
         logs.forEach((log, idx) => {
           const v1 = log.weight ? log.weight : '-';
           const v2 = log.reps ? log.reps : '-';
-          const timeLabel = log.time ? `à ${log.time}` : `Série ${idx + 1}`;
+          
+          // Extrait ou affiche l'heure complète avec secondes
+          let rawTime = log.time || (String(log.date).length > 10 ? String(log.date).substring(11) : "");
+          const timeLabel = rawTime ? `Validé à ${rawTime}` : `Série ${idx + 1}`;
+          
           const note = log.comment ? `<span class="text-slate-500 text-[9px] ml-2 italic">"${log.comment}"</span>` : '';
           
           html += `
@@ -557,7 +560,7 @@
 
       const today = new Date();
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-      const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+      const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
 
       if (nextDone) {
         showToast("Enregistré !", "success");
