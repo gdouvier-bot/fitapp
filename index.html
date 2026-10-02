@@ -139,21 +139,6 @@
       </div>
     </div>
 
-    <!-- Modal Confirmation -->
-    <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
-        <div class="flex items-center space-x-3 text-amber-400">
-          <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-          <h3 class="font-bold text-base text-white">Confirmation</h3>
-        </div>
-        <p class="text-xs text-slate-300 leading-relaxed" id="confirm-modal-msg">Es-tu sûr de vouloir effectuer cette action ?</p>
-        <div class="flex justify-end space-x-2 pt-2">
-          <button onclick="closeConfirmModal(false)" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Annuler</button>
-          <button id="confirm-modal-action-btn" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-500 shadow-lg">Oui, valider</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Modal Félicitations -->
     <div id="congrats-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-sm w-full text-center space-y-5 shadow-2xl relative overflow-hidden animate-pop">
@@ -337,7 +322,6 @@
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
-    let pendingConfirmCallback = null;
 
     let currentCalDate = new Date();
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -480,18 +464,16 @@
 
     // --- ARCHIVAGE D'UN EXERCICE ---
     function archiveExercise(exId, exName) {
-      openConfirmModal(`Souhaites-tu retirer "${exName}" de ton programme actif ? Son historique dans le calendrier et les stats sera conservé.`, (confirmed) => {
-        if (confirmed) {
-          db.collection("exercises").doc(exId).update({
-            archived: true,
-            archivedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }).then(() => {
-            showToast(`"${exName}" a été archivé.`, "success");
-          }).catch(err => {
-            showToast("Erreur lors de l'archivage", "error");
-          });
-        }
-      });
+      if (confirm(`Souhaites-tu retirer "${exName}" de ton programme actif ? Son historique dans le calendrier et les stats sera conservé.`)) {
+        db.collection("exercises").doc(exId).update({
+          archived: true,
+          archivedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          showToast(`"${exName}" a été archivé.`, "success");
+        }).catch(err => {
+          showToast("Erreur lors de l'archivage", "error");
+        });
+      }
     }
 
     // --- MODIFICATION DU NOM D'UNE SÉANCE ---
@@ -965,7 +947,7 @@
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
-        saved.sets[setIdx].isEditing = true; // Indique qu'on est en train de modifier
+        saved.sets[setIdx].isEditing = true;
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
         loadSession(activeSessionIndex);
         renderTabs();
@@ -978,29 +960,8 @@
       return data ? JSON.parse(data) : {};
     }
 
-    function openConfirmModal(msg, onResult) {
-      document.getElementById('confirm-modal-msg').innerText = msg;
-      const modal = document.getElementById('confirm-modal');
-      const actionBtn = document.getElementById('confirm-modal-action-btn');
-
-      pendingConfirmCallback = onResult;
-      modal.classList.remove('hidden');
-
-      actionBtn.onclick = () => {
-        closeConfirmModal(true);
-      };
-    }
-
-    function closeConfirmModal(confirmed) {
-      document.getElementById('confirm-modal').classList.add('hidden');
-      if (pendingConfirmCallback) {
-        pendingConfirmCallback(confirmed);
-        pendingConfirmCallback = null;
-      }
-    }
-
     function checkCongratsModal(isEdit = false) {
-      if (isEdit) return; // Bloque la pop-up si c'est une modification
+      if (isEdit) return;
 
       const currentSession = sessionsList[activeSessionIndex];
       const currentPct = calculateSessionProgress(currentSession);
@@ -1073,12 +1034,9 @@
       const isDone = saved.sets && saved.sets[setIdx]?.done === true;
 
       if (isDone) {
-        // Demande de confirmation avant annulation/suppression
-        openConfirmModal("Es-tu sûr de vouloir annuler cette série ?", (confirmed) => {
-          if (confirmed) {
-            executeToggleSetDone(exId, exName, setIdx, restSec);
-          }
-        });
+        if (confirm(`Annuler la série #${setIdx + 1} de ${exName} ?`)) {
+          executeToggleSetDone(exId, exName, setIdx, restSec);
+        }
       } else {
         executeToggleSetDone(exId, exName, setIdx, restSec);
       }
@@ -1087,6 +1045,7 @@
     function executeToggleSetDone(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
+      
       const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
       const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
@@ -1131,9 +1090,7 @@
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
         showToast("Série annulée !");
-        db.collection("journal").doc(docId).delete().catch(err => {
-          console.error("Erreur suppression:", err);
-        });
+        db.collection("journal").doc(docId).delete().catch(err => console.error(err));
       }
 
       renderTabs();
