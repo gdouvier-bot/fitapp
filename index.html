@@ -25,7 +25,7 @@
   <!-- Toasts -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
-  <!-- Modal Confirmation Suppression -->
+  <!-- Modal Confirmation -->
   <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
       <div class="flex items-center space-x-3 text-amber-400">
@@ -190,7 +190,7 @@
   </nav>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaojRJ0Wn1izHyjAilv6VIF90oGSR5Cs289mvtz3BSDu5d9mJ239uF9xVxRvOB1x2U/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGcQdRgnQltX9OFVpSNg6VLkVh53NVqLznPfOklHwRO9IXRNuhx4EB_itLyLmhoBQi/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -206,31 +206,32 @@
     let currentCalDate = new Date();
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-    // Normalisation universelle des dates au format JJ/MM/AAAA
-    function normalizeDate(rawDate) {
-      if (!rawDate) return "";
-      const str = String(rawDate).trim();
+    function cleanString(str) {
+      return String(str || '').trim().toLowerCase();
+    }
+
+    function parseDateToJJMMAAAA(val) {
+      if (!val) return "";
+      let s = String(val).trim();
       
-      // Si c'est déjà JJ/MM/AAAA
-      if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
-        return str.substring(0, 10);
+      // Format JJ/MM/AAAA
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.substring(0, 10);
+      
+      // Format ISO AAAA-MM-JJ
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        let p = s.substring(0, 10).split('-');
+        return `${p[2]}/${p[1]}/${p[0]}`;
       }
       
-      // Si c'est AAAA-MM-JJ (ISO)
-      if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-        const parts = str.substring(0, 10).split('-');
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
-      }
-      
-      // Si c'est un objet Date
-      const d = new Date(str);
+      // Tenter de parser avec Date
+      let d = new Date(s);
       if (!isNaN(d.getTime())) {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
+        let day = String(d.getDate()).padStart(2, '0');
+        let month = String(d.getMonth() + 1).padStart(2, '0');
+        let year = d.getFullYear();
         return `${day}/${month}/${year}`;
       }
-      return str.substring(0, 10);
+      return s.substring(0, 10);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -296,11 +297,11 @@
       const startDay = firstDay === 0 ? 6 : firstDay - 1;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      const userLogs = journalLogs.filter(log => String(log.user).trim().toLowerCase() === currentUser.trim().toLowerCase());
+      const userLogs = journalLogs.filter(log => cleanString(log.user) === cleanString(currentUser));
       const workoutDates = {};
       
       userLogs.forEach(log => {
-        const dPart = normalizeDate(log.date);
+        const dPart = parseDateToJJMMAAAA(log.date);
         if(dPart) {
           if(!workoutDates[dPart]) workoutDates[dPart] = [];
           workoutDates[dPart].push(log);
@@ -330,8 +331,8 @@
     }
 
     function showDayDetails(dateStr) {
-      const userLogs = journalLogs.filter(log => String(log.user).trim().toLowerCase() === currentUser.trim().toLowerCase());
-      const dayLogs = userLogs.filter(log => normalizeDate(log.date) === dateStr);
+      const userLogs = journalLogs.filter(log => cleanString(log.user) === cleanString(currentUser));
+      const dayLogs = userLogs.filter(log => parseDateToJJMMAAAA(log.date) === dateStr);
       const container = document.getElementById('cal-day-details');
 
       if(dayLogs.length === 0) {
@@ -372,7 +373,7 @@
       container.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    // --- SYNCHRONISATION JSONP ---
+    // --- SYNCHRONISATION ---
     function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
       if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
@@ -416,8 +417,10 @@
     function populateUserSelect(users) {
       const select = document.getElementById('user-select');
       if (users.length === 0) users = ["Doudou"];
-      select.innerHTML = users.map(u => `<option value="${u}" ${u === currentUser ? 'selected' : ''}>${u}</option>`).join('');
-      if (!currentUser || !users.includes(currentUser)) {
+      select.innerHTML = users.map(u => `<option value="${u}" ${cleanString(u) === cleanString(currentUser) ? 'selected' : ''}>${u}</option>`).join('');
+      
+      const found = users.find(u => cleanString(u) === cleanString(currentUser));
+      if (!found) {
         currentUser = users[0];
         localStorage.setItem('fitapp_user', currentUser);
       }
@@ -437,9 +440,9 @@
     // --- GRAPHIQUES ---
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
-      const userLogs = journalLogs.filter(log => String(log.user).trim().toLowerCase() === currentUser.trim().toLowerCase());
+      const userLogs = journalLogs.filter(log => cleanString(log.user) === cleanString(currentUser));
       const historyEx = userLogs.map(log => log.exercise);
-      const programEx = rawExercises.filter(e => String(e.user).trim().toLowerCase() === currentUser.trim().toLowerCase()).map(e => e.name);
+      const programEx = rawExercises.filter(e => cleanString(e.user) === cleanString(currentUser)).map(e => e.name);
       
       const uniqueEx = [...new Set([...historyEx, ...programEx])].sort();
       select.innerHTML = '<option value="">Sélectionnez un exercice...</option>' + uniqueEx.map(ex => `<option value="${ex}">${ex}</option>`).join('');
@@ -452,11 +455,11 @@
       const selectedEx = document.getElementById('chart-exercise-select').value;
       if (!selectedEx) return;
 
-      const userLogs = journalLogs.filter(log => String(log.user).trim().toLowerCase() === currentUser.trim().toLowerCase() && log.exercise === selectedEx);
+      const userLogs = journalLogs.filter(log => cleanString(log.user) === cleanString(currentUser) && log.exercise === selectedEx);
       const dailyPerf = {};
       
       userLogs.forEach(log => {
-        const date = normalizeDate(log.date);
+        const date = parseDateToJJMMAAAA(log.date);
         let val = parseFloat(String(log.weight).replace(/[^0-9.,]/g, '').replace(',', '.'));
         if (isNaN(val)) val = parseFloat(String(log.reps).replace(/[^0-9.,]/g, '').replace(',', '.')); 
         if (!isNaN(val)) { if (!dailyPerf[date] || val > dailyPerf[date]) dailyPerf[date] = val; }
@@ -504,7 +507,7 @@
 
     // --- WORKOUT ---
     function buildProgramForCurrentUser() {
-      const userEx = rawExercises.filter(e => String(e.user).trim().toLowerCase() === currentUser.trim().toLowerCase());
+      const userEx = rawExercises.filter(e => cleanString(e.user) === cleanString(currentUser));
       const grouped = {};
       userEx.forEach(ex => {
         if (!grouped[ex.seance]) grouped[ex.seance] = [];
@@ -602,20 +605,20 @@
           const commentVal = setLog.comment || '';
 
           const editBtnHtml = isDone ? `
-            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30" title="Modifier">
-              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <button onclick="unlockSet('${ex.id}', ${setIdx})" class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30" title="Modifier">
+              <i data-lucide="edit-3" class="w-3 h-3"></i>
             </button>
           ` : '';
 
           setsHtml += `
-            <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
-              <span class="col-span-2 text-center text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
-              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}"></div>
+            <div class="grid grid-cols-12 gap-1 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800 text-center">
+              <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
+              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded px-1 py-1 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2 flex items-center justify-center space-x-1">
                 ${editBtnHtml}
-                <button onclick="handleSetClick('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition ${btnClass}">✓</button>
+                <button onclick="handleSetClick('${ex.id}', '${safeName}', ${setIdx}, ${ex.restSec})" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition ${btnClass}">✓</button>
               </div>
             </div>`;
         }
@@ -631,8 +634,8 @@
               <p class="text-xs text-blue-400 font-medium mt-0.5">${seriesText} • Pause: ${ex.restSec}s</p>
             </div>
             <div class="space-y-2 pt-1">
-              <div class="grid grid-cols-12 gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
-                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Valid</span>
+              <div class="grid grid-cols-12 gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
+                <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Action</span>
               </div>
               ${setsHtml}
             </div>
@@ -649,7 +652,7 @@
         localStorage.setItem(`fitapp_log_${currentUser}_${exId}`, JSON.stringify(saved));
         loadSession(activeSessionIndex);
         renderTabs();
-        showToast("Champs déverrouillés pour modification.");
+        showToast("Série déverrouillée pour modification.");
       }
     }
 
@@ -658,7 +661,7 @@
       return data ? JSON.parse(data) : {};
     }
 
-    // --- POP-UPS DE CONFIRMATION ET CONGRATS ---
+    // --- MODALS CONFIRMATION & CONGRATS ---
     function openConfirmModal(msg, onConfirm) {
       document.getElementById('confirm-modal-msg').innerText = msg;
       pendingDeleteCallback = onConfirm;
@@ -720,7 +723,7 @@
         closeCongratsModal();
         renderTabs();
         loadSession(activeSessionIndex);
-        showToast("Semaine réinitialisée pour la suivante !", "success");
+        showToast("Semaine réinitialisée !", "success");
       });
     }
 
@@ -777,9 +780,9 @@
         sendToGoogleSheets({ action: "UNCHECK", user: currentUser, session: sessionsList[activeSessionIndex].title, exercise: exName, set: setIdx + 1 });
         
         const idxToRemove = journalLogs.findLastIndex(log => 
-          String(log.user).trim().toLowerCase() === currentUser.trim().toLowerCase() && 
+          cleanString(log.user) === cleanString(currentUser) && 
           log.exercise === exName && 
-          normalizeDate(log.date) === dateStr
+          parseDateToJJMMAAAA(log.date) === dateStr
         );
         
         if (idxToRemove !== -1) {
