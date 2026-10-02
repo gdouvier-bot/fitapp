@@ -204,7 +204,7 @@
       </div>
     </div>
 
-    <!-- Header (Sans bordure inférieure) -->
+    <!-- Header -->
     <header class="sticky top-0 z-30 bg-slate-950 px-4 py-3 flex items-center justify-between pt-safe">
       <div class="flex items-center space-x-2.5">
         <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
@@ -220,7 +220,7 @@
       </button>
     </header>
 
-    <!-- Content (Espace augmenté sous le header avec pt-6) -->
+    <!-- Main Content -->
     <main class="flex-1 overflow-y-auto px-4 pt-6 pb-20 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
@@ -347,6 +347,7 @@
   </div>
 
   <script>
+    // Service Worker PWA avec fallback Blob
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {
@@ -361,6 +362,7 @@
       });
     }
 
+    // Config Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDmyDdWOiucYk6rdyO_E3v631401z6bdJw",
       authDomain: "fitapp-pro-5bd6b.firebaseapp.com",
@@ -545,6 +547,8 @@
       }, { merge: true }).then(() => {
         showToast(editId ? "Exercice mis à jour !" : "Exercice créé !", "success");
         closeAddExModal();
+        syncSmartState();
+        buildProgramForCurrentUser();
       }).catch(() => showToast("Erreur lors de la sauvegarde", "error"));
     }
 
@@ -559,8 +563,10 @@
             archivedAt: firebase.firestore.FieldValue.serverTimestamp()
           }).then(() => {
             safeRemoveItem(`fitapp_log_${currentUserId}_${exId}`);
-            showToast(`"${exName}" retiré.`, "success");
+            rawExercises = rawExercises.filter(ex => ex.id !== exId);
+            syncSmartState();
             buildProgramForCurrentUser();
+            showToast(`"${exName}" retiré.`, "success");
           }).catch(() => showToast("Erreur d'archivage", "error"));
         }
       });
@@ -594,6 +600,9 @@
       });
 
       batch.commit().then(() => {
+        rawExercises.forEach(ex => {
+          if (ex.seance === oldTitle) ex.seance = newTitle;
+        });
         showToast(`Séance renommée en "${newTitle}"`, "success");
         closeEditSessionModal();
         syncSmartState();
@@ -832,7 +841,6 @@
       const dataSum = dates.map(d => dailyPerf[d].sum);
       const dataMaxW = dates.map(d => dailyPerf[d].max_w !== -Infinity ? dailyPerf[d].max_w : 0);
       const dataMaxR = dates.map(d => dailyPerf[d].max_r !== -Infinity ? dailyPerf[d].max_r : 0);
-      const dataMinW = dates.map(d => dailyPerf[d].min_w !== Infinity ? dailyPerf[d].min_w : 0);
 
       let datasets = [];
 
@@ -1127,7 +1135,7 @@
     
     function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
 
-    // Swipe Gesture
+    // Gestes Swipe
     let touchStartX = 0, touchEndX = 0;
     document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
     document.addEventListener('touchend', e => {
