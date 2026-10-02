@@ -347,13 +347,14 @@
   </div>
 
   <script>
-    // Service Worker basique pour le support PWA local
+    // --- SERVICE WORKER ET PWA ---
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
 
+    // --- CONFIGURATION FIREBASE ---
     const firebaseConfig = {
       apiKey: "AIzaSyDmyDdWOiucYk6rdyO_E3v631401z6bdJw",
       authDomain: "fitapp-pro-5bd6b.firebaseapp.com",
@@ -368,12 +369,12 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
     
-    db.enablePersistence().catch((err) => console.warn("Persistance Firestore non active:", err.code));
+    db.enablePersistence({ synchronizeTabs: true }).catch((err) => console.warn("Persistance Firestore restreinte:", err.code));
 
+    // --- ÉTAT GLOBAL DE L'APPLICATION ---
     let currentUser = "", currentUserId = "";
     let rawExercises = [], journalLogs = [], sessionsList = [];
     let activeSessionIndex = null;
-    let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
     let currentCalDate = new Date();
     let pendingConfirmAction = null;
@@ -381,28 +382,35 @@
     let unsubscribeExercises = null;
     let unsubscribeJournal = null;
 
+    // Horloge à précision absolue (Résistant au throttling iOS/Android)
+    let restTimerEndTime = null;
+    let restTimerInterval = null;
+    let isRestTimerRunning = false;
+    let restTimeTotal = 90;
+    let restTimeRemaining = 90;
+
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
+    // --- SECURED HELPERS & SANITIZATION ---
     function cleanString(str) { return String(str || '').trim().toLowerCase(); }
     
     function sanitizeHTML(str) {
-      if(!str) return "";
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      if (!str && str !== 0) return "";
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function parseDateToJJMMAAAA(val) {
       if (!val) return "";
-      
-      // Prise en charge des Timestamps Firebase
-      if (typeof val === 'object' && val.seconds) {
-        val = new Date(val.seconds * 1000);
-      }
-
+      if (typeof val === 'object' && val.seconds) val = new Date(val.seconds * 1000);
       if (val instanceof Date) {
         if (isNaN(val.getTime())) return "";
         return `${String(val.getDate()).padStart(2, '0')}/${String(val.getMonth() + 1).padStart(2, '0')}/${val.getFullYear()}`;
       }
-
       let s = String(val).trim();
       if (s.includes('T')) s = s.split('T')[0];
       if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
@@ -416,6 +424,7 @@
       return s.substring(0, 10);
     }
 
+    // --- AUTHENTIFICATION & LIFECYCLE ---
     auth.onAuthStateChanged((user) => {
       const loader = document.getElementById('loading-screen');
       if (loader) {
@@ -433,6 +442,7 @@
         
         if (typeof lucide !== 'undefined') lucide.createIcons();
         initFirebaseListeners();
+        processPendingSyncQueue(); // Sync offline buffer
       } else {
         document.getElementById('login-screen').classList.remove('hidden');
         document.getElementById('app-screen').classList.add('hidden');
@@ -447,8 +457,8 @@
     function logout() { 
       pauseRestTimer();
       
-      if (unsubscribeExercises) unsubscribeExercises();
-      if (unsubscribeJournal) unsubscribeJournal();
+      if (unsubscribeExercises) { unsubscribeExercises(); unsubscribeExercises = null; }
+      if (unsubscribeJournal) { unsubscribeJournal(); unsubscribeJournal = null; }
       
       if (chartInstance) {
         chartInstance.destroy();
@@ -458,6 +468,7 @@
       auth.signOut(); 
     }
 
+    // --- LISTENERS FIRESTORE RESILIENTS ---
     function initFirebaseListeners() {
       if (unsubscribeExercises) unsubscribeExercises();
       if (unsubscribeJournal) unsubscribeJournal();
@@ -471,7 +482,7 @@
             
           syncSmartState();
           buildProgramForCurrentUser();
-        }, (err) => console.error("Err Exercises:", err));
+        }, (err) => showToast("Mode hors-ligne actif (Exercices)", "info"));
 
       unsubscribeJournal = db.collection("journal")
         .where("userId", "==", currentUserId)
@@ -482,7 +493,12 @@
           
           if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
           if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
-        }, (err) => console.error("Err Journal:", err));
+        }, (err) => showToast("Mode hors-ligne actif (Journal)", "info"));
+    }
+
+    // --- MODALES SÉCURISÉES ---
+    function toggleModalScroll(disable) {
+      document.body.style.overflow = disable ? 'hidden' : '';
     }
 
     function openConfirmModal({ title, message, confirmText = "Retirer", onConfirm }) {
@@ -498,11 +514,13 @@
         closeConfirmModal();
       };
 
+      toggleModalScroll(true);
       if (typeof lucide !== 'undefined') lucide.createIcons();
       document.getElementById('confirm-modal').classList.remove('hidden');
     }
 
     function closeConfirmModal() {
+      toggleModalScroll(false);
       document.getElementById('confirm-modal').classList.add('hidden');
       pendingConfirmAction = null;
     }
@@ -528,11 +546,13 @@
           document.getElementById('new-ex-session').value = sessionsList[activeSessionIndex].title;
         }
       }
+      toggleModalScroll(true);
       if (typeof lucide !== 'undefined') lucide.createIcons();
       document.getElementById('add-ex-modal').classList.remove('hidden');
     }
 
     function closeAddExModal() { 
+      toggleModalScroll(false);
       document.getElementById('add-ex-modal').classList.add('hidden'); 
       document.getElementById('add-ex-form').reset();
     }
@@ -566,7 +586,7 @@
         closeAddExModal();
         syncSmartState();
         buildProgramForCurrentUser();
-      }).catch(() => showToast("Erreur lors de la sauvegarde", "error"));
+      }).catch(() => showToast("Sauvegardé en cache hors-ligne", "info"));
     }
 
     function archiveExercise(exId, exName) {
@@ -594,10 +614,12 @@
       const currentTitle = sessionsList[activeSessionIndex].title;
       document.getElementById('old-session-name').value = currentTitle;
       document.getElementById('new-session-title').value = currentTitle;
+      toggleModalScroll(true);
       document.getElementById('edit-session-modal').classList.remove('hidden');
     }
 
     function closeEditSessionModal() {
+      toggleModalScroll(false);
       document.getElementById('edit-session-modal').classList.add('hidden');
     }
 
@@ -624,11 +646,12 @@
         closeEditSessionModal();
         syncSmartState();
         buildProgramForCurrentUser();
-      }).catch(() => showToast("Erreur de renommage", "error"));
+      }).catch(() => showToast("Sauvegardé en local", "info"));
     }
 
     function showToast(msg, type="info") {
       const container = document.getElementById('toast-container');
+      if (!container) return;
       const toast = document.createElement('div');
       const color = type === "error" ? "bg-red-600 border-red-500" : type === "success" ? "bg-emerald-600 border-emerald-500" : "bg-slate-800 border-slate-700";
       toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast pointer-events-auto`;
@@ -822,7 +845,9 @@
     }
 
     function renderChart() {
-      const selectedEx = document.getElementById('chart-exercise-select').value;
+      const selectEl = document.getElementById('chart-exercise-select');
+      if (!selectEl) return;
+      const selectedEx = selectEl.value;
       if (!selectedEx) return;
 
       const exDef = rawExercises.find(e => cleanString(e.name) === cleanString(selectedEx));
@@ -1059,6 +1084,7 @@
     }
 
     function calculateSessionProgress(session) {
+      if (!session || !session.exercises) return 0;
       let totalSets = 0, doneSets = 0;
       session.exercises.forEach(ex => {
         const isCardio = (ex.type || "").toLowerCase().includes("dur") || (ex.type || "").toLowerCase().includes("km");
@@ -1191,13 +1217,44 @@
       const currentSession = sessionsList[activeSessionIndex];
       if (calculateSessionProgress(currentSession) === 100) {
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+        toggleModalScroll(true);
         document.getElementById('congrats-modal').classList.remove('hidden');
       }
     }
 
     function closeCongratsModal() {
+      toggleModalScroll(false);
       document.getElementById('congrats-modal').classList.add('hidden');
     }
+
+    // GESTION RESILIENTE DE SYNCHRONISATION EN TAMPON
+    function queueSyncJournal(data) {
+      let queue = JSON.parse(safeGetItem('fitapp_pending_queue') || '[]');
+      queue.push(data);
+      safeSetItem('fitapp_pending_queue', JSON.stringify(queue));
+      processPendingSyncQueue();
+    }
+
+    function processPendingSyncQueue() {
+      if (!navigator.onLine) return;
+      let queue = JSON.parse(safeGetItem('fitapp_pending_queue') || '[]');
+      if (queue.length === 0) return;
+
+      const item = queue[0];
+      let docRef = item.firestoreId ? db.collection("journal").doc(item.firestoreId) : db.collection("journal").doc();
+      
+      const payload = { ...item };
+      delete payload.firestoreId;
+      payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+
+      docRef.set(payload, { merge: true }).then(() => {
+        queue.shift();
+        safeSetItem('fitapp_pending_queue', JSON.stringify(queue));
+        if (queue.length > 0) processPendingSyncQueue();
+      }).catch(() => {});
+    }
+
+    window.addEventListener('online', processPendingSyncQueue);
 
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
@@ -1212,9 +1269,7 @@
       const dateStr = parseDateToJJMMAAAA(today);
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
 
-      let firestoreId = saved.sets[setIdx]?.firestoreId;
-      let docRef = firestoreId ? db.collection("journal").doc(firestoreId) : db.collection("journal").doc();
-      firestoreId = docRef.id;
+      let firestoreId = saved.sets[setIdx]?.firestoreId || db.collection("journal").doc().id;
 
       saved.sets[setIdx] = { 
         weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : "", 
@@ -1224,12 +1279,12 @@
       safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
       showToast("Enregistré !", "success");
       
-      docRef.set({
+      queueSyncJournal({
+        firestoreId: firestoreId,
         userId: currentUserId, date: dateStr, time: timeStr, user: currentUser,
         session: sessionsList[activeSessionIndex].title, exercise: exName, exerciseId: exId,
-        set: setIdx + 1, weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : "",
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }).catch(() => showToast("Série sauvegardée en local", "error"));
+        set: setIdx + 1, weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : ""
+      });
       
       if (restSec > 0 && !isEditMode) { setTimerPreset(restSec); startRestTimer(); }
 
@@ -1238,49 +1293,74 @@
       checkCongratsModal(isEditMode);
     }
 
-    function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
+    // --- MINUTEUR PRÉCIS ET ANTI-THROTTLING ---
+    function setTimerPreset(sec) {
+      restTimeTotal = sec;
+      restTimeRemaining = sec;
+      if (isRestTimerRunning) {
+        startRestTimer();
+      } else {
+        updateTimerDisplay();
+      }
+    }
     
     function updateTimerDisplay() {
-      const mins = Math.floor(restTimeRemaining / 60);
-      const secs = restTimeRemaining % 60;
-      document.getElementById('timer-display').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      const mins = Math.floor(Math.max(0, restTimeRemaining) / 60);
+      const secs = Math.max(0, restTimeRemaining) % 60;
+      const display = document.getElementById('timer-display');
+      if (display) display.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
     
     function toggleRestTimer() { isRestTimerRunning ? pauseRestTimer() : startRestTimer(); }
     
     function startRestTimer() {
-      if (isRestTimerRunning) clearInterval(restTimerInterval);
+      if (restTimerInterval) clearInterval(restTimerInterval);
+      
+      restTimerEndTime = Date.now() + (restTimeRemaining * 1000);
       isRestTimerRunning = true;
-      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>'; 
+      
+      const toggleBtn = document.getElementById('timer-toggle-btn');
+      if (toggleBtn) toggleBtn.innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>'; 
       if (typeof lucide !== 'undefined') lucide.createIcons();
       
       restTimerInterval = setInterval(() => {
-        if (restTimeRemaining > 0) { 
-          restTimeRemaining--; 
-          updateTimerDisplay(); 
-        } else { 
-          pauseRestTimer(); 
-          if(typeof navigator.vibrate === "function") navigator.vibrate([200, 100, 200]);
+        const now = Date.now();
+        restTimeRemaining = Math.round((restTimerEndTime - now) / 1000);
+
+        if (restTimeRemaining <= 0) {
+          restTimeRemaining = 0;
+          updateTimerDisplay();
+          pauseRestTimer();
+          if (typeof navigator.vibrate === "function") navigator.vibrate([200, 100, 200]);
+        } else {
+          updateTimerDisplay();
         }
-      }, 1000);
+      }, 250);
     }
     
     function pauseRestTimer() { 
       isRestTimerRunning = false; 
-      clearInterval(restTimerInterval); 
-      document.getElementById('timer-toggle-btn').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; 
+      if (restTimerInterval) clearInterval(restTimerInterval); 
+      restTimerInterval = null;
+
+      const toggleBtn = document.getElementById('timer-toggle-btn');
+      if (toggleBtn) toggleBtn.innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>'; 
       if (typeof lucide !== 'undefined') lucide.createIcons(); 
     }
     
-    function resetRestTimer() { pauseRestTimer(); restTimeRemaining = restTimeTotal; updateTimerDisplay(); }
+    function resetRestTimer() { 
+      pauseRestTimer(); 
+      restTimeRemaining = restTimeTotal; 
+      updateTimerDisplay(); 
+    }
 
-    // Gestes Swipe
+    // --- SWIPE GESTURES ROBUSTES ---
     let touchStartX = 0, touchEndX = 0;
     document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
     document.addEventListener('touchend', e => {
       touchEndX = e.changedTouches[0].screenX;
       const deltaX = touchEndX - touchStartX;
-      if (Math.abs(deltaX) > 60) {
+      if (Math.abs(deltaX) > 75) {
         const views = ['workout', 'calendar', 'stats'];
         let idx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
         if (deltaX < 0 && idx < views.length - 1) switchView(views[idx + 1]);
