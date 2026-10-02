@@ -347,17 +347,10 @@
   </div>
 
   <script>
+    // Service Worker basique pour le support PWA local
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {
-          const swCode = `
-            const CACHE_NAME = 'fitapp-v1';
-            self.addEventListener('install', (e) => self.skipWaiting());
-            self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
-          `;
-          const blob = new Blob([swCode], { type: 'application/javascript' });
-          navigator.serviceWorker.register(URL.createObjectURL(blob));
-        });
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
 
@@ -385,6 +378,9 @@
     let currentCalDate = new Date();
     let pendingConfirmAction = null;
     
+    let unsubscribeExercises = null;
+    let unsubscribeJournal = null;
+
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
     function cleanString(str) { return String(str || '').trim().toLowerCase(); }
@@ -396,6 +392,17 @@
 
     function parseDateToJJMMAAAA(val) {
       if (!val) return "";
+      
+      // Prise en charge des Timestamps Firebase
+      if (typeof val === 'object' && val.seconds) {
+        val = new Date(val.seconds * 1000);
+      }
+
+      if (val instanceof Date) {
+        if (isNaN(val.getTime())) return "";
+        return `${String(val.getDate()).padStart(2, '0')}/${String(val.getMonth() + 1).padStart(2, '0')}/${val.getFullYear()}`;
+      }
+
       let s = String(val).trim();
       if (s.includes('T')) s = s.split('T')[0];
       if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
@@ -406,11 +413,7 @@
         let p = s.split(' ')[0].split('/');
         return `${String(p[0]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[2]}`;
       }
-      let d = new Date(val);
-      if (!isNaN(d.getTime())) {
-        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-      }
-      return s.split(' ')[0].substring(0, 10);
+      return s.substring(0, 10);
     }
 
     auth.onAuthStateChanged((user) => {
@@ -443,27 +446,43 @@
 
     function logout() { 
       pauseRestTimer();
+      
+      if (unsubscribeExercises) unsubscribeExercises();
+      if (unsubscribeJournal) unsubscribeJournal();
+      
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+
       auth.signOut(); 
     }
 
     function initFirebaseListeners() {
-      db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
-        rawExercises = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(ex => ex.archived !== true);
-          
-        syncSmartState();
-        buildProgramForCurrentUser();
-      }, (err) => console.error(err));
+      if (unsubscribeExercises) unsubscribeExercises();
+      if (unsubscribeJournal) unsubscribeJournal();
 
-      db.collection("journal").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
-        journalLogs = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
-        syncSmartState();
-        buildProgramForCurrentUser();
-        
-        if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
-        if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
-      }, (err) => console.error(err));
+      unsubscribeExercises = db.collection("exercises")
+        .where("userId", "==", currentUserId)
+        .onSnapshot((snapshot) => {
+          rawExercises = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(ex => ex.archived !== true);
+            
+          syncSmartState();
+          buildProgramForCurrentUser();
+        }, (err) => console.error("Err Exercises:", err));
+
+      unsubscribeJournal = db.collection("journal")
+        .where("userId", "==", currentUserId)
+        .onSnapshot((snapshot) => {
+          journalLogs = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+          syncSmartState();
+          buildProgramForCurrentUser();
+          
+          if (!document.getElementById('view-stats').classList.contains('hidden')) populateChartDropdown();
+          if (!document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
+        }, (err) => console.error("Err Journal:", err));
     }
 
     function openConfirmModal({ title, message, confirmText = "Retirer", onConfirm }) {
@@ -685,7 +704,7 @@
       const container = document.getElementById('cal-day-details');
 
       if(dayLogs.length === 0) {
-        container.innerHTML = `<p class="text-xs text-center text-slate-500 mt-4">Repos 😴 Aucune séance enregistrée le ${dateStr}.</p>`;
+        container.innerHTML = `<p class="text-xs text-center text-slate-500 mt-4">Repos 😴 Aucune séance enregistrée le ${sanitizeHTML(dateStr)}.</p>`;
         return;
       }
 
@@ -705,11 +724,11 @@
         logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0)).forEach((log) => {
           const v1 = log.weight ? sanitizeHTML(log.weight) : '-';
           const v2 = log.reps ? sanitizeHTML(log.reps) : '-';
-          const timeLabel = log.time ? `Validé à ${sanitizeHTML(log.time)}` : `Série ${log.set || '?'}`;
+          const timeLabel = log.time ? `Validé à ${sanitizeHTML(log.time)}` : `Série ${sanitizeHTML(log.set) || '?'}`;
           const note = log.comment ? `<span class="text-slate-500 text-xs ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
           
           html += `<div class="text-xs text-slate-300 flex items-center justify-between bg-slate-950 px-2.5 py-2 rounded border border-slate-800/80">
-              <span class="font-bold text-slate-400">${timeLabel} (Série ${log.set || '?'})</span>
+              <span class="font-bold text-slate-400">${timeLabel} (Série ${sanitizeHTML(log.set) || '?'})</span>
               <span class="font-mono text-white text-xs">${v1} / ${v2} ${note}</span>
             </div>`;
         });
@@ -769,12 +788,15 @@
 
     function populateChartDropdown() {
       const select = document.getElementById('chart-exercise-select');
-      const historyEx = journalLogs.map(log => log.exercise);
+      const historyEx = journalLogs.map(log => log.exercise).filter(Boolean);
       const uniqueDoneEx = [...new Set(historyEx)].sort();
       
       if (uniqueDoneEx.length === 0) {
         select.innerHTML = '<option value="">Aucun exercice validé...</option>';
-        if(chartInstance) chartInstance.destroy();
+        if(chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
         document.getElementById('no-data-msg').classList.remove('hidden');
         document.getElementById('stats-details').classList.add('hidden');
         return;
@@ -782,18 +804,20 @@
 
       select.innerHTML = uniqueDoneEx.map(ex => `<option value="${sanitizeHTML(ex)}">${sanitizeHTML(ex)}</option>`).join('');
       
-      const lastLog = journalLogs.reduce((latest, current) => {
-         const dLatest = parseDateToJJMMAAAA(latest.date).split('/').reverse().join('');
-         const dCurrent = parseDateToJJMMAAAA(current.date).split('/').reverse().join('');
-         return dCurrent >= dLatest ? current : latest;
-      }, journalLogs[0]);
+      let selectedDefault = uniqueDoneEx[0];
+      if (journalLogs.length > 0) {
+        const lastLog = journalLogs.reduce((latest, current) => {
+           const dLatest = parseDateToJJMMAAAA(latest.date).split('/').reverse().join('');
+           const dCurrent = parseDateToJJMMAAAA(current.date).split('/').reverse().join('');
+           return dCurrent >= dLatest ? current : latest;
+        }, journalLogs[0]);
 
-      if (lastLog && lastLog.exercise) {
-        select.value = sanitizeHTML(lastLog.exercise);
-      } else {
-        select.value = sanitizeHTML(uniqueDoneEx[0]);
+        if (lastLog && lastLog.exercise) {
+          selectedDefault = lastLog.exercise;
+        }
       }
 
+      select.value = sanitizeHTML(selectedDefault);
       renderChart();
     }
 
@@ -809,6 +833,8 @@
 
       userLogs.forEach(log => {
         const date = parseDateToJJMMAAAA(log.date);
+        if (!date) return;
+        
         let w = parseFloat(String(log.weight).replace(/[^0-9.,-]/g, '').replace(',', '.')) || 0;
         let r = parseFloat(String(log.reps).replace(/[^0-9.,-]/g, '').replace(',', '.')) || 0; 
 
@@ -839,14 +865,20 @@
       });
 
       if (dates.length === 0) {
-        if(chartInstance) chartInstance.destroy();
+        if(chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
         document.getElementById('no-data-msg').classList.remove('hidden');
         document.getElementById('stats-details').classList.add('hidden');
         return;
       }
       
       document.getElementById('no-data-msg').classList.add('hidden');
-      if (chartInstance) chartInstance.destroy();
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
 
       const dataSum = dates.map(d => dailyPerf[d].sum);
       const dataMaxW = dates.map(d => dailyPerf[d].max_w !== -Infinity ? dailyPerf[d].max_w : 0);
@@ -878,7 +910,6 @@
             pointRadius: 3,
             pointHoverRadius: 6,
             borderWidth: 2, 
-            borderDash: [], 
             fill: false, 
             tension: 0.3 
           }
@@ -907,7 +938,6 @@
             pointRadius: 3,
             pointHoverRadius: 6,
             borderWidth: 2, 
-            borderDash: [], 
             fill: false, 
             tension: 0.3 
           }
@@ -935,11 +965,7 @@
         options: {
           responsive: true, 
           maintainAspectRatio: false,
-          layout: {
-            padding: {
-              top: 0
-            }
-          },
+          layout: { padding: { top: 0 } },
           plugins: { 
             legend: { 
               display: true, 
@@ -948,7 +974,6 @@
               labels: { 
                 color: '#94a3b8',
                 font: { size: 10, family: "'Inter', sans-serif", weight: '600' },
-                usePointStyle: false,
                 boxWidth: 16,
                 boxHeight: 2,
                 padding: 8
@@ -999,7 +1024,7 @@
         return `<div class="flex justify-between items-center bg-slate-900 p-3.5 rounded-xl border border-slate-800">
              <div class="flex items-center gap-3">
                <span class="font-black text-xl ${medalColors[index]}">#${index + 1}</span>
-               <span class="text-sm font-bold text-slate-300">${perf.date}</span>
+               <span class="text-sm font-bold text-slate-300">${sanitizeHTML(perf.date)}</span>
              </div>
              <span class="text-base font-mono text-white font-bold">${perf.max_w > 0 ? perf.max_w + 'kg' : perf.sum}</span>
           </div>`;
