@@ -84,8 +84,8 @@
   </main>
 
   <script>
-    // URL DE TON SCRIPT
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEPjmC8hhvVwvTajH7d6tC8bbCpgQS5nptCY25U7Ty3D8d1v5ZQxHQpuUFfBKTSz26/exec";
+    // URL EXACTE DE TON SCRIPT APPS SCRIPT
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmdJ8iTLQtszZw0dMNNGRfKXG18LqQPnXzbq9xhSyWy9_FcpFKSphucNT97v-WOLkh/exec";
     
     let currentUser = localStorage.getItem('fitapp_user') || "";
     let rawExercises = JSON.parse(localStorage.getItem('fitapp_raw_exercises')) || [];
@@ -113,7 +113,7 @@
       setTimeout(() => toast.remove(), 2500);
     }
 
-    // CHARGEMENT VIA JSONP (Anti-CORS)
+    // CHARGEMENT VIA JSONP
     function fetchSheetData() {
       const btn = document.getElementById('sync-btn');
       if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>`;
@@ -153,9 +153,7 @@
     function populateUserSelect(users) {
       const select = document.getElementById('user-select');
       if (users.length === 0) users = ["Doudou"];
-      
       select.innerHTML = users.map(u => `<option value="${u}" ${u === currentUser ? 'selected' : ''}>${u}</option>`).join('');
-      
       if (!currentUser || !users.includes(currentUser)) {
         currentUser = users[0];
         localStorage.setItem('fitapp_user', currentUser);
@@ -171,7 +169,6 @@
 
     function buildProgramForCurrentUser() {
       const userEx = rawExercises.filter(e => e.user.toLowerCase() === currentUser.toLowerCase());
-      
       const grouped = {};
       userEx.forEach(ex => {
         if (!grouped[ex.seance]) grouped[ex.seance] = [];
@@ -224,16 +221,17 @@
         const savedData = getSavedLogs(ex.id);
         const safeName = ex.name.replace(/'/g, "\\'"); 
         
+        // LA LOGIQUE STRICTE BASÉE SUR LA COLONNE "TYPE"
         let head1 = "Poids", head2 = "Reps", ph1 = "kg", ph2 = "reps";
         const exType = (ex.type || "Poids").toLowerCase();
 
-        if (exType.includes("durée") || exType.includes("temps")) {
-          head1 = "Temps"; ph1 = "min:sec";
+        if (exType === "durée") {
+          head1 = "Temps"; ph1 = "ex: 30s";
           head2 = "Dist."; ph2 = "km/m";
-        } else if (exType === "km" || exType.includes("distance")) {
-          head1 = "Dist."; ph1 = "km";
-          head2 = "Temps"; ph2 = "min:sec";
-        } else if (exType === "pdc" || exType.includes("corps")) {
+        } else if (exType === "km") {
+          head1 = "Dist."; ph1 = "ex: 5km";
+          head2 = "Temps"; ph2 = "ex: 20m";
+        } else if (exType === "pdc") {
           head1 = "Lest";  ph1 = "+kg";
           head2 = "Reps";  ph2 = "reps";
         }
@@ -248,17 +246,17 @@
           const btnClass = isDone ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-800 text-slate-500 hover:text-slate-200';
           
           const val1 = setLog.weight || '';
-          const val2 = setLog.reps || (exType === "poids" || exType === "pdc" ? ex.reps : ''); 
+          const val2 = setLog.reps || (head1 === "Poids" || head1 === "Lest" ? ex.reps : ''); 
           const commentVal = setLog.comment || '';
 
           setsHtml += `
             <div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
               <span class="col-span-2 text-center text-xs font-bold text-slate-400">#${setIdx + 1}</span>
               <div class="col-span-3">
-                <input type="text" inputmode="decimal" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
+                <input type="text" id="weight-${ex.id}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
               </div>
               <div class="col-span-2">
-                <input type="text" inputmode="decimal" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
+                <input type="text" id="reps-${ex.id}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-xs font-mono rounded-lg px-1 py-1 text-center outline-none border transition ${disClass}">
               </div>
               <div class="col-span-3">
                 <input type="text" id="comment-${ex.id}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-[10px] rounded-lg px-1 py-1 outline-none border transition ${disClass}">
