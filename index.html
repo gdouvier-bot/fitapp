@@ -375,7 +375,6 @@
 
     function logout() { auth.signOut(); }
 
-    // RUPTURE DU BUG : L'ID DU DOCUMENT FIRESTORE EST CAPTURÉ DÉFINITIVEMENT
     function initFirebaseListeners() {
       db.collection("exercises").where("userId", "==", currentUserId).onSnapshot((snapshot) => {
         rawExercises = snapshot.docs
@@ -1025,6 +1024,7 @@
       showToast("Nouvelle semaine ! Tes perfs précédentes sont affichées comme repère.", "success");
     }
 
+    // VALIDATION DE LA SÉRIE AVEC DOC ID UNIQUE SUR FIRESTORE
     function validateSet(exId, exName, setIdx, restSec) {
       const saved = getSavedLogs(exId);
       if (!saved.sets) saved.sets = {};
@@ -1049,9 +1049,11 @@
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0');
 
+      const docId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
+
       showToast("Enregistré !", "success");
       
-      db.collection("journal").add({
+      db.collection("journal").doc(docId).set({
         userId: currentUserId,
         date: dateStr,
         time: timeStr,
@@ -1073,21 +1075,23 @@
       checkCongratsModal(isEditMode);
     }
 
-    // SUPPRESSION 100% GARANTIE PAR ID FIRESTORE DIRECT
+    // SUPPRESSION SYNCHRONE : LOCAL + BACKEND SANS REBOND
     function deleteSet(exId, exName, setIdx) {
       const today = new Date();
       const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+      const targetDocId = `${currentUserId}_${dateStr.replace(/\//g, '-')}_${exId}_${setIdx + 1}`;
 
-      // 1. Trouver le vrai ID de document Firestore
-      const targetLog = journalLogs.find(log => {
+      // 1. SUPPRESSION LOCALE IMMÉDIATE DU TABLEAU MÉMOIRE
+      journalLogs = journalLogs.filter(log => {
+        if (log.firestoreId === targetDocId) return false;
         const matchUser = log.userId === currentUserId;
         const matchDate = parseDateToJJMMAAAA(log.date) === dateStr;
         const matchSet = Number(log.set) === (setIdx + 1);
         const matchEx = log.exerciseId ? (log.exerciseId === exId) : (cleanString(log.exercise) === cleanString(exName));
-        return matchUser && matchDate && matchSet && matchEx;
+        return !(matchUser && matchDate && matchSet && matchEx);
       });
 
-      // 2. Vider le stockage local
+      // 2. RÉINITIALISATION DU LOCALSTORAGE
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
@@ -1098,30 +1102,29 @@
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
       }
 
-      // 3. Suppression dans Firestore via ID direct
-      if (targetLog && targetLog.firestoreId) {
-        db.collection("journal").doc(targetLog.firestoreId).delete().then(() => {
-          showToast("Série supprimée !");
-        });
-      } else {
-        db.collection("journal")
-          .where("userId", "==", currentUserId)
-          .where("set", "==", setIdx + 1)
-          .get()
-          .then((snapshot) => {
-            snapshot.docs.forEach((doc) => {
-              const data = doc.data();
-              if (parseDateToJJMMAAAA(data.date) === dateStr && (data.exerciseId === exId || cleanString(data.exercise) === cleanString(exName))) {
-                db.collection("journal").doc(doc.id).delete();
-              }
-            });
-            showToast("Série supprimée !");
-          });
-      }
-
-      // 4. Actualiser l'écran
-      renderTabs();
+      // 3. MISE À JOUR DE L'ÉCRAN SANS ATTENDRE FIRESTORE
       loadSession(activeSessionIndex);
+      renderTabs();
+      showToast("Série supprimée !");
+
+      // 4. SUPPRESSION NETTE DANS FIRESTORE (BACKEND)
+      db.collection("journal").doc(targetDocId).delete().catch(() => {});
+      
+      db.collection("journal")
+        .where("userId", "==", currentUserId)
+        .where("set", "==", setIdx + 1)
+        .get()
+        .then((snapshot) => {
+          snapshot.docs.forEach((doc) => {
+            const data = doc.data();
+            const sameDate = parseDateToJJMMAAAA(data.date) === dateStr;
+            const sameEx = data.exerciseId ? (data.exerciseId === exId) : (cleanString(data.exercise) === cleanString(exName));
+            if (sameDate && sameEx) {
+              db.collection("journal").doc(doc.id).delete();
+            }
+          });
+        })
+        .catch((err) => console.error("Erreur suppression Firestore:", err));
     }
 
     function setTimerPreset(sec) { restTimeTotal = sec; restTimeRemaining = sec; updateTimerDisplay(); }
