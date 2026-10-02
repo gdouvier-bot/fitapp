@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>FitApp Pro</title>
   <meta name="theme-color" content="#0f172a">
+
+  <!-- Lien Manifest PWA -->
+  <link rel="manifest" href="manifest.json">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -266,6 +270,15 @@
   </div>
 
   <script>
+    // Enregistrement du Service Worker PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker enregistré !', reg))
+          .catch(err => console.error('Erreur Service Worker:', err));
+      });
+    }
+
     const firebaseConfig = {
       apiKey: "AIzaSyDmyDdWOiucYk6rdyO_E3v631401z6bdJw",
       authDomain: "fitapp-pro-5bd6b.firebaseapp.com",
