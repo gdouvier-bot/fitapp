@@ -337,7 +337,7 @@
     let activeSessionIndex = null;
     let restTimeTotal = 90, restTimeRemaining = 90, restTimerInterval = null, isRestTimerRunning = false;
     let chartInstance = null;
-    let pendingDeleteCallback = null;
+    let pendingConfirmCallback = null;
 
     let currentCalDate = new Date();
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -480,15 +480,17 @@
 
     // --- ARCHIVAGE D'UN EXERCICE ---
     function archiveExercise(exId, exName) {
-      openConfirmModal(`Souhaites-tu retirer "${exName}" de ton programme actif ? Son historique dans le calendrier et les stats sera conservé.`, () => {
-        db.collection("exercises").doc(exId).update({
-          archived: true,
-          archivedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-          showToast(`"${exName}" a été archivé.`, "success");
-        }).catch(err => {
-          showToast("Erreur lors de l'archivage", "error");
-        });
+      openConfirmModal(`Souhaites-tu retirer "${exName}" de ton programme actif ? Son historique dans le calendrier et les stats sera conservé.`, (confirmed) => {
+        if (confirmed) {
+          db.collection("exercises").doc(exId).update({
+            archived: true,
+            archivedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).then(() => {
+            showToast(`"${exName}" a été archivé.`, "success");
+          }).catch(err => {
+            showToast("Erreur lors de l'archivage", "error");
+          });
+        }
       });
     }
 
@@ -963,7 +965,7 @@
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
-        saved.sets[setIdx].isEditing = true; // Activer le marqueur d'édition
+        saved.sets[setIdx].isEditing = true; // Indique qu'on est en train de modifier
         localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
         loadSession(activeSessionIndex);
         renderTabs();
@@ -976,26 +978,29 @@
       return data ? JSON.parse(data) : {};
     }
 
-    function openConfirmModal(msg, onConfirm) {
+    function openConfirmModal(msg, onResult) {
       document.getElementById('confirm-modal-msg').innerText = msg;
-      pendingDeleteCallback = onConfirm;
-      document.getElementById('confirm-modal').classList.remove('hidden');
-      document.getElementById('confirm-modal-action-btn').onclick = () => {
+      const modal = document.getElementById('confirm-modal');
+      const actionBtn = document.getElementById('confirm-modal-action-btn');
+
+      pendingConfirmCallback = onResult;
+      modal.classList.remove('hidden');
+
+      actionBtn.onclick = () => {
         closeConfirmModal(true);
       };
     }
 
     function closeConfirmModal(confirmed) {
       document.getElementById('confirm-modal').classList.add('hidden');
-      if (confirmed && pendingDeleteCallback) {
-        pendingDeleteCallback();
+      if (pendingConfirmCallback) {
+        pendingConfirmCallback(confirmed);
+        pendingConfirmCallback = null;
       }
-      pendingDeleteCallback = null;
     }
 
     function checkCongratsModal(isEdit = false) {
-      // Bloquer l'affichage du pop-up si la série est en mode modification
-      if (isEdit) return;
+      if (isEdit) return; // Bloque la pop-up si c'est une modification
 
       const currentSession = sessionsList[activeSessionIndex];
       const currentPct = calculateSessionProgress(currentSession);
@@ -1068,8 +1073,11 @@
       const isDone = saved.sets && saved.sets[setIdx]?.done === true;
 
       if (isDone) {
-        openConfirmModal("Es-tu sûr de vouloir annuler cette série ?", () => {
-          executeToggleSetDone(exId, exName, setIdx, restSec);
+        // Demande de confirmation avant annulation/suppression
+        openConfirmModal("Es-tu sûr de vouloir annuler cette série ?", (confirmed) => {
+          if (confirmed) {
+            executeToggleSetDone(exId, exName, setIdx, restSec);
+          }
         });
       } else {
         executeToggleSetDone(exId, exName, setIdx, restSec);
@@ -1082,17 +1090,19 @@
       const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
       const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
-      const nextDone = (saved.sets[setIdx]?.done !== true);
       
+      const isCurrentlyDone = (saved.sets[setIdx]?.done === true);
+      const nextDone = !isCurrentlyDone;
       const isEditMode = saved.sets[setIdx]?.isEditing === true;
 
       saved.sets[setIdx] = { 
-        weight: wEl.value, 
-        reps: rEl.value, 
-        comment: cEl.value, 
+        weight: wEl ? wEl.value : "", 
+        reps: rEl ? rEl.value : "", 
+        comment: cEl ? cEl.value : "", 
         done: nextDone,
         isEditing: false 
       };
+      
       localStorage.setItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
 
       const today = new Date();
@@ -1112,16 +1122,18 @@
           session: sessionsList[activeSessionIndex].title,
           exercise: exName,
           set: setIdx + 1,
-          weight: wEl.value,
-          reps: rEl.value,
-          comment: cEl.value,
+          weight: wEl ? wEl.value : "",
+          reps: rEl ? rEl.value : "",
+          comment: cEl ? cEl.value : "",
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
         if (restSec > 0) { setTimerPreset(restSec); startRestTimer(); }
       } else {
         showToast("Série annulée !");
-        db.collection("journal").doc(docId).delete();
+        db.collection("journal").doc(docId).delete().catch(err => {
+          console.error("Erreur suppression:", err);
+        });
       }
 
       renderTabs();
