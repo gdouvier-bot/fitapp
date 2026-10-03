@@ -1043,8 +1043,7 @@
         if (ex.name === "__STRUCTURE_SESSION__") return;
 
         const logsEx = journalLogs.filter(l => l.exerciseId === ex.id || (cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance)));
-        const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
-        const totalSets = isCardio ? 1 : (ex.sets || 4);
+        const totalSets = ex.sets || 4;
 
         // Bornage temporel exact de la semaine en cours
         const logsThisWeek = logsEx.filter(l => {
@@ -1389,8 +1388,7 @@
       if (!session || !session.exercises) return 0;
       let totalSets = 0, doneSets = 0;
       session.exercises.forEach(ex => {
-        const isCardio = (ex.type || "").toLowerCase().includes("dur") || (ex.type || "").toLowerCase().includes("km");
-        const setsCount = isCardio ? 1 : ex.sets;
+        const setsCount = ex.sets || 4;
         totalSets += setsCount;
         
         const saved = getSavedLogs(ex.id);
@@ -1453,8 +1451,10 @@
           head1 = "Lest"; ph1 = "+kg"; head2 = "Reps"; ph2 = "reps";
         }
 
-        const totalSets = isCardio ? 1 : ex.sets;
+        // CORRECTION : On utilise la valeur configurée ex.sets pour TOUS les types d'exercices
+        const totalSets = ex.sets || 4;
         let setsHtml = '';
+        
         for (let setIdx = 0; setIdx < totalSets; setIdx++) {
           const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
           const isDone = (setLog.done === true);
@@ -1472,7 +1472,7 @@
             <button data-action="validate" data-ex-id="${sanitizeHTML(ex.id)}" data-ex-name="${safeName}" data-set-idx="${setIdx}" data-rest-sec="${ex.restSec || 0}" class="btn-action-set w-7 h-7 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold text-sm transition mx-auto hover:bg-slate-200 border border-slate-200">✓</button>`;
 
           setsHtml += `<div class="grid grid-cols-12 gap-1.5 items-center bg-slate-50/80 p-2 rounded-xl border border-slate-200 text-center">
-              <span class="col-span-2 text-xs font-bold text-slate-500">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
+              <span class="col-span-2 text-xs font-bold text-slate-500">#${setIdx + 1}</span>
               <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${sanitizeHTML(ex.id)}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-slate-900 text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${sanitizeHTML(ex.id)}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-slate-900 text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-3"><input type="text" id="comment-${sanitizeHTML(ex.id)}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-700 text-xs rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
@@ -1488,7 +1488,7 @@
                 <button data-action="archive-ex" data-ex-id="${sanitizeHTML(ex.id)}" data-ex-name="${safeName}" class="btn-action-ex p-2 rounded-lg bg-slate-100 text-slate-500 hover:text-red-600 transition" title="Supprimer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
               </div>
             </div>
-            <p class="text-xs text-blue-600 font-semibold">${isCardio ? 'Objectif: ' + sanitizeHTML(ex.reps) : ex.sets + ' séries'}${ex.restSec > 0 ? ' • Pause: ' + ex.restSec + 's' : ''}</p>
+            <p class="text-xs text-blue-600 font-semibold">${ex.sets + ' séries • Obj: ' + sanitizeHTML(ex.reps)}${ex.restSec > 0 ? ' • Pause: ' + ex.restSec + 's' : ''}</p>
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
                 <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Act.</span>
