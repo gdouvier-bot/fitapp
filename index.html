@@ -133,7 +133,7 @@
         <form id="add-session-form" class="space-y-3">
           <div>
             <label class="text-xs font-bold text-slate-500 uppercase">Nom de la séance</label>
-            <input type="text" id="create-session-title" required placeholder="ex: Séance n°3 - Jambes" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
+            <input type="text" id="create-session-title" required placeholder="ex: Séance n°2 - Dos / Biceps" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
           </div>
           <div class="flex justify-end space-x-2 pt-2">
             <button type="button" id="btn-cancel-add-session" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Annuler</button>
@@ -592,7 +592,7 @@
         .onSnapshot((snapshot) => {
           rawExercises = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(ex => ex.archived !== true);
+            .filter(ex => ex.archived !== true || ex.name === "__STRUCTURE_SESSION__");
             
           syncSmartState();
           buildProgramForCurrentUser();
@@ -647,8 +647,7 @@
 
       const newSessionId = `SESS_${Date.now()}`;
       
-      // SÉCURISATION FIRESTORE : On crée un premier exercice conteneur "placeholder" archivé
-      // pour persister la séance dans Firestore même si aucun exercice visible n'y est créé immédiatement.
+      // SÉCURISATION FIRESTORE : Exercice virtuel "placeholder" pour créer et stocker la séance dans Firestore
       const placeholderDocId = `EX_PLACEHOLDER_${Date.now()}`;
       const placeholderEx = {
         id: placeholderDocId,
@@ -661,8 +660,10 @@
         sets: 1,
         reps: "0",
         restSec: 0,
-        archived: true // Archivé par défaut pour ne pas polluer la vue d'entraînement
+        archived: false // Doit être false pour que le listener Firestore .filter(ex => ex.archived !== true) le conserve
       };
+
+      rawExercises.push(placeholderEx);
 
       db.collection("exercises").doc(placeholderDocId).set({
         ...placeholderEx,
@@ -673,11 +674,14 @@
         showToast("Séance enregistrée en local", "info");
       });
 
-      sessionsList.push({ id: newSessionId, title: title, exercises: [] });
-      activeSessionIndex = sessionsList.length - 1;
-      
       closeAddSessionModal();
       buildProgramForCurrentUser();
+      
+      // Sélectionne la séance nouvellement créée
+      const createdIdx = sessionsList.findIndex(s => s.id === newSessionId);
+      if (createdIdx !== -1) {
+        switchSession(createdIdx);
+      }
     }
 
     function openConfirmModal({ title, message, confirmText = "Retirer", onConfirm }) {
@@ -712,7 +716,8 @@
       
       // Remplir la liste déroulante des séances disponibles
       if (sessionsList.length === 0) {
-        sessionSelect.innerHTML = `<option value="SESS_${Date.now()}">Séance n°1</option>`;
+        const defaultSessId = `SESS_${Date.now()}`;
+        sessionSelect.innerHTML = `<option value="${defaultSessId}">Séance n°1</option>`;
       } else {
         sessionSelect.innerHTML = sessionsList.map(s => `<option value="${sanitizeHTML(s.id)}">${sanitizeHTML(s.title)}</option>`).join('');
       }
@@ -801,13 +806,23 @@
         message: `Es-tu sûr de vouloir retirer "${exName}" ? L'historique sera conservé.`,
         confirmText: "Supprimer",
         onConfirm: () => {
+          // 1. Mise à jour locale immédiate (Optimistic UI)
+          const idx = rawExercises.findIndex(ex => ex.id === exId);
+          if (idx !== -1) {
+            rawExercises[idx].archived = true;
+          }
+          safeRemoveItem(`fitapp_log_${currentUserId}_${exId}`);
+          syncSmartState();
+          buildProgramForCurrentUser();
+          showToast(`"${exName}" retiré.`, "success");
+
+          // 2. Synchronisation Firestore en arrière-plan
           db.collection("exercises").doc(exId).update({
             archived: true,
             archivedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }).then(() => {
-            safeRemoveItem(`fitapp_log_${currentUserId}_${exId}`);
-            showToast(`"${exName}" retiré.`, "success");
-          }).catch(() => showToast("Erreur d'archivage", "error"));
+          }).catch(() => {
+            // L'état local est déjà mis à jour et synchronisé via le cache offline
+          });
         }
       });
     }
@@ -1327,15 +1342,25 @@
 
     function buildProgramForCurrentUser() {
       const grouped = {};
+
+      // 1. Regrouper tous les exercices reçus de Firestore par leur sessionId
       rawExercises.forEach(ex => {
         const sKey = ex.sessionId || ex.seance;
         if (!grouped[sKey]) grouped[sKey] = { title: ex.seance, exercises: [] };
-        // Exclure l'exercice virtuel de structure pour qu'il n'apparaisse pas dans la liste des cartes
+        // Exclure le document virtuel de structure pour ne pas l'afficher dans les cartes
         if (ex.name !== "__STRUCTURE_SESSION__") {
           grouped[sKey].exercises.push(ex);
         }
       });
       
+      // 2. Préserver les séances créées localement qui n'ont pas encore d'exercices
+      sessionsList.forEach(s => {
+        if (!grouped[s.id]) {
+          grouped[s.id] = { title: s.title, exercises: [] };
+        }
+      });
+
+      // 3. Reconstruire la liste des séances
       sessionsList = Object.keys(grouped).map((sKey) => ({ 
         id: sKey, 
         title: grouped[sKey].title, 
