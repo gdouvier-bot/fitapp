@@ -1514,6 +1514,9 @@
       if (e.target.closest('#btn-open-add-ex')) openAddExModal();
       if (e.target.closest('#btn-close-add-modal') || e.target.closest('#btn-cancel-add-modal')) closeAddExModal();
 
+      // Annulation de la modale de suppression d'exercice
+      if (e.target.closest('#confirm-btn-cancel')) closeConfirmModal();
+
       if (e.target.closest('#rename-session-btn')) openEditSessionModal();
       if (e.target.closest('#btn-close-edit-session') || e.target.closest('#btn-cancel-edit-session')) closeEditSessionModal();
 
