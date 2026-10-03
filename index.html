@@ -124,6 +124,7 @@
 
         <form id="add-ex-form" class="space-y-3">
           <input type="hidden" id="edit-ex-id" value="">
+          <input type="hidden" id="edit-session-id" value="">
           <div>
             <label class="text-xs font-bold text-slate-400 uppercase">Nom de l'exercice</label>
             <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
@@ -146,7 +147,7 @@
             </div>
             <div>
               <label class="text-xs font-bold text-slate-400 uppercase">Séries</label>
-              <input type="number" id="new-ex-sets" value="4" min="1" max="15" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <input type="number" id="new-ex-sets" value="4" min="1" max="15" inputmode="numeric" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
           </div>
 
@@ -157,7 +158,7 @@
             </div>
             <div>
               <label class="text-xs font-bold text-slate-400 uppercase">Repos (sec)</label>
-              <input type="number" id="new-ex-rest" value="60" min="0" step="5" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <input type="number" id="new-ex-rest" value="60" min="0" step="5" inputmode="numeric" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
             </div>
           </div>
 
@@ -207,7 +208,7 @@
       </div>
     </div>
 
-    <!-- Header (Trait du bas retiré) -->
+    <!-- Header -->
     <header class="sticky top-0 z-30 bg-slate-950 px-4 py-3 flex items-center justify-between pt-safe">
       <div class="flex items-center space-x-2.5">
         <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
@@ -303,7 +304,12 @@
       <!-- VUE 3 : PROGRESSION -->
       <div id="view-stats" class="space-y-5 hidden animate-pop">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Choisir un exercice</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Choisir un exercice</label>
+            <button id="btn-export-csv" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 transition active:scale-95">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+            </button>
+          </div>
           
           <div class="relative mb-4">
             <select id="chart-exercise-select" class="w-full bg-slate-950 border border-slate-700 text-white text-base font-semibold rounded-xl pl-3.5 pr-10 py-3 outline-none focus:border-emerald-500 transition cursor-pointer">
@@ -398,7 +404,7 @@
 
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-    // --- HELPERS SECURES ---
+    // --- HELPERS SECURES & AUDIO ---
     function cleanString(str) { return String(str || '').trim().toLowerCase(); }
     
     function sanitizeHTML(str) {
@@ -409,6 +415,21 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.value = 880; 
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } catch (e) { console.warn("AudioContext restreint", e); }
     }
 
     function parseDateToJJMMAAAA(val) {
@@ -440,6 +461,23 @@
       const d = new Date(dateStr);
       return isNaN(d.getTime()) ? new Date(0) : d;
     }
+
+    // Recalcul du minuteur au changement de visibilité de la page
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isRestTimerRunning && restTimerEndTime) {
+        const remaining = Math.round((restTimerEndTime - Date.now()) / 1000);
+        if (remaining <= 0) {
+          restTimeRemaining = 0;
+          updateTimerDisplay();
+          pauseRestTimer();
+          playBeep();
+          if (typeof navigator.vibrate === "function") navigator.vibrate([200, 100, 200]);
+        } else {
+          restTimeRemaining = remaining;
+          updateTimerDisplay();
+        }
+      }
+    });
 
     // --- AUTHENTIFICATION ---
     auth.onAuthStateChanged((user) => {
@@ -551,6 +589,7 @@
       if (ex) {
         titleEl.innerHTML = `<i data-lucide="edit" class="w-5 h-5 text-blue-400"></i> Modifier l'exercice`;
         editIdEl.value = ex.id;
+        document.getElementById('edit-session-id').value = ex.sessionId || '';
         document.getElementById('new-ex-name').value = ex.name || '';
         document.getElementById('new-ex-session').value = ex.seance || '';
         document.getElementById('new-ex-type').value = ex.type || 'Poids';
@@ -560,9 +599,11 @@
       } else {
         titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice`;
         editIdEl.value = "";
+        document.getElementById('edit-session-id').value = "";
         document.getElementById('add-ex-form').reset();
         if (activeSessionIndex !== null && sessionsList[activeSessionIndex]) {
           document.getElementById('new-ex-session').value = sessionsList[activeSessionIndex].title;
+          document.getElementById('edit-session-id').value = sessionsList[activeSessionIndex].id;
         }
       }
       toggleModalScroll(true);
@@ -587,6 +628,12 @@
       const restSec = parseInt(document.getElementById('new-ex-rest').value) || 0;
 
       const docId = editId ? editId : `EX_${Date.now()}`;
+      let sessionId = document.getElementById('edit-session-id').value;
+
+      if (!sessionId) {
+        const existingSession = sessionsList.find(s => cleanString(s.title) === cleanString(seance));
+        sessionId = existingSession ? existingSession.id : `SESS_${Date.now()}`;
+      }
       
       const exData = { 
         id: docId, 
@@ -594,6 +641,7 @@
         user: currentUser, 
         name: name, 
         seance: seance, 
+        sessionId: sessionId,
         type: type, 
         sets: sets, 
         reps: reps, 
@@ -660,22 +708,58 @@
         return;
       }
 
+      const activeSession = sessionsList[activeSessionIndex];
+      const sessionId = activeSession ? activeSession.id : null;
+
       const batch = db.batch();
-      rawExercises.filter(ex => ex.seance === oldTitle).forEach(ex => {
+      rawExercises.filter(ex => ex.sessionId === sessionId || ex.seance === oldTitle).forEach(ex => {
         batch.update(db.collection("exercises").doc(ex.id), { seance: newTitle });
       });
 
       batch.commit().then(() => {
-        rawExercises.forEach(ex => { if (ex.seance === oldTitle) ex.seance = newTitle; });
+        rawExercises.forEach(ex => { 
+          if (ex.sessionId === sessionId || ex.seance === oldTitle) ex.seance = newTitle; 
+        });
         showToast(`Séance renommée en "${newTitle}"`, "success");
         closeEditSessionModal();
         buildProgramForCurrentUser();
       }).catch(() => {
-        rawExercises.forEach(ex => { if (ex.seance === oldTitle) ex.seance = newTitle; });
+        rawExercises.forEach(ex => { 
+          if (ex.sessionId === sessionId || ex.seance === oldTitle) ex.seance = newTitle; 
+        });
         closeEditSessionModal();
         buildProgramForCurrentUser();
         showToast("Sauvegardé en local", "info");
       });
+    }
+
+    function exportToCSV() {
+      if (journalLogs.length === 0) {
+        showToast("Aucune donnée à exporter", "info");
+        return;
+      }
+
+      let csv = "Date;Exercice;Séance;Série;Poids/Lest;Reps/Distance;Commentaire\n";
+      journalLogs.forEach(log => {
+        const date = parseDateToJJMMAAAA(log.date);
+        const ex = (log.exercise || "").replace(/;/g, ',');
+        const session = (log.session || "").replace(/;/g, ',');
+        const set = log.set || "";
+        const weight = (log.weight || "").replace(/;/g, ',');
+        const reps = (log.reps || "").replace(/;/g, ',');
+        const comment = (log.comment || "").replace(/;/g, ',');
+        csv += `${date};${ex};${session};${set};${weight};${reps};${comment}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `fitapp_export_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Export CSV réussi !", "success");
     }
 
     function showToast(msg, type="info") {
@@ -801,16 +885,22 @@
       monday.setHours(0,0,0,0);
       monday.setDate(now.getDate() - day + 1);
 
+      // Calcul du lundi suivant pour bornage strict [monday, nextMonday[
+      const nextMonday = new Date(monday);
+      nextMonday.setDate(monday.getDate() + 7);
+
       rawExercises.forEach(ex => {
         const logsEx = journalLogs.filter(l => l.exerciseId === ex.id || (cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance)));
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
         const totalSets = isCardio ? 1 : (ex.sets || 4);
 
+        // Bornage temporel exact de la semaine en cours
         const logsThisWeek = logsEx.filter(l => {
           const safeDate = parseDateToJJMMAAAA(l.date);
           if (!safeDate || !safeDate.includes('/')) return false;
           const p = safeDate.split('/');
-          return new Date(p[2], p[1]-1, p[0]) >= monday;
+          const logDate = new Date(p[2], p[1] - 1, p[0]);
+          return logDate >= monday && logDate < nextMonday;
         });
 
         const existingData = getSavedLogs(ex.id);
@@ -1101,10 +1191,16 @@
     function buildProgramForCurrentUser() {
       const grouped = {};
       rawExercises.forEach(ex => {
-        if (!grouped[ex.seance]) grouped[ex.seance] = [];
-        grouped[ex.seance].push(ex);
+        const sKey = ex.sessionId || ex.seance;
+        if (!grouped[sKey]) grouped[sKey] = { title: ex.seance, exercises: [] };
+        grouped[sKey].exercises.push(ex);
       });
-      sessionsList = Object.keys(grouped).map((seName, idx) => ({ id: "s" + idx, title: seName, exercises: grouped[seName] }));
+      
+      sessionsList = Object.keys(grouped).map((sKey) => ({ 
+        id: sKey, 
+        title: grouped[sKey].title, 
+        exercises: grouped[sKey].exercises 
+      }));
       
       let nextSessionIdx = 0;
       for (let i = 0; i < sessionsList.length; i++) {
@@ -1385,6 +1481,7 @@
           restTimeRemaining = 0;
           updateTimerDisplay();
           pauseRestTimer();
+          playBeep();
           if (typeof navigator.vibrate === "function") navigator.vibrate([200, 100, 200]);
         } else {
           updateTimerDisplay();
@@ -1412,6 +1509,7 @@
     document.addEventListener('click', (e) => {
       if (e.target.closest('#btn-google-login')) loginWithGoogle();
       if (e.target.closest('#btn-logout')) logout();
+      if (e.target.closest('#btn-export-csv')) exportToCSV();
       
       if (e.target.closest('#btn-open-add-ex')) openAddExModal();
       if (e.target.closest('#btn-close-add-modal') || e.target.closest('#btn-cancel-add-modal')) closeAddExModal();
@@ -1481,7 +1579,6 @@
       const deltaX = touchEndX - touchStartX;
       const deltaY = touchEndY - touchStartY;
 
-      // Seuil à 12px et ratio 1.0 pour un basculement hyper-réactif au moindre balayage
       if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.0) {
         const views = ['workout', 'calendar', 'stats'];
         let idx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
