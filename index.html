@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>FitApp</title>
+  <title>FitApp Pro</title>
   <meta name="theme-color" content="#020617">
 
   <!-- PWA iOS & Manifest Support -->
@@ -223,7 +223,7 @@
       </button>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main Content (Padding bas suffisant pour dégager la navbar) -->
     <main class="flex-1 overflow-y-auto px-4 pt-6 pb-32 relative" id="main-content">
       
       <!-- VUE 1 : ENTRAINEMENT -->
@@ -836,7 +836,6 @@
             }
           }
 
-          // PRESERVATION STRICTE DE LA DATE, DE L'ID ET DE L'ETAT D'ÉDITION LOCAUX
           const finalDate = createdDate || (previousSet ? previousSet.date : null);
           const finalFirestoreId = firestoreId || (previousSet ? previousSet.firestoreId : null);
           const isEditingState = previousSet ? previousSet.isEditing : false;
@@ -1126,21 +1125,23 @@
     }
 
     function calculateSessionProgress(session) {
-      if (!session || !session.exercises) return 0;
+      if (!session || !session.exercises || session.exercises.length === 0) return 0;
       let totalSets = 0, doneSets = 0;
       session.exercises.forEach(ex => {
         const isCardio = (ex.type || "").toLowerCase().includes("dur") || (ex.type || "").toLowerCase().includes("km");
-        const setsCount = isCardio ? 1 : ex.sets;
+        const setsCount = isCardio ? 1 : (parseInt(ex.sets) || 4);
         totalSets += setsCount;
         
         const saved = getSavedLogs(ex.id);
-        if (saved.sets) {
+        if (saved && saved.sets) {
           for (let s = 0; s < setsCount; s++) {
             if (saved.sets[s]?.done) doneSets++;
           }
         }
       });
-      return totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+      if (totalSets === 0) return 0;
+      const res = Math.round((doneSets / totalSets) * 100);
+      return isNaN(res) ? 0 : res;
     }
 
     function renderTabs() {
@@ -1464,7 +1465,7 @@
     document.getElementById('add-ex-form').addEventListener('submit', saveNewExercise);
     document.getElementById('edit-session-form').addEventListener('submit', saveSessionName);
 
-    // --- SWIPE VECTORIEL SOUPLE ET FLUIDE ---
+    // --- SWIPE VECTORIEL FLUIDE ---
     let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
     
     document.addEventListener('touchstart', e => {
