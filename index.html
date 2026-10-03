@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark h-full bg-slate-950 text-slate-100">
+<html lang="fr" class="h-full bg-slate-100 text-slate-800">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>FitApp Pro</title>
-  <meta name="theme-color" content="#020617">
+  <meta name="theme-color" content="#ffffff">
 
   <!-- PWA iOS & Manifest Support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="FitApp Pro">
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icon-512.png">
@@ -40,7 +40,7 @@
       scrollbar-width: none;  
     }
 
-    .active-glow { box-shadow: 0 0 15px rgba(37, 99, 235, 0.35); }
+    .active-glow { box-shadow: 0 4px 20px rgba(37, 99, 235, 0.18); }
     .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
     .pt-safe { padding-top: max(0.75rem, env(safe-area-inset-top)); }
 
@@ -63,23 +63,23 @@
     .animate-pop { animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
-<body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden relative">
+<body class="h-full flex flex-col bg-slate-100 text-slate-800 overflow-x-hidden relative">
 
   <!-- ÉCRAN DE CHARGEMENT INITIAL -->
-  <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
-    <div class="w-12 h-12 rounded-xl border-2 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
-    <p class="text-sm text-slate-400 font-medium">Connexion sécurisée...</p>
+  <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
+    <div class="w-12 h-12 rounded-xl border-2 border-blue-500/20 border-t-blue-600 animate-spin mb-4"></div>
+    <p class="text-sm text-slate-500 font-medium">Connexion sécurisée...</p>
   </div>
 
   <!-- ÉCRAN DE CONNEXION GOOGLE -->
-  <div id="login-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center hidden">
-    <div class="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center mb-6 shadow-2xl active-glow">
+  <div id="login-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center hidden">
+    <div class="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mb-6 shadow-md active-glow">
       <svg viewBox="0 0 100 100" class="w-10 h-10"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
     </div>
-    <h1 class="text-2xl font-black text-white tracking-wide uppercase">FITAPP PRO</h1>
-    <p class="text-sm text-slate-400 mt-2 max-w-xs leading-relaxed">Ton entraînement sur-mesure avec suivi en temps réel et réinitialisation hebdomadaire.</p>
+    <h1 class="text-2xl font-black text-slate-900 tracking-wide uppercase">FITAPP PRO</h1>
+    <p class="text-sm text-slate-500 mt-2 max-w-xs leading-relaxed">Ton entraînement sur-mesure avec suivi en temps réel et réinitialisation hebdomadaire.</p>
     
-    <button id="btn-google-login" class="mt-8 w-full max-w-xs bg-slate-900 border border-slate-800 hover:border-slate-700 py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 font-bold text-sm text-white shadow-xl transition active:scale-95">
+    <button id="btn-google-login" class="mt-8 w-full max-w-xs bg-slate-900 hover:bg-slate-800 py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 font-bold text-sm text-white shadow-lg transition active:scale-95">
       <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
       Se connecter avec Google
     </button>
@@ -90,22 +90,22 @@
     <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
     <!-- Modal Confirmation -->
-    <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-pop">
-        <div class="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto text-red-400">
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-pop">
+        <div class="w-14 h-14 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-center mx-auto text-red-500">
           <i data-lucide="trash-2" class="w-7 h-7"></i>
         </div>
         <div>
-          <h3 class="font-bold text-lg text-white" id="confirm-modal-title">Retirer l'exercice ?</h3>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed" id="confirm-modal-desc">
+          <h3 class="font-bold text-lg text-slate-900" id="confirm-modal-title">Retirer l'exercice ?</h3>
+          <p class="text-xs text-slate-500 mt-1.5 leading-relaxed" id="confirm-modal-desc">
             Es-tu sûr de vouloir retirer cet exercice ? L'historique sera conservé.
           </p>
         </div>
         <div class="flex gap-2.5 pt-2">
-          <button id="confirm-btn-cancel" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition active:scale-95">
+          <button id="confirm-btn-cancel" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition active:scale-95">
             Annuler
           </button>
-          <button id="confirm-btn-action" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-600/20 transition active:scale-95">
+          <button id="confirm-btn-action" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/20 transition active:scale-95">
             Retirer
           </button>
         </div>
@@ -113,32 +113,32 @@
     </div>
 
     <!-- Modal Création / Modification -->
-    <div id="add-ex-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 id="ex-modal-title" class="font-bold text-base text-white flex items-center gap-2">
-            <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice
+    <div id="add-ex-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 id="ex-modal-title" class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5 text-blue-600"></i> Nouvel exercice
           </h3>
-          <button id="btn-close-add-modal" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+          <button id="btn-close-add-modal" class="text-slate-400 hover:text-slate-700 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
 
         <form id="add-ex-form" class="space-y-3">
           <input type="hidden" id="edit-ex-id" value="">
           <input type="hidden" id="edit-session-id" value="">
           <div>
-            <label class="text-xs font-bold text-slate-400 uppercase">Nom de l'exercice</label>
-            <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            <label class="text-xs font-bold text-slate-500 uppercase">Nom de l'exercice</label>
+            <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
           </div>
 
           <div>
-            <label class="text-xs font-bold text-slate-400 uppercase">Séance</label>
-            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            <label class="text-xs font-bold text-slate-500 uppercase">Séance</label>
+            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-xs font-bold text-slate-400 uppercase">Type</label>
-              <select id="new-ex-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-500 uppercase">Type</label>
+              <select id="new-ex-type" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
                 <option value="Poids">Poids</option>
                 <option value="PdC">PdC (Poids du corps)</option>
                 <option value="Durée">Durée</option>
@@ -146,80 +146,80 @@
               </select>
             </div>
             <div>
-              <label class="text-xs font-bold text-slate-400 uppercase">Séries</label>
-              <input type="number" id="new-ex-sets" value="4" min="1" max="15" inputmode="numeric" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-500 uppercase">Séries</label>
+              <input type="number" id="new-ex-sets" value="4" min="1" max="15" inputmode="numeric" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-xs font-bold text-slate-400 uppercase">Objectif (Reps/Dist)</label>
-              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5km" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-500 uppercase">Objectif (Reps/Dist)</label>
+              <input type="text" id="new-ex-reps" placeholder="ex: 10 ou 5km" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
             </div>
             <div>
-              <label class="text-xs font-bold text-slate-400 uppercase">Repos (sec)</label>
-              <input type="number" id="new-ex-rest" value="60" min="0" step="5" inputmode="numeric" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+              <label class="text-xs font-bold text-slate-500 uppercase">Repos (sec)</label>
+              <input type="number" id="new-ex-rest" value="60" min="0" step="5" inputmode="numeric" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
             </div>
           </div>
 
           <div class="flex justify-end space-x-2 pt-3">
-            <button type="button" id="btn-cancel-add-modal" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
-            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Enregistrer</button>
+            <button type="button" id="btn-cancel-add-modal" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Annuler</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-md transition active:scale-95">Enregistrer</button>
           </div>
         </form>
       </div>
     </div>
 
     <!-- Modal Renommer Séance -->
-    <div id="edit-session-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 class="font-bold text-base text-white flex items-center gap-2">
-            <i data-lucide="edit-3" class="w-5 h-5 text-blue-400"></i> Renommer la séance
+    <div id="edit-session-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <i data-lucide="edit-3" class="w-5 h-5 text-blue-600"></i> Renommer la séance
           </h3>
-          <button id="btn-close-edit-session" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+          <button id="btn-close-edit-session" class="text-slate-400 hover:text-slate-700 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
 
         <form id="edit-session-form" class="space-y-3">
           <input type="hidden" id="old-session-name" value="">
           <div>
-            <label class="text-xs font-bold text-slate-400 uppercase">Nouveau nom</label>
-            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white mt-1 outline-none focus:border-blue-500 transition-colors">
+            <label class="text-xs font-bold text-slate-500 uppercase">Nouveau nom</label>
+            <input type="text" id="new-session-title" required placeholder="ex: Pecs / Triceps" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
           </div>
           <div class="flex justify-end space-x-2 pt-2">
-            <button type="button" id="btn-cancel-edit-session" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Annuler</button>
-            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg transition active:scale-95">Mettre à jour</button>
+            <button type="button" id="btn-cancel-edit-session" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Annuler</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-md transition active:scale-95">Mettre à jour</button>
           </div>
         </form>
       </div>
     </div>
 
     <!-- Modal Félicitations -->
-    <div id="congrats-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-sm w-full text-center space-y-5 shadow-2xl relative overflow-hidden animate-pop">
-        <div class="w-20 h-20 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
+    <div id="congrats-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-3xl p-8 max-w-sm w-full text-center space-y-5 shadow-2xl relative overflow-hidden animate-pop">
+        <div class="w-20 h-20 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto text-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
           <i data-lucide="trophy" class="w-10 h-10"></i>
         </div>
         <div>
-          <h3 class="font-black text-2xl text-white uppercase tracking-wide" id="congrats-title">SÉANCE TERMINÉE ! 🎉</h3>
-          <p class="text-sm text-slate-300 mt-2 font-medium leading-relaxed" id="congrats-subtitle">Bien joué ! Tu as validé 100% de tes exercices aujourd'hui.</p>
+          <h3 class="font-black text-2xl text-slate-900 uppercase tracking-wide" id="congrats-title">SÉANCE TERMINÉE ! 🎉</h3>
+          <p class="text-sm text-slate-600 mt-2 font-medium leading-relaxed" id="congrats-subtitle">Bien joué ! Tu as validé 100% de tes exercices aujourd'hui.</p>
         </div>
-        <button id="congrats-main-btn" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition active:scale-95">Continuer</button>
+        <button id="congrats-main-btn" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl shadow-lg transition active:scale-95">Continuer</button>
       </div>
     </div>
 
     <!-- Header -->
-    <header class="sticky top-0 z-30 bg-slate-950 px-4 py-3 flex items-center justify-between pt-safe">
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 flex items-center justify-between pt-safe">
       <div class="flex items-center space-x-2.5">
-        <div class="w-9 h-9 rounded-xl bg-slate-950 border border-blue-500/40 flex items-center justify-center p-1.5 shadow-lg active-glow">
+        <div class="w-9 h-9 rounded-xl bg-white border border-blue-200 flex items-center justify-center p-1.5 shadow-sm active-glow">
           <svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30 30 h10 v40 h-10 z M60 30 h10 v40 h-10 z M20 40 h10 v20 h-10 z M70 40 h10 v20 h-10 z M40 46 h20 v8 h-20 z" fill="#2563eb"/><circle cx="50" cy="50" r="6" fill="#10b981"/></svg>
         </div>
         <div>
-          <h1 class="font-extrabold text-base text-white leading-tight">FITAPP PRO</h1>
-          <span id="user-display-name" class="text-blue-400 text-xs font-bold block truncate max-w-[150px]">Chargement...</span>
+          <h1 class="font-extrabold text-base text-slate-900 leading-tight">FITAPP PRO</h1>
+          <span id="user-display-name" class="text-blue-600 text-xs font-bold block truncate max-w-[150px]">Chargement...</span>
         </div>
       </div>
-      <button id="btn-logout" class="p-2 rounded-xl bg-slate-900 text-slate-400 hover:text-red-400 hover:bg-slate-800 transition" title="Déconnexion">
+      <button id="btn-logout" class="p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-red-600 hover:bg-slate-200 transition" title="Déconnexion">
         <i data-lucide="log-out" class="w-5 h-5"></i>
       </button>
     </header>
@@ -231,8 +231,8 @@
       <div id="view-workout" class="space-y-5 block animate-pop">
         <div>
           <div class="flex items-center justify-between mb-2.5">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Programme Semaine</h2>
-            <button id="btn-open-add-ex" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/30 transition active:scale-95">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Programme Semaine</h2>
+            <button id="btn-open-add-ex" class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200 transition active:scale-95">
               <i data-lucide="plus" class="w-4 h-4"></i> Ajouter
             </button>
           </div>
@@ -240,25 +240,25 @@
         </div>
 
         <!-- Minuteur -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center space-x-2">
-              <i data-lucide="timer" class="w-5 h-5 text-blue-400"></i>
-              <h3 class="font-bold text-base text-white">Minuteur</h3>
+              <i data-lucide="timer" class="w-5 h-5 text-blue-600"></i>
+              <h3 class="font-bold text-base text-slate-900">Minuteur</h3>
             </div>
             <div class="flex items-center space-x-1.5" id="timer-presets">
-              <button data-preset="45" class="btn-timer-preset px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">45s</button>
-              <button data-preset="60" class="btn-timer-preset px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">60s</button>
-              <button data-preset="90" class="btn-timer-preset px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-slate-300 active:scale-90 transition">90s</button>
+              <button data-preset="45" class="btn-timer-preset px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 active:scale-90 transition hover:bg-slate-200">45s</button>
+              <button data-preset="60" class="btn-timer-preset px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 active:scale-90 transition hover:bg-slate-200">60s</button>
+              <button data-preset="90" class="btn-timer-preset px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 active:scale-90 transition hover:bg-slate-200">90s</button>
             </div>
           </div>
-          <div class="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
-            <span id="timer-display" class="font-mono font-black text-2xl text-white tracking-wider">01:30</span>
+          <div class="flex items-center justify-between bg-slate-50 rounded-xl p-3 border border-slate-200">
+            <span id="timer-display" class="font-mono font-black text-2xl text-slate-900 tracking-wider">01:30</span>
             <div class="flex items-center space-x-2">
-              <button id="timer-toggle-btn" class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg transition active:scale-90">
+              <button id="timer-toggle-btn" class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md transition active:scale-90">
                 <i data-lucide="play" class="w-5 h-5"></i>
               </button>
-              <button id="timer-reset-btn" class="w-11 h-11 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center transition hover:bg-slate-700 active:scale-90">
+              <button id="timer-reset-btn" class="w-11 h-11 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center transition hover:bg-slate-300 active:scale-90">
                 <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
               </button>
             </div>
@@ -267,12 +267,12 @@
 
         <!-- Liste des exercices -->
         <div class="space-y-3" id="exercise-container">
-          <div class="flex items-center justify-between py-2 border-b border-slate-800/50">
+          <div class="flex items-center justify-between py-2 border-b border-slate-200">
             <div class="flex items-center space-x-2">
-              <span id="session-badge" class="w-3 h-3 rounded-full bg-slate-600"></span>
-              <h2 id="session-title" class="font-black text-xl text-white">Aucune séance</h2>
+              <span id="session-badge" class="w-3 h-3 rounded-full bg-slate-400"></span>
+              <h2 id="session-title" class="font-black text-xl text-slate-900">Aucune séance</h2>
             </div>
-            <button id="rename-session-btn" class="text-xs font-bold text-slate-400 hover:text-blue-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition hidden active:scale-95">
+            <button id="rename-session-btn" class="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm transition hidden active:scale-95">
               <i data-lucide="edit-2" class="w-4 h-4"></i> Renommer
             </button>
           </div>
@@ -282,14 +282,14 @@
 
       <!-- VUE 2 : CALENDRIER -->
       <div id="view-calendar" class="space-y-5 hidden animate-pop">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
           <div class="flex justify-between items-center mb-4">
-            <button id="btn-cal-prev" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-            <h3 id="cal-month-year" class="font-bold text-base text-white uppercase tracking-wider">Mois</h3>
-            <button id="btn-cal-next" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition active:scale-90"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+            <button id="btn-cal-prev" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 transition active:scale-90"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+            <h3 id="cal-month-year" class="font-bold text-base text-slate-900 uppercase tracking-wider">Mois</h3>
+            <button id="btn-cal-next" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 transition active:scale-90"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
           </div>
           
-          <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500 mb-2">
+          <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 mb-2">
             <div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div>
           </div>
           
@@ -297,22 +297,22 @@
         </div>
 
         <div id="cal-day-details" class="space-y-3 mt-4">
-          <p class="text-xs text-center text-slate-500 mt-6">Sélectionne un jour pour voir ta séance</p>
+          <p class="text-xs text-center text-slate-400 mt-6">Sélectionne un jour pour voir ta séance</p>
         </div>
       </div>
 
       <!-- VUE 3 : PROGRESSION -->
       <div id="view-stats" class="space-y-5 hidden animate-pop">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
           <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Choisir un exercice</label>
-            <button id="btn-export-csv" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 transition active:scale-95">
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Choisir un exercice</label>
+            <button id="btn-export-csv" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 transition active:scale-95">
               <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
             </button>
           </div>
           
           <div class="relative mb-4">
-            <select id="chart-exercise-select" class="w-full bg-slate-950 border border-slate-700 text-white text-base font-semibold rounded-xl pl-3.5 pr-10 py-3 outline-none focus:border-emerald-500 transition cursor-pointer">
+            <select id="chart-exercise-select" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-base font-semibold rounded-xl pl-3.5 pr-10 py-3 outline-none focus:border-emerald-500 transition cursor-pointer">
               <option value="">Sélectionnez...</option>
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
@@ -320,16 +320,16 @@
             </div>
           </div>
           
-          <div class="relative h-80 w-full bg-slate-950/50 rounded-xl border border-slate-800 p-1 flex items-center justify-center">
+          <div class="relative h-80 w-full bg-slate-50 rounded-xl border border-slate-200 p-1 flex items-center justify-center">
             <canvas id="progressionChart"></canvas>
-            <p id="no-data-msg" class="absolute text-slate-500 text-sm font-semibold hidden">Pas de données validées</p>
+            <p id="no-data-msg" class="absolute text-slate-400 text-sm font-semibold hidden">Pas de données validées</p>
           </div>
         </div>
 
         <div id="stats-details" class="mt-5 space-y-3 hidden">
           <div class="flex items-center gap-2 mb-2 pl-1">
-            <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
-            <h3 class="text-xs font-black text-white uppercase tracking-wider">Top 3 Records (PR)</h3>
+            <i data-lucide="award" class="w-5 h-5 text-amber-500"></i>
+            <h3 class="text-xs font-black text-slate-900 uppercase tracking-wider">Top 3 Records (PR)</h3>
           </div>
           <div id="top-records-list" class="space-y-2"></div>
         </div>
@@ -337,17 +337,17 @@
     </main>
 
     <!-- Navigation -->
-    <nav class="fixed bottom-0 w-full bg-slate-900/95 backdrop-blur-md border-t border-slate-800/80 pb-safe z-40">
+    <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/80 pb-safe z-40">
       <div class="flex justify-around items-center py-1 px-2">
-        <button id="nav-workout" data-view="workout" class="nav-btn flex flex-col items-center py-1 text-blue-500 w-1/3 transition">
+        <button id="nav-workout" data-view="workout" class="nav-btn flex flex-col items-center py-1 text-blue-600 w-1/3 transition">
           <i data-lucide="dumbbell" class="w-5 h-5 mb-0.5"></i>
           <span class="text-[10px] font-bold">Séance</span>
         </button>
-        <button id="nav-calendar" data-view="calendar" class="nav-btn flex flex-col items-center py-1 text-slate-500 hover:text-slate-300 w-1/3 transition">
+        <button id="nav-calendar" data-view="calendar" class="nav-btn flex flex-col items-center py-1 text-slate-400 hover:text-slate-600 w-1/3 transition">
           <i data-lucide="calendar-days" class="w-5 h-5 mb-0.5"></i>
           <span class="text-[10px] font-bold">Historique</span>
         </button>
-        <button id="nav-stats" data-view="stats" class="nav-btn flex flex-col items-center py-1 text-slate-500 hover:text-slate-300 w-1/3 transition">
+        <button id="nav-stats" data-view="stats" class="nav-btn flex flex-col items-center py-1 text-slate-400 hover:text-slate-600 w-1/3 transition">
           <i data-lucide="bar-chart-3" class="w-5 h-5 mb-0.5"></i>
           <span class="text-[10px] font-bold">Stats</span>
         </button>
@@ -587,7 +587,7 @@
       const ex = exId ? rawExercises.find(e => e.id === exId) : null;
 
       if (ex) {
-        titleEl.innerHTML = `<i data-lucide="edit" class="w-5 h-5 text-blue-400"></i> Modifier l'exercice`;
+        titleEl.innerHTML = `<i data-lucide="edit" class="w-5 h-5 text-blue-600"></i> Modifier l'exercice`;
         editIdEl.value = ex.id;
         document.getElementById('edit-session-id').value = ex.sessionId || '';
         document.getElementById('new-ex-name').value = ex.name || '';
@@ -597,7 +597,7 @@
         document.getElementById('new-ex-reps').value = ex.reps || '';
         document.getElementById('new-ex-rest').value = ex.restSec || 60;
       } else {
-        titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Nouvel exercice`;
+        titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-blue-600"></i> Nouvel exercice`;
         editIdEl.value = "";
         document.getElementById('edit-session-id').value = "";
         document.getElementById('add-ex-form').reset();
@@ -766,8 +766,8 @@
       const container = document.getElementById('toast-container');
       if (!container) return;
       const toast = document.createElement('div');
-      const color = type === "error" ? "bg-red-600 border-red-500" : type === "success" ? "bg-emerald-600 border-emerald-500" : "bg-slate-800 border-slate-700";
-      toast.className = `${color} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-toast pointer-events-auto`;
+      const color = type === "error" ? "bg-red-600 border-red-500 text-white" : type === "success" ? "bg-emerald-600 border-emerald-500 text-white" : "bg-slate-900 border-slate-800 text-white";
+      toast.className = `${color} px-4 py-2.5 rounded-xl shadow-xl text-xs font-bold flex items-center gap-2 animate-toast pointer-events-auto`;
       toast.innerHTML = `<span>${sanitizeHTML(msg)}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 2500);
@@ -776,11 +776,11 @@
     function switchView(view) {
       ['workout', 'calendar', 'stats'].forEach(v => {
         document.getElementById(`view-${v}`).classList.add('hidden');
-        document.getElementById(`nav-${v}`).className = "nav-btn flex flex-col items-center py-1 text-slate-500 hover:text-slate-300 w-1/3 transition";
+        document.getElementById(`nav-${v}`).className = "nav-btn flex flex-col items-center py-1 text-slate-400 hover:text-slate-600 w-1/3 transition";
       });
 
       document.getElementById(`view-${view}`).classList.remove('hidden');
-      const activeColor = view === 'workout' ? "text-blue-500" : view === 'calendar' ? "text-indigo-500" : "text-emerald-500";
+      const activeColor = view === 'workout' ? "text-blue-600" : view === 'calendar' ? "text-indigo-600" : "text-emerald-600";
       document.getElementById(`nav-${view}`).className = `nav-btn flex flex-col items-center py-1 w-1/3 transition ${activeColor}`;
 
       if (view === 'calendar') {
@@ -826,9 +826,9 @@
         const hasWorkout = !!workoutDates[dateStr];
         const isToday = (dateStr === todayStr);
 
-        let colorClass = "text-slate-400 hover:bg-slate-800 bg-slate-950/50 border border-transparent";
-        if(hasWorkout) colorClass = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.15)]";
-        if(isToday) colorClass += " ring-2 ring-indigo-500 border-indigo-500 text-white font-extrabold";
+        let colorClass = "text-slate-600 hover:bg-slate-100 bg-slate-50/80 border border-transparent";
+        if(hasWorkout) colorClass = "bg-indigo-50 text-indigo-600 border border-indigo-200 font-bold";
+        if(isToday) colorClass += " ring-2 ring-indigo-500 border-indigo-500 text-indigo-700 font-extrabold";
 
         html += `<div data-date="${sanitizeHTML(dateStr)}" class="btn-cal-day aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition cursor-pointer active:scale-90 ${colorClass}">${d}</div>`;
       }
@@ -840,7 +840,7 @@
       const container = document.getElementById('cal-day-details');
 
       if(dayLogs.length === 0) {
-        container.innerHTML = `<p class="text-xs text-center text-slate-500 mt-4">Repos 😴 Aucune séance enregistrée le ${sanitizeHTML(dateStr)}.</p>`;
+        container.innerHTML = `<p class="text-xs text-center text-slate-400 mt-4">Repos 😴 Aucune séance enregistrée le ${sanitizeHTML(dateStr)}.</p>`;
         return;
       }
 
@@ -850,22 +850,22 @@
         exGroups[log.exercise].push(log);
       });
 
-      let html = `<h4 class="font-bold text-base text-white mb-3 mt-2 border-b border-slate-800 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
+      let html = `<h4 class="font-bold text-base text-slate-900 mb-3 mt-2 border-b border-slate-200 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
 
       for(const [exName, logs] of Object.entries(exGroups)) {
-        html += `<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md mb-2">
-            <h5 class="text-sm font-black text-indigo-400 mb-2">${sanitizeHTML(exName)}</h5>
+        html += `<div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm mb-2">
+            <h5 class="text-sm font-black text-indigo-600 mb-2">${sanitizeHTML(exName)}</h5>
             <div class="space-y-1.5">`;
         
         logs.sort((a,b) => (Number(a.set) || 0) - (Number(b.set) || 0)).forEach((log) => {
           const v1 = log.weight ? sanitizeHTML(log.weight) : '-';
           const v2 = log.reps ? sanitizeHTML(log.reps) : '-';
           const timeLabel = log.time ? `Validé à ${sanitizeHTML(log.time)}` : `Série ${sanitizeHTML(log.set) || '?'}`;
-          const note = log.comment ? `<span class="text-slate-500 text-xs ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
+          const note = log.comment ? `<span class="text-slate-400 text-xs ml-2 italic">"${sanitizeHTML(log.comment)}"</span>` : '';
           
-          html += `<div class="text-xs text-slate-300 flex items-center justify-between bg-slate-950 px-2.5 py-2 rounded border border-slate-800/80">
-              <span class="font-bold text-slate-400">${timeLabel} (Série ${sanitizeHTML(log.set) || '?'})</span>
-              <span class="font-mono text-white text-xs">${v1} / ${v2} ${note}</span>
+          html += `<div class="text-xs text-slate-700 flex items-center justify-between bg-slate-50 px-2.5 py-2 rounded border border-slate-200">
+              <span class="font-bold text-slate-500">${timeLabel} (Série ${sanitizeHTML(log.set) || '?'})</span>
+              <span class="font-mono text-slate-900 font-bold text-xs">${v1} / ${v2} ${note}</span>
             </div>`;
         });
         html += `</div></div>`;
@@ -1048,12 +1048,12 @@
             label: 'Volume (Poids × Reps)', 
             data: dataSum, 
             yAxisID: 'y', 
-            borderColor: '#3b82f6', 
-            backgroundColor: 'rgba(59, 130, 246, 0.08)', 
+            borderColor: '#2563eb', 
+            backgroundColor: 'rgba(37, 99, 235, 0.08)', 
             borderWidth: 2.5, 
-            pointRadius: 3,
+            pointRadius: 3.5,
             pointHoverRadius: 6,
-            pointBackgroundColor: '#3b82f6',
+            pointBackgroundColor: '#2563eb',
             fill: true, 
             tension: 0.3 
           },
@@ -1061,9 +1061,9 @@
             label: 'Poids Max (kg)', 
             data: dataMaxW, 
             yAxisID: 'y1', 
-            borderColor: '#f59e0b', 
-            pointBackgroundColor: '#f59e0b',
-            pointRadius: 3,
+            borderColor: '#d97706', 
+            pointBackgroundColor: '#d97706',
+            pointRadius: 3.5,
             pointHoverRadius: 6,
             borderWidth: 2, 
             fill: false, 
@@ -1076,12 +1076,12 @@
             label: usedLest ? 'Score (Lest × Reps)' : 'Répétitions', 
             data: dataSum, 
             yAxisID: 'y', 
-            borderColor: '#10b981', 
-            backgroundColor: 'rgba(16, 185, 129, 0.08)', 
+            borderColor: '#059669', 
+            backgroundColor: 'rgba(5, 150, 105, 0.08)', 
             borderWidth: 2.5, 
-            pointRadius: 3,
+            pointRadius: 3.5,
             pointHoverRadius: 6,
-            pointBackgroundColor: '#10b981',
+            pointBackgroundColor: '#059669',
             fill: true, 
             tension: 0.3 
           },
@@ -1089,9 +1089,9 @@
             label: usedLest ? 'Lest Max (kg)' : 'Série Max', 
             data: usedLest ? dataMaxW : dataMaxR, 
             yAxisID: 'y1', 
-            borderColor: '#f59e0b', 
-            pointBackgroundColor: '#f59e0b',
-            pointRadius: 3,
+            borderColor: '#d97706', 
+            pointBackgroundColor: '#d97706',
+            pointRadius: 3.5,
             pointHoverRadius: 6,
             borderWidth: 2, 
             fill: false, 
@@ -1103,12 +1103,12 @@
           label: 'Performance Max', 
           data: dataMaxW, 
           yAxisID: 'y', 
-          borderColor: '#8b5cf6', 
-          backgroundColor: 'rgba(139, 92, 246, 0.08)', 
+          borderColor: '#7c3aed', 
+          backgroundColor: 'rgba(124, 58, 237, 0.08)', 
           borderWidth: 2.5, 
-          pointRadius: 3,
+          pointRadius: 3.5,
           pointHoverRadius: 6,
-          pointBackgroundColor: '#8b5cf6',
+          pointBackgroundColor: '#7c3aed',
           fill: true, 
           tension: 0.3 
         });
@@ -1128,7 +1128,7 @@
               position: 'top',
               align: 'center',
               labels: { 
-                color: '#94a3b8',
+                color: '#475569',
                 font: { size: 10, family: "'Inter', sans-serif", weight: '600' },
                 boxWidth: 16,
                 boxHeight: 2,
@@ -1138,11 +1138,11 @@
             tooltip: {
               mode: 'index',
               intersect: false,
-              backgroundColor: '#0f172a',
-              borderColor: '#334155',
+              backgroundColor: '#ffffff',
+              borderColor: '#e2e8f0',
               borderWidth: 1,
-              titleColor: '#f8fafc',
-              bodyColor: '#cbd5e1'
+              titleColor: '#0f172a',
+              bodyColor: '#334155'
             }
           },
           scales: {
@@ -1154,14 +1154,14 @@
               type: 'linear', 
               display: true, 
               position: 'left', 
-              ticks: { color: '#3b82f6', font: { size: 10, weight: '600' } }, 
-              grid: { display: false } 
+              ticks: { color: '#2563eb', font: { size: 10, weight: '600' } }, 
+              grid: { color: '#f1f5f9' } 
             },
             y1: { 
               type: 'linear', 
               display: datasets.length > 1, 
               position: 'right', 
-              ticks: { color: '#f59e0b', font: { size: 10, weight: '600' } }, 
+              ticks: { color: '#d97706', font: { size: 10, weight: '600' } }, 
               grid: { display: false } 
             }
           }
@@ -1176,13 +1176,13 @@
       records.sort((a, b) => b.max_w - a.max_w || b.max_r - a.max_r);
 
       topRecordsList.innerHTML = records.slice(0, 3).map((perf, index) => {
-        const medalColors = ['text-amber-400', 'text-slate-300', 'text-amber-600'];
-        return `<div class="flex justify-between items-center bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+        const medalColors = ['text-amber-500', 'text-slate-400', 'text-amber-700'];
+        return `<div class="flex justify-between items-center bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm">
              <div class="flex items-center gap-3">
                <span class="font-black text-xl ${medalColors[index]}">#${index + 1}</span>
-               <span class="text-sm font-bold text-slate-300">${sanitizeHTML(perf.date)}</span>
+               <span class="text-sm font-bold text-slate-700">${sanitizeHTML(perf.date)}</span>
              </div>
-             <span class="text-base font-mono text-white font-bold">${perf.max_w > 0 ? perf.max_w + 'kg' : perf.sum}</span>
+             <span class="text-base font-mono text-slate-900 font-bold">${perf.max_w > 0 ? perf.max_w + 'kg' : perf.sum}</span>
           </div>`;
       }).join('');
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -1215,7 +1215,7 @@
         document.getElementById('rename-session-btn').classList.remove('hidden');
       } else {
         document.getElementById('session-title').innerText = "Aucun exercice";
-        document.getElementById('exercise-list').innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Clique sur "+ Ajouter" pour créer tes premiers exercices !</p>';
+        document.getElementById('exercise-list').innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Clique sur "+ Ajouter" pour créer tes premiers exercices !</p>';
         document.getElementById('rename-session-btn').classList.add('hidden');
       }
     }
@@ -1242,13 +1242,13 @@
       const container = document.getElementById('session-tabs');
       container.innerHTML = sessionsList.map((s, idx) => {
         const pct = calculateSessionProgress(s);
-        let badgeColor = pct === 100 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" : pct > 0 ? "bg-blue-500/20 text-blue-400 border-blue-500/40" : "bg-slate-800 text-slate-400 border-slate-700";
+        let badgeColor = pct === 100 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : pct > 0 ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-slate-100 text-slate-500 border-slate-200";
 
-        return `<button data-session-idx="${idx}" class="btn-session-tab text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-slate-900 border-blue-500/80 active-glow' : 'bg-slate-900/60 border-slate-800'} active:scale-95">
-            <div class="font-bold text-sm text-white truncate mb-2 w-full">${sanitizeHTML(s.title)}</div>
+        return `<button data-session-idx="${idx}" class="btn-session-tab text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${idx === activeSessionIndex ? 'bg-white border-blue-600 active-glow shadow-md' : 'bg-white/70 border-slate-200'} active:scale-95">
+            <div class="font-bold text-sm text-slate-900 truncate mb-2 w-full">${sanitizeHTML(s.title)}</div>
             <div class="flex items-center justify-between w-full">
               <span class="text-xs px-2 py-0.5 rounded-md border font-bold ${badgeColor}">${pct}%</span>
-              ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>' : ''}
+              ${pct === 100 ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>' : ''}
             </div>
           </button>`;
       }).join('');
@@ -1289,36 +1289,36 @@
           const setLog = (savedData.sets && savedData.sets[setIdx]) ? savedData.sets[setIdx] : {};
           const isDone = (setLog.done === true);
           const disabledAttr = isDone ? 'disabled' : '';
-          const disClass = isDone ? 'opacity-50 bg-slate-950 border-slate-800' : 'bg-slate-900 border-slate-700 focus:border-blue-500';
+          const disClass = isDone ? 'opacity-50 bg-slate-100 border-slate-200' : 'bg-white border-slate-300 focus:border-blue-600';
           
           const val1 = sanitizeHTML(setLog.weight || '');
           const val2 = sanitizeHTML(setLog.reps || ex.reps || '');
           const commentVal = sanitizeHTML(setLog.comment || '');
 
           const actionButtons = isDone ? `
-            <button data-action="unlock" data-ex-id="${sanitizeHTML(ex.id)}" data-set-idx="${setIdx}" class="btn-action-set w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center transition hover:bg-amber-500/30 mx-auto" title="Modifier">
+            <button data-action="unlock" data-ex-id="${sanitizeHTML(ex.id)}" data-set-idx="${setIdx}" class="btn-action-set w-7 h-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center transition hover:bg-amber-100 mx-auto" title="Modifier">
               <i data-lucide="edit-3" class="w-4 h-4"></i>
             </button>` : `
-            <button data-action="validate" data-ex-id="${sanitizeHTML(ex.id)}" data-ex-name="${safeName}" data-set-idx="${setIdx}" data-rest-sec="${ex.restSec || 0}" class="btn-action-set w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition mx-auto hover:bg-slate-700">✓</button>`;
+            <button data-action="validate" data-ex-id="${sanitizeHTML(ex.id)}" data-ex-name="${safeName}" data-set-idx="${setIdx}" data-rest-sec="${ex.restSec || 0}" class="btn-action-set w-7 h-7 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold text-sm transition mx-auto hover:bg-slate-200 border border-slate-200">✓</button>`;
 
-          setsHtml += `<div class="grid grid-cols-12 gap-1.5 items-center bg-slate-950/60 p-2 rounded-xl border border-slate-800 text-center">
-              <span class="col-span-2 text-xs font-bold text-slate-400">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
-              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${sanitizeHTML(ex.id)}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${sanitizeHTML(ex.id)}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-white text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
-              <div class="col-span-3"><input type="text" id="comment-${sanitizeHTML(ex.id)}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-300 text-xs rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+          setsHtml += `<div class="grid grid-cols-12 gap-1.5 items-center bg-slate-50/80 p-2 rounded-xl border border-slate-200 text-center">
+              <span class="col-span-2 text-xs font-bold text-slate-500">${isCardio ? 'Obj.' : '#' + (setIdx + 1)}</span>
+              <div class="col-span-3"><input type="text" inputmode="decimal" id="weight-${sanitizeHTML(ex.id)}-${setIdx}" value="${val1}" placeholder="${ph1}" ${disabledAttr} class="w-full text-slate-900 text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-2"><input type="text" inputmode="decimal" id="reps-${sanitizeHTML(ex.id)}-${setIdx}" value="${val2}" placeholder="${ph2}" ${disabledAttr} class="w-full text-slate-900 text-sm font-mono rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
+              <div class="col-span-3"><input type="text" id="comment-${sanitizeHTML(ex.id)}-${setIdx}" value="${commentVal}" placeholder="Note" ${disabledAttr} class="w-full text-slate-700 text-xs rounded-lg px-1.5 py-1.5 text-center outline-none border transition ${disClass}"></div>
               <div class="col-span-2 flex items-center justify-center space-x-1">${actionButtons}</div>
             </div>`;
         }
 
-        html += `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md relative">
+        html += `<div class="bg-white border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-sm relative">
             <div class="flex justify-between items-start">
-              <h3 class="font-black text-lg text-white pr-16 leading-tight">${safeName}</h3>
+              <h3 class="font-black text-lg text-slate-900 pr-16 leading-tight">${safeName}</h3>
               <div class="flex items-center space-x-1.5 absolute top-3.5 right-3.5">
-                <button data-action="edit-ex" data-ex-id="${sanitizeHTML(ex.id)}" class="btn-action-ex p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-blue-400 transition" title="Modifier"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                <button data-action="archive-ex" data-ex-id="${sanitizeHTML(ex.id)}" data-ex-name="${safeName}" class="btn-action-ex p-2 rounded-lg bg-slate-800/80 text-slate-400 hover:text-red-400 transition" title="Supprimer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <button data-action="edit-ex" data-ex-id="${sanitizeHTML(ex.id)}" class="btn-action-ex p-2 rounded-lg bg-slate-100 text-slate-500 hover:text-blue-600 transition" title="Modifier"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button data-action="archive-ex" data-ex-id="${sanitizeHTML(ex.id)}" data-ex-name="${safeName}" class="btn-action-ex p-2 rounded-lg bg-slate-100 text-slate-500 hover:text-red-600 transition" title="Supprimer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
               </div>
             </div>
-            <p class="text-xs text-blue-400 font-medium">${isCardio ? 'Objectif: ' + sanitizeHTML(ex.reps) : ex.sets + ' séries'}${ex.restSec > 0 ? ' • Pause: ' + ex.restSec + 's' : ''}</p>
+            <p class="text-xs text-blue-600 font-semibold">${isCardio ? 'Objectif: ' + sanitizeHTML(ex.reps) : ex.sets + ' séries'}${ex.restSec > 0 ? ' • Pause: ' + ex.restSec + 's' : ''}</p>
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center px-1">
                 <span class="col-span-2">Série</span><span class="col-span-3">${head1}</span><span class="col-span-2">${head2}</span><span class="col-span-3">Note</span><span class="col-span-2">Act.</span>
