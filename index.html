@@ -600,11 +600,9 @@
       }, { merge: true }).then(() => {
         showToast(editId ? "Exercice mis à jour !" : "Exercice créé !", "success");
         closeAddExModal();
-        // Le listener onSnapshot gère la mise à jour réactive de rawExercises
       }).catch(() => {
         showToast("Sauvegardé en cache hors-ligne", "info");
         closeAddExModal();
-        // Fallback local uniquement si la requête échoue en offline
         const exData = { id: docId, userId: currentUserId, user: currentUser, name, seance, type, sets, reps, restSec, archived: false };
         const idx = rawExercises.findIndex(ex => ex.id === docId);
         if (idx !== -1) rawExercises[idx] = exData;
@@ -811,7 +809,7 @@
         let saved = { sets: {} };
 
         for(let i = 0; i < totalSets; i++) {
-          let setDone = false, weight = "", reps = "", comment = "", firestoreId = null;
+          let setDone = false, weight = "", reps = "", comment = "", firestoreId = null, createdDate = null;
           const logForSet = logsThisWeek.find(l => Number(l.set) === (i + 1));
 
           if (logForSet) {
@@ -820,6 +818,7 @@
             reps = logForSet.reps;
             comment = logForSet.comment;
             firestoreId = logForSet.firestoreId;
+            createdDate = parseDateToJJMMAAAA(logForSet.date);
           } else {
             const lastLogForSet = logsEx.find(l => Number(l.set) === (i + 1));
             if (lastLogForSet) {
@@ -827,7 +826,7 @@
               reps = lastLogForSet.reps || "";
             }
           }
-          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId };
+          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId, date: createdDate };
         }
         safeSetItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
       });
@@ -1285,14 +1284,22 @@
       
       const isEditMode = saved.sets[setIdx]?.isEditing === true;
       const today = new Date();
-      const dateStr = parseDateToJJMMAAAA(today);
+
+      // VERROUILLAGE DE LA DATE D'ORIGINE : réutilise la date existante ou prend la date actuelle si 1ère création
+      const existingSet = saved.sets[setIdx];
+      const dateStr = (existingSet && existingSet.date) ? existingSet.date : parseDateToJJMMAAAA(today);
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
 
       let firestoreId = saved.sets[setIdx]?.firestoreId || db.collection("journal").doc().id;
 
       saved.sets[setIdx] = { 
-        weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : "", 
-        done: true, isEditing: false, firestoreId: firestoreId
+        weight: wEl ? wEl.value : "", 
+        reps: rEl ? rEl.value : "", 
+        comment: cEl ? cEl.value : "", 
+        done: true, 
+        isEditing: false, 
+        firestoreId: firestoreId,
+        date: dateStr // Conserve la date de création dans le LocalStorage
       };
       
       safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
@@ -1300,9 +1307,17 @@
       
       queueSyncJournal({
         firestoreId: firestoreId,
-        userId: currentUserId, date: dateStr, time: timeStr, user: currentUser,
-        session: sessionsList[activeSessionIndex].title, exercise: exName, exerciseId: exId,
-        set: Number(setIdx) + 1, weight: wEl ? wEl.value : "", reps: rEl ? rEl.value : "", comment: cEl ? cEl.value : ""
+        userId: currentUserId, 
+        date: dateStr, // Synchronise avec la date de création initiale
+        time: timeStr, 
+        user: currentUser,
+        session: sessionsList[activeSessionIndex].title, 
+        exercise: exName, 
+        exerciseId: exId,
+        set: Number(setIdx) + 1, 
+        weight: wEl ? wEl.value : "", 
+        reps: rEl ? rEl.value : "", 
+        comment: cEl ? cEl.value : ""
       });
       
       if (restSec > 0 && !isEditMode) { setTimerPreset(restSec); startRestTimer(); }
