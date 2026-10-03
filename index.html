@@ -1393,13 +1393,22 @@
     window.addEventListener('online', processPendingSyncQueue);
 
     function validateSet(exId, exName, setIdx, restSec) {
-      const saved = getSavedLogs(exId);
-      if (!saved.sets) saved.sets = {};
-      
       const wEl = document.getElementById(`weight-${exId}-${setIdx}`);
       const rEl = document.getElementById(`reps-${exId}-${setIdx}`);
       const cEl = document.getElementById(`comment-${exId}-${setIdx}`);
       
+      const weightVal = wEl ? wEl.value.trim() : "";
+      const repsVal = rEl ? rEl.value.trim() : "";
+
+      // Sécurité : Bloquer si poids ET reps sont vides
+      if (!weightVal && !repsVal) {
+        showToast("Indique au moins le poids ou les reps !", "error");
+        return;
+      }
+
+      const saved = getSavedLogs(exId);
+      if (!saved.sets) saved.sets = {};
+
       const isEditMode = saved.sets[setIdx]?.isEditing === true;
       const today = new Date();
 
@@ -1409,9 +1418,9 @@
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
 
       saved.sets[setIdx] = { 
-        weight: wEl ? wEl.value : "", 
-        reps: rEl ? rEl.value : "", 
-        comment: cEl ? cEl.value : "", 
+        weight: weightVal, 
+        reps: repsVal, 
+        comment: cEl ? cEl.value.trim() : "", 
         done: true, 
         isEditing: false, 
         firestoreId: firestoreId,
@@ -1431,9 +1440,9 @@
         exercise: exName, 
         exerciseId: exId,
         set: Number(setIdx) + 1, 
-        weight: wEl ? wEl.value : "", 
-        reps: rEl ? rEl.value : "", 
-        comment: cEl ? cEl.value : ""
+        weight: weightVal, 
+        reps: repsVal, 
+        comment: cEl ? cEl.value.trim() : ""
       });
       
       if (restSec > 0 && !isEditMode) { setTimerPreset(restSec); startRestTimer(); }
