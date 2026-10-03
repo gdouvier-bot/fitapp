@@ -1400,9 +1400,9 @@
       const weightVal = wEl ? wEl.value.trim() : "";
       const repsVal = rEl ? rEl.value.trim() : "";
 
-      // Sécurité : Bloquer si le poids/lest OU les reps sont vides
+      // Sécurité : Message générique de saisie obligatoire
       if (!weightVal || !repsVal) {
-        showToast("Saisis le poids/lest ET le nombre de reps !", "error");
+        showToast("Merci de remplir tous les champs obligatoires !", "error");
         return;
       }
 
