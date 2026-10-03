@@ -1,4 +1,5 @@
-const CACHE_NAME = 'fitapp-pro-v1';
+const CACHE_NAME = 'fitapp-pro-v2';
+
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -12,22 +13,35 @@ const ASSETS_TO_CACHE = [
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js'
 ];
 
-// Installation : Mise en cache des ressources essentielles
+// 1. Installation : Mise en cache tolérante (Tolère les pannes individuelles)
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const url of ASSETS_TO_CACHE) {
+        try {
+          await cache.add(new Request(url, { mode: 'cors' }));
+        } catch (err) {
+          try {
+            // Fallback no-cors pour requêtes opaques CDN
+            const response = await fetch(url, { mode: 'no-cors' });
+            await cache.put(url, response);
+          } catch (fallbackErr) {
+            console.warn(`[SW] Impossible de mettre en cache : ${url}`);
+          }
+        }
+      }
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activation : Nettoyage des anciens caches et prise de contrôle immédiate
+// 2. Activation : Nettoyage des anciens caches et prise de contrôle
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log(`[SW] Nettoyage ancien cache : ${key}`);
             return caches.delete(key);
           }
         })
@@ -36,36 +50,43 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Interception des requêtes réseau (Stratégie Network First avec fallback sur Cache)
+// 3. Interception Réseau
 self.addEventListener('fetch', (e) => {
-  // Ignorer les requêtes non-GET ou vers Firebase Auth/Firestore
-  if (e.request.method !== 'GET' || e.request.url.includes('firestore.googleapis.com') || e.request.url.includes('identitytoolkit.googleapis.com')) {
+  const url = new URL(e.request.url);
+
+  // Ignorer requêtes non-GET, non-HTTP(S) et API Firebase dynamiques
+  if (
+    e.request.method !== 'GET' ||
+    !url.protocol.startsWith('http') ||
+    url.hostname.includes('firestore.googleapis.com') ||
+    url.hostname.includes('identitytoolkit.googleapis.com') ||
+    url.hostname.includes('securetoken.googleapis.com')
+  ) {
     return;
   }
 
+  // Stratégie : Stale-While-Revalidate pour les assets statiques et HTML
   e.respondWith(
-    fetch(e.request)
-      .then((response) => {
-        // Si la réponse est valide, on met à jour le cache dynamiquement
-        if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(e.request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // En cas de panne de réseau / hors-ligne, on sert la ressource depuis le cache
-        return caches.match(e.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+    caches.match(e.request).then((cachedResponse) => {
+      const fetchPromise = fetch(e.request)
+        .then((networkResponse) => {
+          if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(e.request, responseClone);
+            });
           }
-          // Si la page demandée n'est pas trouvée, retourner l'index
+          return networkResponse;
+        })
+        .catch(() => {
+          // En cas de panne réseau complète et d'absence de cache pour la navigation
           if (e.request.mode === 'navigate') {
-            return caches.match('./index.html');
+            return caches.match('./index.html') || caches.match('./');
           }
         });
-      })
+
+      // Si présent en cache, répondre immédiatement, sinon attendre le réseau
+      return cachedResponse || fetchPromise;
+    })
   );
 });
