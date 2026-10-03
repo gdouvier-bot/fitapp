@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitapp-pro-v2';
+const CACHE_NAME = 'fitapp-pro-v3';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -13,7 +13,6 @@ const ASSETS_TO_CACHE = [
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js'
 ];
 
-// 1. Installation : Mise en cache tolérante (Tolère les pannes individuelles)
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
@@ -22,11 +21,10 @@ self.addEventListener('install', (e) => {
           await cache.add(new Request(url, { mode: 'cors' }));
         } catch (err) {
           try {
-            // Fallback no-cors pour requêtes opaques CDN
             const response = await fetch(url, { mode: 'no-cors' });
             await cache.put(url, response);
           } catch (fallbackErr) {
-            console.warn(`[SW] Impossible de mettre en cache : ${url}`);
+            console.warn(`[SW] Maintien hors cache : ${url}`);
           }
         }
       }
@@ -34,14 +32,12 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// 2. Activation : Nettoyage des anciens caches et prise de contrôle
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log(`[SW] Nettoyage ancien cache : ${key}`);
             return caches.delete(key);
           }
         })
@@ -50,22 +46,18 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// 3. Interception Réseau
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // Ignorer requêtes non-GET, non-HTTP(S) et API Firebase dynamiques
   if (
     e.request.method !== 'GET' ||
     !url.protocol.startsWith('http') ||
-    url.hostname.includes('firestore.googleapis.com') ||
-    url.hostname.includes('identitytoolkit.googleapis.com') ||
-    url.hostname.includes('securetoken.googleapis.com')
+    url.hostname.endsWith('.googleapis.com') ||
+    url.hostname.endsWith('.firebaseapp.com')
   ) {
     return;
   }
 
-  // Stratégie : Stale-While-Revalidate pour les assets statiques et HTML
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
       const fetchPromise = fetch(e.request)
@@ -79,13 +71,11 @@ self.addEventListener('fetch', (e) => {
           return networkResponse;
         })
         .catch(() => {
-          // En cas de panne réseau complète et d'absence de cache pour la navigation
           if (e.request.mode === 'navigate') {
             return caches.match('./index.html') || caches.match('./');
           }
         });
 
-      // Si présent en cache, répondre immédiatement, sinon attendre le réseau
       return cachedResponse || fetchPromise;
     })
   );
