@@ -89,6 +89,60 @@
   <div id="app-screen" class="h-full flex flex-col hidden">
     <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-sm"></div>
 
+    <!-- Modal Choix d'ajout (Exercice ou Séance) -->
+    <div id="add-choice-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-pop text-center">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+          <h3 class="font-bold text-base text-slate-900">Que veux-tu ajouter ?</h3>
+          <button id="btn-close-choice-modal" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="grid grid-cols-1 gap-3 pt-1">
+          <button id="btn-choice-ex" class="w-full py-3.5 px-4 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-2xl flex items-center gap-3 text-blue-700 font-bold text-sm transition active:scale-95">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+              <i data-lucide="dumbbell" class="w-5 h-5"></i>
+            </div>
+            <div class="text-left">
+              <div>Nouvel exercice</div>
+              <div class="text-[11px] font-medium text-blue-500">Ajouter un exo dans une séance</div>
+            </div>
+          </button>
+          
+          <button id="btn-choice-session" class="w-full py-3.5 px-4 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-2xl flex items-center gap-3 text-slate-800 font-bold text-sm transition active:scale-95">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center shadow-sm">
+              <i data-lucide="folder-plus" class="w-5 h-5"></i>
+            </div>
+            <div class="text-left">
+              <div>Nouvelle séance</div>
+              <div class="text-[11px] font-medium text-slate-500">Créer un nouvel onglet de séance</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Création Nouvelle Séance -->
+    <div id="add-session-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <i data-lucide="folder-plus" class="w-5 h-5 text-blue-600"></i> Nouvelle séance
+          </h3>
+          <button id="btn-close-add-session" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <form id="add-session-form" class="space-y-3">
+          <div>
+            <label class="text-xs font-bold text-slate-500 uppercase">Nom de la séance</label>
+            <input type="text" id="create-session-title" required placeholder="ex: Séance n°3 - Jambes" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
+          </div>
+          <div class="flex justify-end space-x-2 pt-2">
+            <button type="button" id="btn-cancel-add-session" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Annuler</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-md transition active:scale-95">Créer la séance</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal Confirmation -->
     <div id="confirm-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
       <div class="bg-white border border-slate-200 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-pop">
@@ -112,7 +166,7 @@
       </div>
     </div>
 
-    <!-- Modal Création / Modification -->
+    <!-- Modal Création / Modification Exercice -->
     <div id="add-ex-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
       <div class="bg-white border border-slate-200 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -124,15 +178,20 @@
 
         <form id="add-ex-form" class="space-y-3">
           <input type="hidden" id="edit-ex-id" value="">
-          <input type="hidden" id="edit-session-id" value="">
           <div>
             <label class="text-xs font-bold text-slate-500 uppercase">Nom de l'exercice</label>
             <input type="text" id="new-ex-name" required placeholder="ex: Développé Couché" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
           </div>
 
           <div>
-            <label class="text-xs font-bold text-slate-500 uppercase">Séance</label>
-            <input type="text" id="new-ex-session" required placeholder="ex: Séance 1 - Lundi" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors">
+            <label class="text-xs font-bold text-slate-500 uppercase">Séance (Sélectionner pour déplacer)</label>
+            <div class="relative">
+              <select id="new-ex-session-select" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 mt-1 outline-none focus:border-blue-600 transition-colors pr-8">
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 pt-1 text-slate-400">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+              </div>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
@@ -232,7 +291,7 @@
         <div>
           <div class="flex items-center justify-between mb-2.5">
             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Programme Semaine</h2>
-            <button id="btn-open-add-ex" class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200 transition active:scale-95">
+            <button id="btn-open-add-choice" class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200 transition active:scale-95">
               <i data-lucide="plus" class="w-4 h-4"></i> Ajouter
             </button>
           </div>
@@ -551,9 +610,74 @@
         }, (err) => showToast("Mode hors-ligne actif (Journal)", "info"));
     }
 
-    // --- MODALES ---
+    // --- MODALES ET MENU D'AJOUT ---
     function toggleModalScroll(disable) {
       document.body.style.overflow = disable ? 'hidden' : '';
+    }
+
+    function openAddChoiceModal() {
+      toggleModalScroll(true);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      document.getElementById('add-choice-modal').classList.remove('hidden');
+    }
+
+    function closeAddChoiceModal() {
+      toggleModalScroll(false);
+      const choiceModal = document.getElementById('add-choice-modal');
+      if (choiceModal) choiceModal.classList.add('hidden');
+    }
+
+    function openAddSessionModal() {
+      closeAddChoiceModal();
+      document.getElementById('create-session-title').value = "";
+      toggleModalScroll(true);
+      document.getElementById('add-session-modal').classList.remove('hidden');
+    }
+
+    function closeAddSessionModal() {
+      toggleModalScroll(false);
+      document.getElementById('add-session-modal').classList.add('hidden');
+      document.getElementById('add-session-form').reset();
+    }
+
+    function saveNewSession(e) {
+      e.preventDefault();
+      const title = document.getElementById('create-session-title').value.trim();
+      if (!title) return;
+
+      const newSessionId = `SESS_${Date.now()}`;
+      
+      // SÉCURISATION FIRESTORE : On crée un premier exercice conteneur "placeholder" archivé
+      // pour persister la séance dans Firestore même si aucun exercice visible n'y est créé immédiatement.
+      const placeholderDocId = `EX_PLACEHOLDER_${Date.now()}`;
+      const placeholderEx = {
+        id: placeholderDocId,
+        userId: currentUserId,
+        user: currentUser,
+        name: "__STRUCTURE_SESSION__",
+        seance: title,
+        sessionId: newSessionId,
+        type: "Poids",
+        sets: 1,
+        reps: "0",
+        restSec: 0,
+        archived: true // Archivé par défaut pour ne pas polluer la vue d'entraînement
+      };
+
+      db.collection("exercises").doc(placeholderDocId).set({
+        ...placeholderEx,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).then(() => {
+        showToast(`Séance "${title}" créée !`, "success");
+      }).catch(() => {
+        showToast("Séance enregistrée en local", "info");
+      });
+
+      sessionsList.push({ id: newSessionId, title: title, exercises: [] });
+      activeSessionIndex = sessionsList.length - 1;
+      
+      closeAddSessionModal();
+      buildProgramForCurrentUser();
     }
 
     function openConfirmModal({ title, message, confirmText = "Retirer", onConfirm }) {
@@ -581,17 +705,25 @@
     }
 
     function openAddExModal(exId = null) {
+      closeAddChoiceModal();
       const titleEl = document.getElementById('ex-modal-title');
       const editIdEl = document.getElementById('edit-ex-id');
+      const sessionSelect = document.getElementById('new-ex-session-select');
       
+      // Remplir la liste déroulante des séances disponibles
+      if (sessionsList.length === 0) {
+        sessionSelect.innerHTML = `<option value="SESS_${Date.now()}">Séance n°1</option>`;
+      } else {
+        sessionSelect.innerHTML = sessionsList.map(s => `<option value="${sanitizeHTML(s.id)}">${sanitizeHTML(s.title)}</option>`).join('');
+      }
+
       const ex = exId ? rawExercises.find(e => e.id === exId) : null;
 
       if (ex) {
         titleEl.innerHTML = `<i data-lucide="edit" class="w-5 h-5 text-blue-600"></i> Modifier l'exercice`;
         editIdEl.value = ex.id;
-        document.getElementById('edit-session-id').value = ex.sessionId || '';
+        sessionSelect.value = ex.sessionId || (sessionsList[0] ? sessionsList[0].id : '');
         document.getElementById('new-ex-name').value = ex.name || '';
-        document.getElementById('new-ex-session').value = ex.seance || '';
         document.getElementById('new-ex-type').value = ex.type || 'Poids';
         document.getElementById('new-ex-sets').value = ex.sets || 4;
         document.getElementById('new-ex-reps').value = ex.reps || '';
@@ -599,11 +731,9 @@
       } else {
         titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-blue-600"></i> Nouvel exercice`;
         editIdEl.value = "";
-        document.getElementById('edit-session-id').value = "";
         document.getElementById('add-ex-form').reset();
         if (activeSessionIndex !== null && sessionsList[activeSessionIndex]) {
-          document.getElementById('new-ex-session').value = sessionsList[activeSessionIndex].title;
-          document.getElementById('edit-session-id').value = sessionsList[activeSessionIndex].id;
+          sessionSelect.value = sessionsList[activeSessionIndex].id;
         }
       }
       toggleModalScroll(true);
@@ -621,19 +751,17 @@
       e.preventDefault();
       const editId = document.getElementById('edit-ex-id').value;
       const name = document.getElementById('new-ex-name').value.trim();
-      const seance = document.getElementById('new-ex-session').value.trim();
+      const sessionSelect = document.getElementById('new-ex-session-select');
+      const sessionId = sessionSelect.value;
+      const selectedSession = sessionsList.find(s => s.id === sessionId);
+      const seance = selectedSession ? selectedSession.title : sessionSelect.options[sessionSelect.selectedIndex].text;
+
       const type = document.getElementById('new-ex-type').value;
       const sets = parseInt(document.getElementById('new-ex-sets').value) || 4;
       const reps = document.getElementById('new-ex-reps').value.trim();
       const restSec = parseInt(document.getElementById('new-ex-rest').value) || 0;
 
       const docId = editId ? editId : `EX_${Date.now()}`;
-      let sessionId = document.getElementById('edit-session-id').value;
-
-      if (!sessionId) {
-        const existingSession = sessionsList.find(s => cleanString(s.title) === cleanString(seance));
-        sessionId = existingSession ? existingSession.id : `SESS_${Date.now()}`;
-      }
       
       const exData = { 
         id: docId, 
@@ -845,12 +973,18 @@
       }
 
       const exGroups = {};
+      let sessionName = "";
+
       dayLogs.forEach(log => {
         if(!exGroups[log.exercise]) exGroups[log.exercise] = [];
         exGroups[log.exercise].push(log);
+        if (log.session && !sessionName) sessionName = log.session;
       });
 
-      let html = `<h4 class="font-bold text-base text-slate-900 mb-3 mt-2 border-b border-slate-200 pb-2">Séance du ${sanitizeHTML(dateStr)}</h4>`;
+      let html = `<div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3 mt-2">
+          <h4 class="font-bold text-base text-slate-900">Séance du ${sanitizeHTML(dateStr)}</h4>
+          ${sessionName ? `<span class="text-xs font-bold px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg border border-blue-200">${sanitizeHTML(sessionName)}</span>` : ''}
+        </div>`;
 
       for(const [exName, logs] of Object.entries(exGroups)) {
         html += `<div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm mb-2">
@@ -890,6 +1024,9 @@
       nextMonday.setDate(monday.getDate() + 7);
 
       rawExercises.forEach(ex => {
+        // Filtrer les exercices réels (exclure le placeholder de structure)
+        if (ex.name === "__STRUCTURE_SESSION__") return;
+
         const logsEx = journalLogs.filter(l => l.exerciseId === ex.id || (cleanString(l.exercise) === cleanString(ex.name) && cleanString(l.session) === cleanString(ex.seance)));
         const isCardio = (ex.type && (ex.type.toLowerCase().includes("dur") || ex.type.toLowerCase().includes("km")));
         const totalSets = isCardio ? 1 : (ex.sets || 4);
@@ -1193,7 +1330,10 @@
       rawExercises.forEach(ex => {
         const sKey = ex.sessionId || ex.seance;
         if (!grouped[sKey]) grouped[sKey] = { title: ex.seance, exercises: [] };
-        grouped[sKey].exercises.push(ex);
+        // Exclure l'exercice virtuel de structure pour qu'il n'apparaisse pas dans la liste des cartes
+        if (ex.name !== "__STRUCTURE_SESSION__") {
+          grouped[sKey].exercises.push(ex);
+        }
       });
       
       sessionsList = Object.keys(grouped).map((sKey) => ({ 
@@ -1268,6 +1408,11 @@
       const container = document.getElementById('exercise-list');
       
       let html = '';
+      if (!session.exercises || session.exercises.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Aucun exercice dans cette séance. Clique sur "+ Ajouter" pour en créer un !</p>';
+        return;
+      }
+
       session.exercises.forEach((ex) => {
         const savedData = getSavedLogs(ex.id);
         const safeName = sanitizeHTML(ex.name);
@@ -1543,10 +1688,15 @@
       if (e.target.closest('#btn-logout')) logout();
       if (e.target.closest('#btn-export-csv')) exportToCSV();
       
-      if (e.target.closest('#btn-open-add-ex')) openAddExModal();
-      if (e.target.closest('#btn-close-add-modal') || e.target.closest('#btn-cancel-add-modal')) closeAddExModal();
+      // Menu choix d'ajout
+      if (e.target.closest('#btn-open-add-choice')) openAddChoiceModal();
+      if (e.target.closest('#btn-close-choice-modal')) closeAddChoiceModal();
+      if (e.target.closest('#btn-choice-ex')) openAddExModal();
+      if (e.target.closest('#btn-choice-session')) openAddSessionModal();
 
-      // Annulation de la modale de suppression d'exercice
+      // Annulations modales
+      if (e.target.closest('#btn-close-add-modal') || e.target.closest('#btn-cancel-add-modal')) closeAddExModal();
+      if (e.target.closest('#btn-close-add-session') || e.target.closest('#btn-cancel-add-session')) closeAddSessionModal();
       if (e.target.closest('#confirm-btn-cancel')) closeConfirmModal();
 
       if (e.target.closest('#rename-session-btn')) openEditSessionModal();
@@ -1594,6 +1744,7 @@
     });
 
     document.getElementById('add-ex-form').addEventListener('submit', saveNewExercise);
+    document.getElementById('add-session-form').addEventListener('submit', saveNewSession);
     document.getElementById('edit-session-form').addEventListener('submit', saveSessionName);
 
     // --- SWIPE VECTORIEL ULTRA SENSIBLE ---
