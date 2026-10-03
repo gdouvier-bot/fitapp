@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>FitApp Pro</title>
+  <title>FitApp</title>
   <meta name="theme-color" content="#020617">
 
-  <!-- PWA iOS Support -->
+  <!-- PWA iOS & Manifest Support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FitApp Pro">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 
   <!-- External Libraries (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -584,31 +587,37 @@
       const restSec = parseInt(document.getElementById('new-ex-rest').value) || 0;
 
       const docId = editId ? editId : `EX_${Date.now()}`;
+      
+      const exData = { 
+        id: docId, 
+        userId: currentUserId, 
+        user: currentUser, 
+        name: name, 
+        seance: seance, 
+        type: type, 
+        sets: sets, 
+        reps: reps, 
+        restSec: restSec, 
+        archived: false 
+      };
 
+      // MISE À JOUR LOCALE INSTANTANÉE (Online & Offline)
+      const idx = rawExercises.findIndex(ex => ex.id === docId);
+      if (idx !== -1) rawExercises[idx] = { ...rawExercises[idx], ...exData };
+      else rawExercises.push(exData);
+      
+      syncSmartState();
+      buildProgramForCurrentUser();
+      closeAddExModal();
+
+      // SYNCHRONISATION ARRIÈRE-PLAN
       db.collection("exercises").doc(docId).set({
-        id: docId,
-        userId: currentUserId,
-        user: currentUser,
-        name: name,
-        seance: seance,
-        type: type,
-        sets: sets,
-        reps: reps,
-        restSec: restSec,
-        archived: false,
+        ...exData,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).then(() => {
         showToast(editId ? "Exercice mis à jour !" : "Exercice créé !", "success");
-        closeAddExModal();
       }).catch(() => {
         showToast("Sauvegardé en cache hors-ligne", "info");
-        closeAddExModal();
-        const exData = { id: docId, userId: currentUserId, user: currentUser, name, seance, type, sets, reps, restSec, archived: false };
-        const idx = rawExercises.findIndex(ex => ex.id === docId);
-        if (idx !== -1) rawExercises[idx] = exData;
-        else rawExercises.push(exData);
-        syncSmartState();
-        buildProgramForCurrentUser();
       });
     }
 
@@ -806,6 +815,8 @@
           return new Date(p[2], p[1]-1, p[0]) >= monday;
         });
 
+        // Lecture sécurisée du LocalStorage existant
+        const existingData = getSavedLogs(ex.id);
         let saved = { sets: {} };
 
         for(let i = 0; i < totalSets; i++) {
@@ -826,7 +837,12 @@
               reps = lastLogForSet.reps || "";
             }
           }
-          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId, date: createdDate };
+
+          // RÉTENTION DE LA DATE EXISTANTE SI DISPONIBLE
+          const previousSet = existingData.sets ? existingData.sets[i] : null;
+          const finalDate = createdDate || (previousSet ? previousSet.date : null);
+
+          saved.sets[i] = { weight, reps, comment, done: setDone, isEditing: false, firestoreId, date: finalDate };
         }
         safeSetItem(`fitapp_log_${currentUserId}_${ex.id}`, JSON.stringify(saved));
       });
@@ -1213,12 +1229,14 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    // UNLOCK SET SÉCURISÉ (Conservation de la donnée locale sans suppression destructive Firestore)
     function unlockSet(exId, setIdx) {
       const saved = getSavedLogs(exId);
       if (saved.sets && saved.sets[setIdx]) {
         saved.sets[setIdx].done = false;
         saved.sets[setIdx].isEditing = true;
         safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
+        
         loadSession(activeSessionIndex);
         renderTabs();
         showToast("Série déverrouillée.");
