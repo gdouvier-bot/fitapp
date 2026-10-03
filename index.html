@@ -1285,12 +1285,11 @@
       const isEditMode = saved.sets[setIdx]?.isEditing === true;
       const today = new Date();
 
-      // VERROUILLAGE DE LA DATE D'ORIGINE : réutilise la date existante ou prend la date actuelle si 1ère création
+      // VERROUILLAGE DE LA DATE D'ORIGINE ET DE L'ID FIRESTORE
       const existingSet = saved.sets[setIdx];
       const dateStr = (existingSet && existingSet.date) ? existingSet.date : parseDateToJJMMAAAA(today);
+      const firestoreId = (existingSet && existingSet.firestoreId) ? existingSet.firestoreId : db.collection("journal").doc().id;
       const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
-
-      let firestoreId = saved.sets[setIdx]?.firestoreId || db.collection("journal").doc().id;
 
       saved.sets[setIdx] = { 
         weight: wEl ? wEl.value : "", 
@@ -1299,7 +1298,7 @@
         done: true, 
         isEditing: false, 
         firestoreId: firestoreId,
-        date: dateStr // Conserve la date de création dans le LocalStorage
+        date: dateStr
       };
       
       safeSetItem(`fitapp_log_${currentUserId}_${exId}`, JSON.stringify(saved));
@@ -1308,7 +1307,7 @@
       queueSyncJournal({
         firestoreId: firestoreId,
         userId: currentUserId, 
-        date: dateStr, // Synchronise avec la date de création initiale
+        date: dateStr, 
         time: timeStr, 
         user: currentUser,
         session: sessionsList[activeSessionIndex].title, 
@@ -1455,7 +1454,7 @@
     document.getElementById('add-ex-form').addEventListener('submit', saveNewExercise);
     document.getElementById('edit-session-form').addEventListener('submit', saveSessionName);
 
-    // --- SWIPE VECTORIEL ---
+    // --- SWIPE VECTORIEL AJUSTÉ ---
     let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
     
     document.addEventListener('touchstart', e => {
@@ -1472,7 +1471,7 @@
       const deltaX = touchEndX - touchStartX;
       const deltaY = touchEndY - touchStartY;
 
-      if (Math.abs(deltaX) > 75 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.1) {
         const views = ['workout', 'calendar', 'stats'];
         let idx = views.findIndex(v => !document.getElementById(`view-${v}`).classList.contains('hidden'));
         if (deltaX < 0 && idx < views.length - 1) switchView(views[idx + 1]);
